@@ -1,0 +1,13 @@
+import { CycleStatus } from "@prisma/client";
+
+import { PageHeader, StatusBadge, inputClass, textareaClass } from "@/components/dashboard/common";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { changeCycleStatus, createCycle } from "@/lib/actions/admin";
+import { cycleStatusLabels } from "@/lib/constants";
+import { prisma } from "@/lib/prisma";
+
+export default async function AdminCyclesPage() {
+  const cycles=await prisma.cycle.findMany({orderBy:{startDate:"desc"},include:{_count:{select:{entries:true}}}});
+  return <div className="mx-auto max-w-6xl space-y-7"><PageHeader eyebrow="Admin" title="Cycles" description="নতুন cycle তৈরি, active, complete অথবা archive করুন।"/><div className="grid gap-6 lg:grid-cols-[1fr_360px]"><div className="space-y-4">{cycles.map((cycle)=><Card key={cycle.id}><CardContent><div className="flex flex-wrap items-start justify-between gap-4"><div><div className="flex items-center gap-3"><h2 className="text-lg font-bold text-emerald-950">{cycle.title}</h2><StatusBadge tone={cycle.status===CycleStatus.ACTIVE?"green":"neutral"}>{cycleStatusLabels[cycle.status]}</StatusBadge></div><p className="mt-2 text-sm text-stone-500">{cycle.startDate.toLocaleDateString("bn-BD")} — {cycle.endDate.toLocaleDateString("bn-BD")} • {cycle._count.entries} entries</p></div><form action={changeCycleStatus} className="flex gap-2"><input type="hidden" name="cycleId" value={cycle.id}/><select name="status" defaultValue={cycle.status} className={`${inputClass} w-32`}>{Object.values(CycleStatus).map((status)=><option key={status} value={status}>{cycleStatusLabels[status]}</option>)}</select><Button size="sm">Apply</Button></form></div>{cycle.description?<p className="mt-4 text-sm leading-6 text-stone-600">{cycle.description}</p>:null}</CardContent></Card>)}</div><Card className="h-fit lg:sticky lg:top-6"><CardContent><h2 className="font-bold text-emerald-950">নতুন সাইকেল</h2><form action={createCycle} className="mt-5 space-y-4"><input name="title" required placeholder="সাইকেলের নাম" className={inputClass}/><div><label className="text-xs font-semibold text-stone-500">শুরুর তারিখ</label><input name="startDate" type="date" required className={`${inputClass} mt-1`}/></div><div><label className="text-xs font-semibold text-stone-500">শেষ তারিখ</label><input name="endDate" type="date" required className={`${inputClass} mt-1`}/></div><textarea name="description" placeholder="বিবরণ (ঐচ্ছিক)" className={textareaClass}/><Button className="w-full">সাইকেল তৈরি করুন</Button></form></CardContent></Card></div></div>;
+}

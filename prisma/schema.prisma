@@ -1,0 +1,260 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  MEMBER
+  USTADH
+  ADMIN
+}
+
+enum CycleStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  ARCHIVED
+}
+
+enum AmalCategory {
+  SALAH
+  QURAN
+  DHIKR
+  SUNNAH
+  CHARACTER
+  SERVICE
+  SELF_DISCIPLINE
+  READING
+  OTHER
+}
+
+enum AmalInputType {
+  BOOLEAN
+  NUMBER
+  MINUTES
+  PAGES
+  AYAT
+  COUNT
+  TEXT
+}
+
+enum Weekday {
+  SUNDAY
+  MONDAY
+  TUESDAY
+  WEDNESDAY
+  THURSDAY
+  FRIDAY
+  SATURDAY
+}
+
+enum DailyEntryStatus {
+  DRAFT
+  SUBMITTED
+  LOCKED
+}
+
+enum BookStatus {
+  PLANNED
+  READING
+  COMPLETED
+  PAUSED
+}
+
+type AmalResponse {
+  amalItemId   String   @db.ObjectId
+  valueBoolean Boolean?
+  valueNumber  Float?
+  valueText    String?
+  score        Float
+  maxScore     Float
+}
+
+model User {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  email         String   @unique
+  emailVerified Boolean  @default(false)
+  image         String?
+  role          Role     @default(MEMBER)
+  isActive      Boolean  @default(true)
+  joinedAt      DateTime @default(now())
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  sessions        Session[]
+  accounts        Account[]
+  cyclesCreated   Cycle[]          @relation("CycleCreator")
+  dailyEntries    DailyAmalEntry[]
+  reviewsReceived UstadhReview[]   @relation("ReviewMember")
+  reviewsWritten  UstadhReview[]   @relation("ReviewAuthor")
+  books           Book[]
+  readingLogs     BookReadingLog[]
+
+  @@index([role, isActive])
+}
+
+model Session {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  expiresAt DateTime
+  token     String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  ipAddress String?
+  userAgent String?
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model Account {
+  id                    String    @id @default(auto()) @map("_id") @db.ObjectId
+  accountId             String
+  providerId            String
+  userId                String    @db.ObjectId
+  user                  User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  accessToken           String?
+  refreshToken          String?
+  idToken               String?
+  accessTokenExpiresAt  DateTime?
+  refreshTokenExpiresAt DateTime?
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+}
+
+model Verification {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  identifier String
+  value      String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([identifier])
+}
+
+model Cycle {
+  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  status      CycleStatus @default(DRAFT)
+  createdById String      @db.ObjectId
+  createdBy   User        @relation("CycleCreator", fields: [createdById], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  entries     DailyAmalEntry[]
+  reviews     UstadhReview[]
+
+  @@index([status, startDate, endDate])
+  @@index([createdById])
+}
+
+model AmalItem {
+  id           String        @id @default(auto()) @map("_id") @db.ObjectId
+  titleBn      String
+  titleEn      String?
+  description  String?
+  category     AmalCategory
+  inputType    AmalInputType
+  targetValue  Float?
+  unit         String?
+  points       Float         @default(1)
+  order        Int
+  isActive     Boolean       @default(true)
+  isRequired   Boolean       @default(false)
+  specificDay Weekday?
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+
+  @@index([isActive, order])
+  @@index([category, order])
+}
+
+model DailyAmalEntry {
+  id                   String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId               String           @db.ObjectId
+  user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  cycleId              String           @db.ObjectId
+  cycle                Cycle            @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  date                  DateTime
+  status                DailyEntryStatus @default(DRAFT)
+  responses             AmalResponse[]
+  totalScore            Float            @default(0)
+  maxPossibleScore      Float            @default(0)
+  completionPercentage Float            @default(0)
+  personalNote          String?
+  submittedAt           DateTime?
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
+
+  @@unique([userId, cycleId, date])
+  @@index([cycleId])
+  @@index([userId, cycleId])
+  @@index([cycleId, date])
+  @@index([userId, date])
+}
+
+model UstadhReview {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  cycleId           String   @db.ObjectId
+  cycle             Cycle    @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+  memberId          String   @db.ObjectId
+  member            User     @relation("ReviewMember", fields: [memberId], references: [id], onDelete: Cascade)
+  reviewerId        String   @db.ObjectId
+  reviewer          User     @relation("ReviewAuthor", fields: [reviewerId], references: [id])
+  comment           String
+  isVisibleToMember Boolean  @default(false)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  @@unique([memberId, cycleId, reviewerId])
+  @@index([memberId, cycleId])
+  @@index([reviewerId])
+}
+
+model Book {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String     @db.ObjectId
+  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  author      String?
+  translator  String?
+  publisher   String?
+  totalPages  Int?
+  status      BookStatus @default(PLANNED)
+  notes       String?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  readingLogs BookReadingLog[]
+
+  @@index([userId, status])
+}
+
+model BookReadingLog {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  bookId    String   @db.ObjectId
+  book      Book     @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  userId    String   @db.ObjectId
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  pagesRead Int
+  fromPage  Int?
+  toPage    Int?
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
+  @@index([bookId, date])
+}

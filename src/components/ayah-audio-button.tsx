@@ -1,0 +1,4 @@
+"use client";
+import { Pause, Volume2 } from "lucide-react";
+import { useRef, useState } from "react";
+export function AyahAudioButton({ src }: { src: string }) { const ref=useRef<HTMLAudioElement>(null); const [playing,setPlaying]=useState(false); async function toggle(){const a=ref.current;if(!a)return;if(playing){a.pause();setPlaying(false);}else{await a.play();setPlaying(true)}} return <><button type="button" onClick={toggle} className="inline-flex items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-900 transition hover:bg-emerald-200">{playing?<Pause className="size-4"/>:<Volume2 className="size-4"/>}{playing?"থামান":"তিলাওয়াত শুনুন"}</button><audio ref={ref} src={src} onEnded={()=>setPlaying(false)}/></> }
