@@ -1,18 +1,278 @@
 @import "tailwindcss";
 
-:root { --background: #faf8f2; --foreground: #1c2521; }
+/* ══════════════════════════════════════════════════════════════════════
+   مুহাসাবাহ — design tokens
+   A warm, calm, devotional system: cream surfaces layered on #faf8f2,
+   emerald as the single primary, stone for text. Not startup-y.
 
+   Radius is deliberately limited to TWO tiers (never larger than 2xl):
+     · control = 12px  → rounded-control  (buttons, inputs, chips)
+     · card    = 16px  → rounded-card     (cards, panels, modals)
+
+   NOTE ON LAYERS: Tailwind v4 emits its own rules inside cascade layers,
+   so anything written here *outside* a layer beats every utility class.
+   Rules that must stay overridable by utilities live in @layer base /
+   @layer components below; the a11y + mobile rules stay unlayered on
+   purpose so they can never be accidentally disabled.
+   ══════════════════════════════════════════════════════════════════════ */
+
+:root {
+  /* ── Canvas + warm surface palette ─────────────────────────────── */
+  --background: #faf8f2;          /* cream canvas                       */
+  --foreground: #1c2521;          /* warm near-black                    */
+
+  --surface: #ffffff;             /* cards / panels                     */
+  --surface-raised: #fffdf9;      /* slightly warmer lifted surface     */
+  --surface-sunken: #f3f0e8;      /* wells, grouped rows, inputs        */
+  --surface-tint: #f0f7f3;        /* faint emerald wash                 */
+
+  --hairline: #e9e4d8;            /* default warm border                */
+  --hairline-strong: #dcd5c6;     /* emphasised border                  */
+
+  /* ── Emerald primary + states ──────────────────────────────────── */
+  --primary: #064e3b;
+  --primary-hover: #054231;
+  --primary-active: #022c22;
+  --primary-soft: #ecfdf5;
+  --on-primary: #ffffff;
+
+  /* ── Supporting roles ──────────────────────────────────────────── */
+  --muted: #f3f0e8;
+  --muted-foreground: #78716b;
+  --ring: #047857;
+  --destructive: #b91c1c;
+
+  /* ── Aliases consumed by sonner / shadcn-style var() references ── */
+  --card: #ffffff;
+  --card-foreground: #1c2521;
+  --popover: #fffdf9;
+  --popover-foreground: #1c2521;
+  --primary-foreground: #ffffff;
+  --secondary: #f3f0e8;
+  --secondary-foreground: #1c2521;
+  --accent: #f0f7f3;
+  --accent-foreground: #054231;
+  --border: #e9e4d8;
+  --input: #dcd5c6;
+  --destructive-foreground: #ffffff;
+  --radius: 0.75rem;
+
+  color-scheme: light;
+}
+
+/* ── Semantic colours exposed to Tailwind as utilities ────────────────
+   → bg-surface, bg-surface-sunken, border-hairline, text-primary, …   */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Noto Sans Bengali", "Hind Siliguri", ui-sans-serif, system-ui, sans-serif;
+
+  --color-surface: var(--surface);
+  --color-surface-raised: var(--surface-raised);
+  --color-surface-sunken: var(--surface-sunken);
+  --color-surface-tint: var(--surface-tint);
+
+  --color-hairline: var(--hairline);
+  --color-hairline-strong: var(--hairline-strong);
+
+  --color-primary: var(--primary);
+  --color-primary-hover: var(--primary-hover);
+  --color-primary-active: var(--primary-active);
+  --color-primary-soft: var(--primary-soft);
+  --color-on-primary: var(--on-primary);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-ring: var(--ring);
+  --color-destructive: var(--destructive);
+
+  --font-sans: "Hind Siliguri", "Noto Sans Bengali", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Amiri", "Noto Naskh Arabic", "Scheherazade New", "Traditional Arabic", serif;
 }
 
-* { border-color: rgb(231 229 228); }
-html { scroll-behavior: smooth; }
-body { min-height: 100vh; background: var(--background); color: var(--foreground); font-family: var(--font-sans); text-rendering: optimizeLegibility; }
-::selection { background: rgb(167 243 208); color: rgb(2 44 34); }
+/* ── Shape, depth, motion ───────────────────────────────────────────── */
+@theme {
+  /* Soft, warm-tinted elevation scale (brown-grey instead of pure grey). */
+  --shadow-xs: 0 1px 2px 0 rgb(61 52 38 / 0.05);
+  --shadow-sm: 0 1px 2px -1px rgb(61 52 38 / 0.06), 0 2px 4px -2px rgb(61 52 38 / 0.06);
+  --shadow-md: 0 2px 4px -2px rgb(61 52 38 / 0.07), 0 6px 14px -4px rgb(61 52 38 / 0.08);
+  --shadow-lg: 0 4px 8px -4px rgb(61 52 38 / 0.08), 0 14px 30px -8px rgb(61 52 38 / 0.1);
+  --shadow-xl: 0 8px 16px -8px rgb(61 52 38 / 0.1), 0 24px 44px -12px rgb(61 52 38 / 0.14);
+  --shadow-2xl: 0 24px 56px -16px rgb(35 28 18 / 0.3);
+  --shadow-card: 0 1px 2px 0 rgb(61 52 38 / 0.04), 0 8px 24px -14px rgb(61 52 38 / 0.14);
+  --shadow-raised: 0 2px 6px -2px rgb(61 52 38 / 0.08), 0 18px 40px -20px rgb(61 52 38 / 0.22);
+
+  /* Two-tier radius (see header). */
+  --radius-control: 0.75rem; /* 12px */
+  --radius-card: 1rem; /* 16px — project maximum */
+
+  /* One gentle easing curve for the whole product. */
+  --ease-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
+  --animate-rise: rise 420ms var(--ease-soft) both;
+  --animate-fade: fade-in 320ms var(--ease-soft) both;
+}
+
+@keyframes rise {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ── Default border colour ─────────────────────────────────────────────
+   Scoped to @layer base so that explicit border-* utilities
+   (border-emerald-200, border-red-200, …) actually win, while plain
+   `border` elements still fall back to the warm hairline. */
+@layer base {
+  *,
+  ::before,
+  ::after,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--hairline);
+  }
+}
+
+/* ── Small reusable utilities ───────────────────────────────────────────
+   Kept in @layer components so any Tailwind utility can override them. */
+@layer components {
+  /* A plain white panel: hairline border + card shadow. */
+  .surface {
+    background-color: var(--surface);
+    border: 1px solid var(--hairline);
+    box-shadow: var(--shadow-card);
+  }
+
+  /* 1px warm rule under a block (section / row divider). */
+  .hairline {
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  /* Warm top-down wash behind app chrome — keeps large cream areas alive
+     without adding ornament. */
+  .canvas-warm {
+    background-image: linear-gradient(180deg, #f5f1e7 0px, var(--background) 360px);
+  }
+
+  /* Hide the scrollbar on horizontal chip / tab rows. */
+  .no-scrollbar {
+    scrollbar-width: none;
+  }
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+:root {
+  color-scheme: light;
+}
+
+html {
+  scroll-behavior: smooth;
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 5rem;
+}
+
+body {
+  min-height: 100vh;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: var(--font-sans);
+  text-rendering: optimizeLegibility;
+  -webkit-tap-highlight-color: transparent;
+  overflow-wrap: break-word;
+}
+
+::selection {
+  background: rgb(167 243 208);
+  color: rgb(2 44 34);
+}
+
+/* Keep form controls readable on phones — below 16px iOS auto-zooms the page
+   as soon as a field is focused, which breaks the fixed app chrome.
+   Deliberately unlayered (higher precedence than utilities) so no `text-sm`
+   can accidentally re-introduce the zoom. */
+@media (max-width: 640px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+  textarea,
+  select {
+    font-size: 16px;
+  }
+
+  h1,
+  h2,
+  h3 {
+    text-wrap: balance;
+  }
+}
+
+/* Visible keyboard focus without changing the mouse experience.
+   Also unlayered on purpose: focus rings can never be turned off by a
+   utility class. */
+:focus-visible {
+  outline: 2px solid rgb(4 120 87);
+  outline-offset: 2px;
+}
+
 .quiet-grid {
-  background-image: linear-gradient(rgba(6, 78, 59, 0.035) 1px, transparent 1px), linear-gradient(90deg, rgba(6, 78, 59, 0.035) 1px, transparent 1px);
+  background-image: linear-gradient(rgba(6, 78, 59, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(6, 78, 59, 0.035) 1px, transparent 1px);
   background-size: 32px 32px;
+}
+
+/* ── Slim, warm scrollbar ──────────────────────────────────────────────
+   In @layer base so per-element scrollbar utilities still win. */
+@layer base {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: rgb(120 113 107 / 0.32) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background-color: rgb(120 113 107 / 0.3);
+    background-clip: content-box;
+    border: 3px solid transparent;
+    border-radius: 999px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background-color: rgb(120 113 107 / 0.5);
+  }
+
+  *::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

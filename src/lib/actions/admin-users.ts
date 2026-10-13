@@ -1,6 +1,6 @@
 "use server";
 
-import { Prisma, Role } from "@prisma/client";
+import { Gender, Prisma, Role } from "@prisma/client";
 import { hashPassword } from "better-auth/crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -11,10 +11,18 @@ import { prisma } from "@/lib/prisma";
 export type UserActionResult = { success: boolean; message: string };
 
 const objectId = z.string().regex(/^[a-f\d]{24}$/i);
+/**
+ * Only পুরুষ / নারী can be assigned. Legacy rows may still carry `OTHER`
+ * (an unset gender) — those members only see the general amals and are
+ * flagged in the members table so an admin can set the real gender here.
+ */
+const assignableGender = z.enum([Gender.MALE, Gender.FEMALE], { message: "লিঙ্গ নির্বাচন করুন — পুরুষ বা নারী।" });
+
 const baseUserSchema = z.object({
   name: z.string().trim().min(2, "নাম কমপক্ষে ২ অক্ষরের হতে হবে।").max(100),
   email: z.string().trim().toLowerCase().email("সঠিক ইমেইল দিন।").max(160),
   role: z.enum(Role),
+  gender: assignableGender,
   isActive: z.boolean(),
 });
 
@@ -39,6 +47,7 @@ export async function createManagedUser(formData: FormData): Promise<UserActionR
     email: formData.get("email"),
     password: formData.get("password"),
     role: formData.get("role"),
+    gender: formData.get("gender"),
     isActive: formData.get("isActive") === "on",
   });
   if (!parsed.success) return { success: false, message: parsed.error.issues[0]?.message ?? "তথ্য সঠিক নয়।" };
@@ -51,6 +60,7 @@ export async function createManagedUser(formData: FormData): Promise<UserActionR
           name: parsed.data.name,
           email: parsed.data.email,
           role: parsed.data.role,
+          gender: parsed.data.gender,
           isActive: parsed.data.isActive,
           emailVerified: true,
         },
@@ -82,6 +92,7 @@ export async function updateManagedUser(formData: FormData): Promise<UserActionR
     email: formData.get("email"),
     password: String(formData.get("password") ?? "").trim() || undefined,
     role: formData.get("role"),
+    gender: formData.get("gender"),
     isActive: formData.get("isActive") === "on",
   });
   if (!parsed.success) return { success: false, message: parsed.error.issues[0]?.message ?? "তথ্য সঠিক নয়।" };
@@ -103,6 +114,7 @@ export async function updateManagedUser(formData: FormData): Promise<UserActionR
           name: parsed.data.name,
           email: parsed.data.email,
           role: parsed.data.role,
+          gender: parsed.data.gender,
           isActive: parsed.data.isActive,
         },
       });

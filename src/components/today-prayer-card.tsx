@@ -71,7 +71,7 @@ export function TodayPrayerCard({
   return (
     <div
       id="today"
-      className="w-full self-center rounded-[2rem] border border-emerald-100 bg-white p-6 shadow-2xl shadow-emerald-950/10 sm:p-8"
+      className="w-full self-center rounded-2xl border border-emerald-100 bg-white p-6 shadow-2xl shadow-emerald-950/10 sm:p-8"
     >
       {/* Date Header */}
       <div className="flex items-start justify-between gap-4 border-b border-stone-100 pb-5">

@@ -6,6 +6,7 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
+import { GenderField } from "@/components/auth/gender-field";
 import { authClient } from "@/lib/auth-client";
 
 type AuthTab = "login" | "register" | "forgot";
@@ -19,6 +20,8 @@ export function AuthModal() {
   const [tab, setTab] = useState<AuthTab>((authParam as AuthTab) || "login");
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gender, setGender] = useState("");
+  const [genderTouched, setGenderTouched] = useState(false);
 
   const isOpen = authParam === "login" || authParam === "register" || authParam === "forgot";
 
@@ -34,10 +37,14 @@ export function AuthModal() {
 
   function close() {
     dialogRef.current?.close();
+    // Strip the `auth`/`next` query without going through the router: a router
+    // navigation here would race with the post-login `router.push` and bounce
+    // the user back to the landing page.
     const url = new URL(window.location.href);
+    if (!url.searchParams.has("auth") && !url.searchParams.has("next")) return;
     url.searchParams.delete("auth");
     url.searchParams.delete("next");
-    router.replace(url.pathname + url.search, { scroll: false });
+    window.history.replaceState(window.history.state, "", url.pathname + url.search);
   }
 
   async function handleLogin(event: FormEvent<HTMLFormElement>) {
@@ -72,8 +79,14 @@ export function AuthModal() {
       setError("দুইটি পাসওয়ার্ড এক নয়।");
       return;
     }
+    if (!gender) {
+      // No silent default — the user must actively pick one.
+      setGenderTouched(true);
+      setError("অনুগ্রহ করে আপনার লিঙ্গ নির্বাচন করুন।");
+      return;
+    }
     setIsPending(true);
-    const result = await authClient.signUp.email({ name, email, password });
+    const result = await authClient.signUp.email({ name, email, password, gender });
     if (result.error) {
       setError(
         result.error.code === "USER_ALREADY_EXISTS"
@@ -83,12 +96,11 @@ export function AuthModal() {
       setIsPending(false);
       return;
     }
-    // Sign out immediately — new users need admin approval before they can log in
-    await authClient.signOut();
-    toast.success("নিবন্ধন সম্পন্ন! অ্যাডমিনের অনুমোদনের জন্য অপেক্ষা করুন।");
+    // Registration is open: the account is active immediately, no approval needed.
+    toast.success("নিবন্ধন সফল! স্বাগতম 🌙");
     dialogRef.current?.close();
-    close();
-    setIsPending(false);
+    router.push(nextParam?.startsWith("/") ? nextParam : "/dashboard");
+    router.refresh();
   }
 
   function handleForgotPassword(event: FormEvent<HTMLFormElement>) {
@@ -108,7 +120,7 @@ export function AuthModal() {
       ref={dialogRef}
       onClose={close}
       onCancel={close}
-      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-3xl border border-stone-200 bg-white p-0 text-stone-900 shadow-2xl backdrop:bg-emerald-950/60 backdrop:backdrop-blur-sm"
+      className="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-stone-200 bg-white p-0 text-stone-900 shadow-2xl backdrop:bg-emerald-950/60 backdrop:backdrop-blur-sm"
     >
       <div className="p-6 sm:p-8">
         {/* Header */}
@@ -128,7 +140,7 @@ export function AuthModal() {
               {tab === "login"
                 ? "আপনার ইমেইল ও পাসওয়ার্ড দিয়ে লগইন করুন।"
                 : tab === "register"
-                  ? "নিবন্ধনের পর অ্যাডমিনের অনুমোদন প্রয়োজন হবে।"
+                  ? "নিবন্ধন শেষ হলেই সরাসরি ড্যাশবোর্ডে ঢুকতে পারবেন। কোনো অনুমোদন লাগবে না।"
                   : "এই সুবিধার জন্য অ্যাডমিনের সঙ্গে যোগাযোগ করুন।"}
             </p>
           </div>
@@ -187,6 +199,15 @@ export function AuthModal() {
             <Field label="ইমেইল" name="email" type="email" autoComplete="email" placeholder="you@example.com" />
             <Field label="পাসওয়ার্ড" name="password" type="password" autoComplete="new-password" placeholder="কমপক্ষে ৮ অক্ষর" minLength={8} />
             <Field label="পাসওয়ার্ড নিশ্চিত করুন" name="confirmPassword" type="password" autoComplete="new-password" placeholder="পাসওয়ার্ড আবার লিখুন" minLength={8} />
+            <GenderField
+              idPrefix="auth"
+              value={gender}
+              onChange={(value) => {
+                setGender(value);
+                setGenderTouched(true);
+              }}
+              error={genderTouched && !gender}
+            />
             {error && <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p>}
             <Button className="w-full" size="lg" disabled={isPending}>
               {isPending ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}

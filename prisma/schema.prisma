@@ -13,6 +13,21 @@ enum Role {
   ADMIN
 }
 
+/// Member gender. `OTHER` is the safe legacy default — those members keep
+/// seeing the general (ALL) amal list.
+enum Gender {
+  MALE
+  FEMALE
+  OTHER
+}
+
+/// Who an AmalItem applies to. Women's amals are kept separate from men's.
+enum AmalAudience {
+  ALL
+  MALE
+  FEMALE
+}
+
 enum CycleStatus {
   DRAFT
   ACTIVE
@@ -82,18 +97,27 @@ model User {
   image         String?
   role          Role     @default(MEMBER)
   isActive      Boolean  @default(true)
+  /// Required at registration; drives which AmalItems the member receives.
+  gender        Gender   @default(OTHER)
+  /// Privacy switch (profile settings): when true, even ADMIN/USTADH cannot
+  /// see this member's Amalnama. Turning it off restores full review access.
+  hideAmalnama  Boolean  @default(false)
   joinedAt      DateTime @default(now())
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  sessions        Session[]
-  accounts        Account[]
-  cyclesCreated   Cycle[]          @relation("CycleCreator")
-  dailyEntries    DailyAmalEntry[]
-  reviewsReceived UstadhReview[]   @relation("ReviewMember")
-  reviewsWritten  UstadhReview[]   @relation("ReviewAuthor")
-  books           Book[]
-  readingLogs     BookReadingLog[]
+  sessions             Session[]
+  accounts             Account[]
+  cyclesCreated        Cycle[]          @relation("CycleCreator")
+  dailyEntries         DailyAmalEntry[]
+  reviewsReceived      UstadhReview[]   @relation("ReviewMember")
+  reviewsWritten       UstadhReview[]   @relation("ReviewAuthor")
+  books                Book[]
+  readingLogs          BookReadingLog[]
+  commentsReceived     AmalComment[]    @relation("AmalCommentMember")
+  commentsWritten      AmalComment[]    @relation("AmalCommentAuthor")
+
+  quranProgress        QuranProgress?
 
   @@index([role, isActive])
 }
@@ -174,12 +198,36 @@ model AmalItem {
   order        Int
   isActive     Boolean       @default(true)
   isRequired   Boolean       @default(false)
-  specificDay Weekday?
+  /// On a member's period (মাসিক) day this amal does not apply — it is shown
+  /// as "—" in reports and never counts as missed. Ustad/Admin controls it.
+  exemptOnPeriod Boolean     @default(false)
+  /// `ALL` = everyone (default for the seeded list), `MALE`/`FEMALE` = only
+  /// members of that gender receive this amal in their daily Amalnama.
+  genderScope  AmalAudience  @default(ALL)
+  specificDay  Weekday?
+  /// Creator of the item. `null` means the system/admin seed default list.
+  createdById  String?       @db.ObjectId
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
   @@index([isActive, order])
   @@index([category, order])
+  @@index([createdById])
+}
+
+/// Ustadh/Admin feedback left on a member's Amalnama.
+model AmalComment {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  memberId  String   @db.ObjectId
+  member    User     @relation("AmalCommentMember", fields: [memberId], references: [id], onDelete: Cascade)
+  authorId  String   @db.ObjectId
+  author    User     @relation("AmalCommentAuthor", fields: [authorId], references: [id], onDelete: Cascade)
+  comment   String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([memberId, createdAt])
+  @@index([authorId])
 }
 
 model DailyAmalEntry {
@@ -195,6 +243,9 @@ model DailyAmalEntry {
   maxPossibleScore      Float            @default(0)
   completionPercentage Float            @default(0)
   personalNote          String?
+  /// Member marked this day as menstrual — prayer/fasting amals are exempt
+  /// (shown as "—" in reports and never counted as missed).
+  isPeriodDay           Boolean          @default(false)
   submittedAt           DateTime?
   createdAt             DateTime         @default(now())
   updatedAt             DateTime         @updatedAt
@@ -257,4 +308,34 @@ model BookReadingLog {
 
   @@index([userId, date])
   @@index([bookId, date])
+}
+
+/// Per-user Quran reading tracker: where the reader stopped (resume across
+/// devices) plus the cumulative set of global ayah numbers already read.
+model QuranProgress {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String   @unique @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  /// Reader mode the user was in: "surah" | "juz"
+  mode        String   @default("surah")
+  /// Surah number currently open (always populated, also for juz mode)
+  surah       Int      @default(1)
+  /// Juz number when mode = "juz"
+  juz         Int?
+  /// Last read ayah inside `surah`
+  ayahInSurah Int      @default(1)
+  /// Last read global ayah number (1..6236) — canonical resume anchor
+  globalAyah  Int      @default(1)
+
+  /// Reading preferences restored together with the position
+  viewMode    String?
+  fontSize    String?
+  reciter     String?
+
+  /// Cumulative coverage: every global ayah number the user has read so far
+  readAyahs   Int[]    @default([])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }

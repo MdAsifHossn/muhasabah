@@ -17,29 +17,28 @@ import {
   formatEnglishDate,
   formatHijriDate,
 } from "@/lib/dates";
-import { getGuidanceSlides } from "@/lib/islamic-content";
+import { getDailyGuidance } from "@/lib/islamic-content";
 import { getTodayFastingInfo } from "@/lib/prayer-times";
 
 import { TodayPrayerCard } from "@/components/today-prayer-card";
 
 export default async function HomePage() {
   const session = await auth.api.getSession({ headers: await headers() });
-  const [timings, guidanceSlides] = await Promise.all([
+  const [timings, guidance] = await Promise.all([
     getTodayFastingInfo(),
-    getGuidanceSlides(),
+    getDailyGuidance(),
   ]);
   const today = new Date();
   const appHref = session ? "/dashboard" : "/?auth=login";
-  const quranHref = session
-    ? "/dashboard/quran"
-    : "/?auth=login&next=/dashboard/quran";
+  // The Quran reader is PUBLIC — anyone may read/listen without logging in.
+  const quranHref = "/quran";
   const hadithHref = session
     ? "/dashboard/hadith"
     : "/?auth=login&next=/dashboard/hadith";
   return (
     <main className="min-h-screen overflow-x-clip bg-[#fbfaf6] text-stone-900">
       <header className="sticky top-0 z-[100] border-b border-emerald-950/10 bg-[#fbfaf6]/90 backdrop-blur-xl">
-        <div className="mx-auto grid h-18 max-w-[1480px] grid-cols-[auto_1fr_auto] items-center gap-4 px-5 sm:px-8">
+        <div className="mx-auto grid h-18 max-w-[1480px] grid-cols-[auto_1fr_auto] items-center gap-4 px-5 lg:px-8">
           <Brand />
           <p
             dir="rtl"
@@ -50,13 +49,13 @@ export default async function HomePage() {
           <div className="flex items-center gap-1 sm:gap-2">
             <Link
               href={quranHref}
-              className="hidden rounded-full px-3 py-2 text-sm font-bold text-emerald-800 hover:bg-emerald-50 sm:inline-flex"
+              className="hidden rounded-full px-3 py-2.5 text-sm font-bold text-emerald-800 hover:bg-emerald-50 sm:inline-flex"
             >
               কুরআন
             </Link>
             <Link
               href={hadithHref}
-              className="hidden rounded-full px-3 py-2 text-sm font-bold text-emerald-800 hover:bg-emerald-50 sm:inline-flex"
+              className="hidden rounded-full px-3 py-2.5 text-sm font-bold text-emerald-800 hover:bg-emerald-50 sm:inline-flex"
             >
               হাদীস
             </Link>
@@ -74,12 +73,12 @@ export default async function HomePage() {
       </header>
 
       <section className="quiet-grid relative border-b border-[#d7e3d9] bg-[#f4f8f5] text-emerald-950">
-        <div className="relative mx-auto grid max-w-[1480px] items-center gap-12 px-5 py-16 sm:px-8 lg:grid-cols-[1.1fr_.9fr] lg:py-24">
+        <div className="relative mx-auto grid max-w-[1480px] items-center gap-8 px-5 py-12 sm:gap-12 sm:py-16 lg:grid-cols-[1.1fr_.9fr] lg:px-8 lg:py-24">
           <div className="flex flex-col justify-center">
             <span className="w-fit rounded-full border border-emerald-200 bg-white/80 px-4 py-2 text-xs font-bold text-emerald-800 shadow-sm">
               নিজের হিসাব নিজে নিন • প্রতিদিন একটু উন্নতি
             </span>
-            <h1 className="mt-7 max-w-3xl text-4xl font-black leading-[1.15] tracking-tight sm:text-6xl">
+            <h1 className="mt-7 max-w-3xl text-3xl font-black leading-[1.15] tracking-tight sm:text-5xl lg:text-6xl">
               নিজের আমলের হিসাব{" "}
               <span className="text-emerald-700">
                 নিয়মিত ও সুশৃঙ্খলভাবে রাখুন
@@ -138,12 +137,15 @@ export default async function HomePage() {
 
       <section
         id="guidance"
-        className="mx-auto max-w-[1480px] px-5 py-20 sm:px-8"
+        className="mx-auto max-w-[1480px] px-5 py-12 sm:py-16 lg:px-8 lg:py-20"
       >
-        <GuidanceCarousel slides={guidanceSlides} />
+        <GuidanceCarousel
+          quranPages={guidance.quranPages}
+          hadiths={guidance.hadiths}
+        />
       </section>
 
-      <section className="mx-auto max-w-[1480px] px-5 py-20 sm:px-8">
+      <section className="mx-auto max-w-[1480px] px-5 py-12 sm:py-16 lg:px-8 lg:py-20">
         <div className="grid gap-6 lg:grid-cols-3">
           {[
             [
@@ -162,14 +164,14 @@ export default async function HomePage() {
               "history, progress ও উস্তাদজির review থেকে পরবর্তী দিনের লক্ষ্য ঠিক করুন।",
             ],
           ].map(([n, t, d]) => (
-            <div key={n} className="rounded-3xl bg-stone-100 p-7">
+            <div key={n} className="rounded-2xl bg-stone-100 p-7">
               <span className="text-4xl font-black text-emerald-200">{n}</span>
               <h3 className="mt-4 text-xl font-black text-emerald-950">{t}</h3>
               <p className="mt-2 text-sm leading-7 text-stone-600">{d}</p>
             </div>
           ))}
         </div>
-        <div className="mt-16 flex flex-col items-center justify-between gap-7 rounded-[2rem] bg-emerald-950 p-8 text-center text-white sm:p-12 lg:flex-row lg:text-left">
+        <div className="mt-10 flex flex-col items-center justify-between gap-7 rounded-2xl bg-emerald-950 p-6 text-center text-white sm:mt-16 sm:p-8 lg:flex-row lg:p-12 lg:text-left">
           <div>
             <h2 className="text-3xl font-black">
               আজ থেকেই নিজের হিসাব শুরু করুন
@@ -191,7 +193,7 @@ export default async function HomePage() {
         </div>
       </section>
       <footer className="border-t border-stone-200 bg-white">
-        <div className="mx-auto flex max-w-[1480px] flex-col gap-3 px-5 py-8 text-sm text-stone-500 sm:flex-row sm:items-center sm:justify-between sm:px-8">
+        <div className="mx-auto flex max-w-[1480px] flex-col gap-3 px-5 py-8 text-sm text-stone-500 sm:flex-row sm:items-center sm:justify-between lg:px-8">
           <Brand />
           <div className="text-center sm:text-right">
             <p>মুহাসাবাহ • প্রতিদিনের আত্মপর্যালোচনা ও আমলের সঙ্গী</p>

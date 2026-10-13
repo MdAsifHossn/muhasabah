@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
 import { Button } from "@/components/ui/button";
+import { GenderField } from "@/components/auth/gender-field";
 import { authClient } from "@/lib/auth-client";
 
 type RegistrationModalProps = { open: boolean; onClose: () => void };
@@ -14,6 +15,8 @@ export function RegistrationModal({ open, onClose }: RegistrationModalProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [gender, setGender] = useState("");
+  const [genderTouched, setGenderTouched] = useState(false);
 
   useEffect(() => {
     const dialog = dialogRef.current;
@@ -34,9 +37,14 @@ export function RegistrationModal({ open, onClose }: RegistrationModalProps) {
       setError("দুইটি পাসওয়ার্ড এক নয়।");
       return;
     }
+    if (!gender) {
+      setGenderTouched(true);
+      setError("অনুগ্রহ করে আপনার লিঙ্গ নির্বাচন করুন।");
+      return;
+    }
 
     setIsPending(true);
-    const result = await authClient.signUp.email({ name, email, password });
+    const result = await authClient.signUp.email({ name, email, password, gender });
     if (result.error) {
       setError(result.error.code === "USER_ALREADY_EXISTS" ? "এই ইমেইল দিয়ে ইতিমধ্যে অ্যাকাউন্ট আছে।" : "নিবন্ধন সম্পন্ন হয়নি। তথ্য যাচাই করে আবার চেষ্টা করুন।");
       setIsPending(false);
@@ -49,7 +57,7 @@ export function RegistrationModal({ open, onClose }: RegistrationModalProps) {
   }
 
   return (
-    <dialog ref={dialogRef} onClose={onClose} onCancel={onClose} className="m-auto w-[calc(100%-2rem)] max-w-md rounded-3xl border border-stone-200 bg-white p-0 text-stone-900 shadow-2xl backdrop:bg-emerald-950/55 backdrop:backdrop-blur-sm">
+    <dialog ref={dialogRef} onClose={onClose} onCancel={onClose} className="m-auto w-[calc(100%-2rem)] max-w-md rounded-2xl border border-stone-200 bg-white p-0 text-stone-900 shadow-2xl backdrop:bg-emerald-950/55 backdrop:backdrop-blur-sm">
       <div className="p-6 sm:p-8">
         <div className="flex items-start justify-between gap-4">
           <div><p className="text-sm font-semibold text-emerald-700">নতুন সদস্য</p><h2 className="mt-1 text-2xl font-bold text-emerald-950">অ্যাকাউন্ট তৈরি করুন</h2><p className="mt-2 text-sm leading-6 text-stone-500">আপনার ব্যক্তিগত আমলের তথ্য অন্য সাধারণ সদস্যদের কাছে প্রকাশিত হবে না।</p></div>
@@ -60,6 +68,7 @@ export function RegistrationModal({ open, onClose }: RegistrationModalProps) {
           <Field label="ইমেইল" name="email" type="email" autoComplete="email" placeholder="you@example.com" />
           <Field label="পাসওয়ার্ড" name="password" type="password" autoComplete="new-password" placeholder="কমপক্ষে ৮ অক্ষর" minLength={8} />
           <Field label="পাসওয়ার্ড নিশ্চিত করুন" name="confirmPassword" type="password" autoComplete="new-password" placeholder="পাসওয়ার্ড আবার লিখুন" minLength={8} />
+          <GenderField idPrefix="register" value={gender} onChange={(value) => { setGender(value); setGenderTouched(true); }} error={genderTouched && !gender} />
           {error ? <p role="alert" className="rounded-xl bg-red-50 px-4 py-3 text-sm text-red-700">{error}</p> : null}
           <Button className="w-full" size="lg" disabled={isPending}>{isPending ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}{isPending ? "অ্যাকাউন্ট তৈরি হচ্ছে…" : "নিবন্ধন সম্পন্ন করুন"}</Button>
         </form>
