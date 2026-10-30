@@ -1,23 +1,15 @@
-import { PageHeader } from "@/components/dashboard/common";
 import { UserManager, type ManagedUser } from "@/components/admin/user-manager";
+import { PageHeader } from "@/components/design/page-header";
 import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+
+export const metadata = { title: "ব্যবহারকারী ও রোল" };
 
 export default async function MembersPage() {
   const session = await requireAdmin();
   const users = await prisma.user.findMany({
-    orderBy: { createdAt: "desc" },
-    select: {
-      id: true,
-      name: true,
-      email: true,
-      role: true,
-      gender: true,
-      isActive: true,
-      hideAmalnama: true,
-      joinedAt: true,
-      _count: { select: { dailyEntries: true, books: true } },
-    },
+    orderBy: [{ role: "asc" }, { createdAt: "desc" }],
+    select: { id: true, name: true, email: true, role: true, gender: true, isActive: true, hideAmalnama: true, joinedAt: true, _count: { select: { dailyEntries: true, books: true } } },
   });
 
   const managedUsers: ManagedUser[] = users.map((user) => ({
@@ -35,11 +27,11 @@ export default async function MembersPage() {
   }));
 
   return (
-    <div className="mx-auto max-w-[1500px] space-y-7">
+    <div className="space-y-5">
       <PageHeader
-        eyebrow="Admin · User management"
-        title="ব্যবহারকারী ব্যবস্থাপনা"
-        description="নতুন সদস্য বা উস্তায তৈরি করুন, তথ্য ও password পরিবর্তন করুন, account সক্রিয়/নিষ্ক্রিয় করুন এবং প্রয়োজন হলে নিরাপদে delete করুন।"
+        eyebrow="অ্যাডমিন"
+        title="ব্যবহারকারী ও রোল"
+        description="সদস্য, উস্তাদজি ও অ্যাডমিন অ্যাকাউন্ট তৈরি, রোল ও লিঙ্গ নির্ধারণ, পাসওয়ার্ড রিসেট এবং সক্রিয়/নিষ্ক্রিয় করুন।"
       />
       <UserManager users={managedUsers} currentUserId={session.user.id} />
     </div>

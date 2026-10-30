@@ -1,19 +1,28 @@
-import { DailyEntryStatus } from "@prisma/client";
+import type { Gender } from "@prisma/client";
 import { differenceInCalendarDays } from "date-fns";
 
+import { buildReport, laterOf, reportEntrySelect, reportItemSelect } from "@/components/amalnama/report-data";
 import { getBangladeshToday, startOfBangladeshDay } from "@/lib/dates";
+import { prisma } from "@/lib/prisma";
 
+/** Days of the cycle that have started so far (0 before the cycle, capped at its length). */
 export function getElapsedCycleDays(startDate: Date, endDate: Date, today = getBangladeshToday()) {
-  if (today < startDate) return 0;
-  return Math.min(differenceInCalendarDays(startOfBangladeshDay(today), startOfBangladeshDay(startDate)) + 1, differenceInCalendarDays(startOfBangladeshDay(endDate), startOfBangladeshDay(startDate)) + 1);
+  const day = startOfBangladeshDay(today);
+  const start = startOfBangladeshDay(startDate);
+  if (day.getTime() < start.getTime()) return 0;
+  return Math.min(differenceInCalendarDays(day, start) + 1, differenceInCalendarDays(startOfBangladeshDay(endDate), start) + 1);
 }
 
-export function summarizeEntries(entries: Array<{ date: Date; status: DailyEntryStatus; totalScore: number; maxPossibleScore: number; completionPercentage: number }>, elapsedDays: number) {
-  const submitted = entries.filter((entry) => entry.status !== DailyEntryStatus.DRAFT);
-  const average = submitted.length ? Math.round(submitted.reduce((sum, entry) => sum + entry.completionPercentage, 0) / submitted.length) : 0;
-  const submittedKeys = new Set(submitted.map((entry) => entry.date.toISOString().slice(0, 10)));
-  let cursor: Date = startOfBangladeshDay(getBangladeshToday());
-  let streak = 0;
-  while (submittedKeys.has(cursor.toISOString().slice(0, 10))) { streak += 1; cursor = new Date(cursor); cursor.setUTCDate(cursor.getUTCDate() - 1); }
-  return { submittedDays: submitted.length, missedDays: Math.max(elapsedDays - submitted.length, 0), average, streak };
+/**
+ * Loads one member's report for [start, end] (Bangladesh days), never earlier
+ * than the day they joined. All amal items are loaded (inactive ones still
+ * count on days they were answered); applicability is decided per day.
+ */
+export async function loadMemberReport(member: { id: string; gender: Gender | string; joinedAt: Date }, start: Date, end: Date) {
+  const from = laterOf(startOfBangladeshDay(start), startOfBangladeshDay(member.joinedAt));
+  const [items, entries] = await Promise.all([
+    prisma.amalItem.findMany({ orderBy: { order: "asc" }, select: reportItemSelect }),
+    prisma.dailyAmalEntry.findMany({ where: { userId: member.id, date: { gte: from, lte: end } }, orderBy: { date: "asc" }, select: reportEntrySelect }),
+  ]);
+  return { items, report: buildReport({ items, entries, gender: member.gender, start: from, end }) };
 }

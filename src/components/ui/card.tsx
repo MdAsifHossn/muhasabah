@@ -2,26 +2,18 @@ import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-export interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
-  /** Adds a gentle hover lift — only for cards that behave like a link/button. */
+export interface CardProps extends React.ComponentProps<"div"> {
+  /** Gentle hover lift — only for cards that behave like a link/button. */
   interactive?: boolean;
 }
 
-/**
- * The base panel of the design system.
- *
- * Depth & shape come from the global tokens (`shadow-sm` = the warm card
- * shadow, `rounded-2xl` = the 16px "card" tier, `border-hairline` = the warm
- * 1px rule). Everything is written so a caller's `className` still wins —
- * e.g. `<Card className="border-emerald-900/20 shadow-lg">` merges cleanly.
- */
-export function Card({ className, interactive, ...props }: CardProps) {
+function Card({ className, interactive, ...props }: CardProps) {
   return (
     <div
+      data-slot="card"
       className={cn(
-        "rounded-2xl border border-hairline bg-surface shadow-sm text-foreground transition",
-        interactive &&
-          "hover:-translate-y-0.5 hover:border-hairline-strong hover:shadow-md active:translate-y-0 active:scale-[0.995]",
+        "rounded-card border bg-card text-card-foreground shadow-card",
+        interactive && "transition hover:-translate-y-0.5 hover:border-border-strong hover:shadow-md active:translate-y-0",
         className,
       )}
       {...props}
@@ -29,25 +21,24 @@ export function Card({ className, interactive, ...props }: CardProps) {
   );
 }
 
-/** Title row for a card. Sits above `CardContent` with no double padding. */
-export function CardHeader({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("flex flex-col gap-1.5 px-5 pt-5 sm:px-6 sm:pt-6", className)} {...props} />;
+function CardHeader({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="card-header" className={cn("flex flex-col gap-1.5 px-4 pt-4 sm:px-6 sm:pt-6", className)} {...props} />;
 }
 
-export function CardTitle({ className, ...props }: React.HTMLAttributes<HTMLHeadingElement>) {
-  return <h3 className={cn("text-base font-bold leading-6 text-emerald-950 sm:text-lg", className)} {...props} />;
+function CardTitle({ className, ...props }: React.ComponentProps<"h3">) {
+  return <h3 data-slot="card-title" className={cn("text-base font-semibold leading-6 sm:text-lg", className)} {...props} />;
 }
 
-export function CardDescription({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) {
-  return <p className={cn("text-sm leading-6 text-stone-500", className)} {...props} />;
+function CardDescription({ className, ...props }: React.ComponentProps<"p">) {
+  return <p data-slot="card-description" className={cn("text-sm leading-6 text-muted-foreground", className)} {...props} />;
 }
 
-export function CardContent({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return <div className={cn("p-5 sm:p-6", className)} {...props} />;
+function CardContent({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="card-content" className={cn("p-4 sm:p-6", className)} {...props} />;
 }
 
-export function CardFooter({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div className={cn("flex flex-wrap items-center gap-3 px-5 pb-5 sm:px-6 sm:pb-6", className)} {...props} />
-  );
+function CardFooter({ className, ...props }: React.ComponentProps<"div">) {
+  return <div data-slot="card-footer" className={cn("flex flex-wrap items-center gap-3 px-4 pb-4 sm:px-6 sm:pb-6", className)} {...props} />;
 }
+
+export { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle };

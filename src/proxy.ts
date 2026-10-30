@@ -14,8 +14,7 @@ export function proxy(request: NextRequest) {
   }
 
   if (!getSessionCookie(request)) {
-    const loginUrl = new URL("/", request.url);
-    loginUrl.searchParams.set("auth", "login");
+    const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("next", request.nextUrl.pathname);
     return NextResponse.redirect(loginUrl);
   }

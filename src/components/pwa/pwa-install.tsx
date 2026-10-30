@@ -79,20 +79,20 @@ export function PwaInstall() {
     <div
       role="region"
       aria-label="অ্যাপ ইনস্টল"
-      className={`fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-50 flex items-center gap-2 rounded-2xl border border-emerald-800 bg-emerald-950 p-2 pl-4 text-white shadow-2xl transition-all duration-300 sm:right-auto sm:w-96 lg:bottom-6 lg:left-6 lg:right-auto ${
+      className={`fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] z-50 flex items-center gap-2 hero-surface rounded-2xl p-2 pl-4 shadow-2xl ring-1 ring-white/10 transition-all duration-300 sm:right-auto sm:w-96 lg:bottom-6 lg:left-6 lg:right-auto ${
         mounted ? "translate-y-0 opacity-100" : "pointer-events-none translate-y-3 opacity-0"
       }`}
     >
       <div className="min-w-0 flex-1">
         <p className="text-xs font-bold leading-5">মুহাসাবাহ অ্যাপ ইনস্টল করুন</p>
-        <p className="truncate text-[11px] leading-4 text-emerald-200/80">
+        <p className="truncate text-[11px] leading-4 text-on-hero-muted">
           হোমস্ক্রিন থেকে এক ট্যাপে খুলুন — অ্যাপের মতো চলবে।
         </p>
       </div>
       <button
         type="button"
         onClick={install}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-amber-400 px-3 py-2 text-xs font-black text-emerald-950 active:bg-amber-300"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-emerald-400 px-3 py-2 text-xs font-bold text-emerald-950 active:bg-emerald-300"
       >
         <Download className="size-3.5" /> ইনস্টল করুন
       </button>
@@ -100,7 +100,7 @@ export function PwaInstall() {
         type="button"
         onClick={dismiss}
         aria-label="বন্ধ করুন"
-        className="grid size-8 shrink-0 place-items-center rounded-xl text-emerald-200 active:bg-emerald-900"
+        className="grid size-8 shrink-0 place-items-center rounded-xl text-on-hero-muted active:bg-white/10"
       >
         <X className="size-4" />
       </button>
@@ -146,23 +146,23 @@ export function InstallHint({ className }: { className?: string }) {
     <div
       role="region"
       aria-label="অ্যাপ ইনস্টল"
-      className={`flex items-start gap-3 rounded-2xl border border-emerald-100 bg-emerald-50/70 p-4 ${className ?? ""}`}
+      className={`flex items-start gap-3 rounded-2xl border border-hairline bg-primary-soft p-4 ${className ?? ""}`}
     >
-      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-emerald-900 text-amber-300">
+      <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-primary text-on-primary">
         {platform === "ios" ? <Share className="size-4" /> : <Download className="size-4" />}
       </span>
       <div className="min-w-0">
-        <p className="flex items-center gap-1.5 text-sm font-bold text-emerald-950">
+        <p className="flex items-center gap-1.5 text-sm font-bold text-foreground">
           <Smartphone className="size-3.5" /> অ্যাপ হিসেবে ইনস্টল করুন
         </p>
         {platform === "ios" ? (
-          <p className="mt-1 text-xs leading-5 text-stone-600">
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
             Safari-এ খুলে <b>Share</b> বাটনে চাপুন → নিচে স্ক্রল করে{" "}
             <b>হোমস্ক্রিনে যোগ করুন</b> ট্যাপ করুন। এতে অফলাইনে পড়ার জন্য অ্যাপ আলাদা আইকনে
             চলবে।
           </p>
         ) : (
-          <p className="mt-1 text-xs leading-5 text-stone-600">
+          <p className="mt-1 text-xs leading-5 text-muted-foreground">
             ব্রাউজারের মেনু থেকে <b>অ্যাপ ইনস্টল করুন</b> / <b>হোমস্ক্রিনে যোগ করুন</b> চাপুন —
             ইনস্টল করলে এক ট্যাপে খুলবে এবং অফলাইনেও চলবে।
           </p>

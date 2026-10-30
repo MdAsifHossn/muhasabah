@@ -1,14 +1,19 @@
-import { AmalAudience, type AmalItem } from "@prisma/client";
+import { Gender, Weekday } from "@prisma/client";
 
-import type { AmalItemView, AmalItemsPageKey } from "@/components/amal-items/amal-item-view";
-import { AMAL_ITEMS_PAGES } from "@/components/amal-items/amal-item-view";
+import type { AmalItemView, AmalPreview } from "@/components/amal-items/amal-item-view";
+import { applicableItems } from "@/lib/amal-rules";
+import { weekdayLabels } from "@/lib/constants";
+import { getBangladeshWeekday } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 
-/** A full Prisma `AmalItem` row (all three pages read the same columns). */
-type AmalItemRow = AmalItem;
+/** Every amal item (the manager filters by tab on the client) + the per-gender preview. */
+export async function loadAmalItems(): Promise<{ items: AmalItemView[]; preview: AmalPreview }> {
+  const rows = await prisma.amalItem.findMany({ orderBy: { order: "asc" } });
+  const creatorIds = [...new Set(rows.map((row) => row.createdById).filter((id): id is string => Boolean(id)))];
+  const creators = creatorIds.length ? await prisma.user.findMany({ where: { id: { in: creatorIds } }, select: { id: true, name: true } }) : [];
+  const creatorName = new Map(creators.map((creator) => [creator.id, creator.name]));
 
-export function toAmalItemView(item: AmalItemRow): AmalItemView {
-  return {
+  const items: AmalItemView[] = rows.map((item) => ({
     id: item.id,
     titleBn: item.titleBn,
     titleEn: item.titleEn,
@@ -25,18 +30,27 @@ export function toAmalItemView(item: AmalItemRow): AmalItemView {
     genderScope: item.genderScope,
     specificDay: item.specificDay,
     createdById: item.createdById,
-  };
-}
+    creatorName: item.createdById ? (creatorName.get(item.createdById) ?? null) : null,
+  }));
 
-/**
- * Items visible on one of the three management pages:
- * `men` → ALL+MALE, `women` → ALL+FEMALE, `all` → everything.
- */
-export async function loadAmalItemsForPage(page: AmalItemsPageKey): Promise<AmalItemView[]> {
-  const scopes = AMAL_ITEMS_PAGES[page].visibleScopes;
-  const items = await prisma.amalItem.findMany({
-    where: scopes ? { genderScope: { in: scopes as AmalAudience[] } } : undefined,
-    orderBy: { order: "asc" },
-  });
-  return items.map(toAmalItemView);
+  const active = rows.filter((row) => row.isActive);
+  const weekday = getBangladeshWeekday();
+  const forGender = (gender: Gender) => {
+    const today = applicableItems(active, { gender, weekday });
+    return {
+      today: today.length,
+      friday: applicableItems(active, { gender, weekday: Weekday.FRIDAY }).length,
+      points: today.reduce((sum, item) => sum + item.points, 0),
+    };
+  };
+
+  return {
+    items,
+    preview: {
+      todayLabel: weekdayLabels[weekday],
+      isFriday: weekday === Weekday.FRIDAY,
+      male: forGender(Gender.MALE),
+      female: forGender(Gender.FEMALE),
+    },
+  };
 }

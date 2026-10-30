@@ -3,6 +3,8 @@
 import { toast } from "sonner";
 import { ReactNode, useRef } from "react";
 
+import { actionErrorMessage } from "@/lib/action-error";
+
 export function ToastForm({
   action,
   children,
@@ -31,11 +33,7 @@ export function ToastForm({
         toast.success("সম্পন্ন হয়েছে!");
       }
     } catch (error) {
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error("দুঃখিত, কোনো একটি সমস্যা হয়েছে।");
-      }
+      toast.error(actionErrorMessage(error, "দুঃখিত, কোনো একটি সমস্যা হয়েছে।"));
     }
   }
 

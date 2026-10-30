@@ -99,6 +99,19 @@ export function PwaProvider({ children }: { children: ReactNode }) {
       if (document.readyState === "complete") void register();
       else window.addEventListener("load", register, { once: true });
       document.addEventListener("visibilitychange", onVisibilityChange);
+    } else if (typeof navigator !== "undefined" && navigator.serviceWorker) {
+      // Not wanted here (dev without opt-in): remove any worker left from an
+      // earlier opt-in — it would keep serving stale CSS/JS chunks.
+      navigator.serviceWorker
+        .getRegistrations()
+        .then(async (registrations) => {
+          if (!registrations.length) return;
+          await Promise.all(registrations.map((item) => item.unregister()));
+          const names = await caches.keys();
+          await Promise.all(names.filter((name) => name.startsWith("muhasabah-")).map((name) => caches.delete(name)));
+          window.location.reload();
+        })
+        .catch(() => {});
     }
 
     // Reload once when an updated worker takes over — but never on the very

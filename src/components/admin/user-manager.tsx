@@ -1,14 +1,19 @@
 "use client";
 
 import { Gender, Role } from "@prisma/client";
-import { CheckCircle2, Pencil, Plus, Search, ShieldCheck, Trash2, UserRound, Users, X } from "lucide-react";
+import { EyeOff, KeyRound, Pencil, Search, ShieldCheck, Trash2, UserPlus, UserRound, UsersRound } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
 
+import { Segmented, Sheet } from "@/components/ustad/sheet";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { createManagedUser, deleteManagedUser, updateManagedUser } from "@/lib/actions/admin-users";
+import { Field, Input, Select } from "@/components/ui/input";
+import { createManagedUser, deleteManagedUser, resetManagedUserPassword, updateManagedUser, type UserActionResult } from "@/lib/actions/admin-users";
 import { genderLabels } from "@/lib/amal-audience";
 import { roleLabels } from "@/lib/constants";
+import { cn } from "@/lib/utils";
 
 export type ManagedUser = {
   id: string;
@@ -24,214 +29,276 @@ export type ManagedUser = {
   hideAmalnama: boolean;
 };
 
-type EditorMode = "create" | "edit" | null;
+type Editor = { mode: "create" } | { mode: "edit"; user: ManagedUser } | { mode: "password"; user: ManagedUser } | { mode: "delete"; user: ManagedUser } | null;
+type RoleFilter = "ALL" | Role;
+type GenderFilter = "ALL" | Gender;
 
-const fieldClass = "h-11 w-full rounded-xl border border-stone-300 bg-white px-3 text-sm outline-none transition focus:border-emerald-700 focus:ring-4 focus:ring-emerald-700/10";
+const roleVariant = { ADMIN: "gold", USTADH: "info", MEMBER: "secondary" } as const;
+
+function initials(name: string) {
+  return name.trim().slice(0, 1) || "?";
+}
 
 export function UserManager({ users, currentUserId }: { users: ManagedUser[]; currentUserId: string }) {
+  const router = useRouter();
   const [query, setQuery] = useState("");
-  const [mode, setMode] = useState<EditorMode>(null);
-  const [selected, setSelected] = useState<ManagedUser | null>(null);
+  const [roleFilter, setRoleFilter] = useState<RoleFilter>("ALL");
+  const [genderFilter, setGenderFilter] = useState<GenderFilter>("ALL");
+  const [editor, setEditor] = useState<Editor>(null);
   const [isPending, startTransition] = useTransition();
 
   const filtered = useMemo(() => {
     const needle = query.trim().toLowerCase();
-    if (!needle) return users;
-    return users.filter((user) => `${user.name} ${user.email} ${user.role}`.toLowerCase().includes(needle));
-  }, [query, users]);
+    return users.filter(
+      (user) =>
+        (roleFilter === "ALL" || user.role === roleFilter) &&
+        (genderFilter === "ALL" || user.gender === genderFilter) &&
+        (!needle || `${user.name} ${user.email}`.toLowerCase().includes(needle)),
+    );
+  }, [users, query, roleFilter, genderFilter]);
 
-  const stats = {
-    total: users.length,
-    active: users.filter((user) => user.isActive).length,
-    admins: users.filter((user) => user.role === Role.ADMIN).length,
-    pending: users.filter((user) => !user.isActive).length,
+  const counts = {
+    all: users.length,
+    ADMIN: users.filter((user) => user.role === Role.ADMIN).length,
+    USTADH: users.filter((user) => user.role === Role.USTADH).length,
+    MEMBER: users.filter((user) => user.role === Role.MEMBER).length,
+    inactive: users.filter((user) => !user.isActive).length,
+    unsetGender: users.filter((user) => user.gender === Gender.OTHER).length,
   };
 
-  function openEdit(user: ManagedUser) {
-    setSelected(user);
-    setMode("edit");
+  function close() {
+    if (!isPending) setEditor(null);
   }
 
-  function closeEditor() {
-    if (isPending) return;
-    setMode(null);
-    setSelected(null);
-  }
-
-  function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
-    const form = event.currentTarget;
-    const data = new FormData(form);
+  function run(action: () => Promise<UserActionResult>) {
     startTransition(async () => {
-      const result = mode === "create" ? await createManagedUser(data) : await updateManagedUser(data);
+      const result = await action();
       if (result.success) {
         toast.success(result.message);
-        form.reset();
-        closeEditor();
-      } else {
-        toast.error(result.message);
-      }
+        setEditor(null);
+        router.refresh();
+      } else toast.error(result.message);
     });
   }
 
-  function remove(user: ManagedUser) {
-    if (user.id === currentUserId) {
-      toast.error("নিজের admin account delete করা যাবে না।");
-      return;
-    }
-    if (!window.confirm(`${user.name}-এর account এবং সংশ্লিষ্ট তথ্য স্থায়ীভাবে delete করবেন?`)) return;
-    startTransition(async () => {
-      const result = await deleteManagedUser(user.id);
-      if (result.success) toast.success(result.message);
-      else toast.error(result.message);
-    });
+  function submit(event: FormEvent<HTMLFormElement>, action: (data: FormData) => Promise<UserActionResult>) {
+    event.preventDefault();
+    const data = new FormData(event.currentTarget);
+    run(() => action(data));
   }
+
+  const editing = editor?.mode === "edit" ? editor.user : null;
+  const isSelf = editing?.id === currentUserId;
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
-        <Stat label="মোট ব্যবহারকারী" value={stats.total} icon={Users} tone="emerald" />
-        <Stat label="সক্রিয়" value={stats.active} icon={CheckCircle2} tone="sky" />
-        <Stat label="Admin" value={stats.admins} icon={ShieldCheck} tone="violet" />
-        <Stat label="নিষ্ক্রিয়" value={stats.pending} icon={UserRound} tone="amber" />
+    <div className="space-y-4">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { label: "মোট ব্যবহারকারী", value: counts.all },
+          { label: "উস্তাদজি", value: counts.USTADH },
+          { label: "সাধারণ সদস্য", value: counts.MEMBER },
+          { label: "নিষ্ক্রিয়", value: counts.inactive },
+        ].map((stat) => (
+          <div key={stat.label} className="surface rounded-card p-4">
+            <p className="text-xs text-muted-foreground">{stat.label}</p>
+            <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">{stat.value.toLocaleString("bn-BD")}</p>
+          </div>
+        ))}
       </div>
 
-      <section className="overflow-hidden rounded-2xl border border-stone-200 bg-white shadow-sm">
-        <div className="flex flex-col gap-4 border-b border-stone-100 p-5 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-black text-emerald-950">ব্যবহারকারীদের তালিকা</h2>
-            <p className="mt-1 text-sm text-stone-500">নাম, ইমেইল, role, status ও password পরিচালনা করুন।</p>
+      {counts.unsetGender ? (
+        <p className="rounded-card bg-warning-soft px-4 py-3 text-sm leading-6 text-warning">
+          {counts.unsetGender.toLocaleString("bn-BD")} জন ব্যবহারকারীর লিঙ্গ নির্ধারিত নেই — তারা শুধু “সবার” আমল পাচ্ছেন। সম্পাদনা করে পুরুষ/নারী নির্বাচন করুন।
+        </p>
+      ) : null}
+
+      <div className="surface space-y-3 rounded-card p-3 sm:p-4">
+        <div className="flex gap-2">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-subtle-foreground" />
+            <Input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="নাম বা ইমেইল দিয়ে খুঁজুন" className="pl-9" aria-label="খুঁজুন" />
           </div>
-          <Button onClick={() => { setSelected(null); setMode("create"); }}>
-            <Plus className="size-4" /> নতুন ব্যবহারকারী
+          <Button onClick={() => setEditor({ mode: "create" })} className="shrink-0">
+            <UserPlus className="size-4" />
+            <span className="hidden sm:inline">নতুন ব্যবহারকারী</span>
           </Button>
         </div>
+        <Segmented<RoleFilter>
+          value={roleFilter}
+          onChange={setRoleFilter}
+          options={[
+            { value: "ALL", label: "সব রোল", count: counts.all },
+            { value: Role.MEMBER, label: roleLabels.MEMBER, count: counts.MEMBER },
+            { value: Role.USTADH, label: roleLabels.USTADH, count: counts.USTADH },
+            { value: Role.ADMIN, label: roleLabels.ADMIN, count: counts.ADMIN },
+          ]}
+        />
+        <Segmented<GenderFilter>
+          value={genderFilter}
+          onChange={setGenderFilter}
+          options={[
+            { value: "ALL", label: "সবাই" },
+            { value: Gender.MALE, label: "ভাই (পুরুষ)" },
+            { value: Gender.FEMALE, label: "বোন (নারী)" },
+            { value: Gender.OTHER, label: "লিঙ্গ নির্ধারিত নয়" },
+          ]}
+        />
+      </div>
 
-        <div className="border-b border-stone-100 p-4">
-          <div className="relative max-w-md">
-            <Search className="absolute left-3 top-3 size-4 text-stone-400" />
-            <input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="নাম, ইমেইল বা role দিয়ে খুঁজুন" className={`${fieldClass} pl-9`} />
-          </div>
-        </div>
-
-        <div className="hidden overflow-x-auto md:block">
-          <table className="w-full min-w-[900px] text-left text-sm">
-            <thead className="bg-stone-50 text-xs uppercase tracking-wide text-stone-500">
-              <tr>
-                <th className="px-5 py-4">ব্যবহারকারী</th>
-                <th className="px-5 py-4">Role</th>
-                <th className="px-5 py-4">Status</th>
-                <th className="px-5 py-4">কার্যক্রম</th>
-                <th className="px-5 py-4">যোগদান</th>
-                <th className="px-5 py-4 text-right">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-stone-100">
-              {filtered.map((user) => (
-                <tr key={user.id} className="transition hover:bg-emerald-50/40">
-                  <td className="px-5 py-4">
-                    <div className="flex items-center gap-3">
-                      <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-emerald-100 font-black text-emerald-900">{user.name.slice(0, 1).toUpperCase()}</span>
-                      <div><p className="font-bold text-stone-900">{user.name}{user.id === currentUserId ? <span className="ml-2 text-xs text-emerald-700">(আপনি)</span> : null}</p><p className="text-xs text-stone-500">{user.email}</p></div>
-                    </div>
-                  </td>
-                  <td className="px-5 py-4"><div className="flex flex-wrap items-center gap-1.5"><RoleBadge role={user.role} /><GenderBadge gender={user.gender} /></div></td>
-                  <td className="px-5 py-4"><span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${user.isActive ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>{user.isActive ? "সক্রিয়" : "নিষ্ক্রিয়"}</span></td>
-                  <td className="px-5 py-4 text-stone-600">{user.hideAmalnama ? <span className="font-semibold text-stone-500">আমলনামা লুকানো</span> : <><b>{user.entryCount}</b> আমলনামা · <b>{user.bookCount}</b> বই</>}</td>
-                  <td className="px-5 py-4 text-stone-500">{new Intl.DateTimeFormat("bn-BD", { dateStyle: "medium" }).format(new Date(user.joinedAt))}</td>
-                  <td className="px-5 py-4">
-                    <div className="flex justify-end gap-2">
-                      <Button size="sm" variant="outline" onClick={() => openEdit(user)} disabled={isPending}><Pencil className="size-3.5" /> Edit</Button>
-                      <Button size="sm" variant="outline" onClick={() => remove(user)} disabled={isPending || user.id === currentUserId} className="border-red-200 text-red-700 hover:bg-red-50"><Trash2 className="size-3.5" /> Delete</Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-              {filtered.length === 0 ? <tr><td colSpan={6} className="px-5 py-14 text-center text-stone-500">কোনো ব্যবহারকারী পাওয়া যায়নি।</td></tr> : null}
-            </tbody>
-          </table>
-        </div>
-
-        {/* ── Phone layout: one compact card per user (no sideways scrolling) ── */}
-        <ul className="divide-y divide-stone-100 md:hidden">
+      {filtered.length === 0 ? (
+        <p className="surface rounded-card p-8 text-center text-sm text-muted-foreground">কোনো ব্যবহারকারী পাওয়া যায়নি।</p>
+      ) : (
+        <ul className="grid gap-3 md:grid-cols-2">
           {filtered.map((user) => (
-            <li key={user.id} className="p-4">
+            <li key={user.id} className={cn("surface rounded-card p-4", !user.isActive && "opacity-70")}>
               <div className="flex items-start gap-3">
-                <span className="grid size-10 shrink-0 place-items-center rounded-2xl bg-emerald-100 font-black text-emerald-900">{user.name.slice(0, 1).toUpperCase()}</span>
+                <span
+                  className={cn(
+                    "grid size-11 shrink-0 place-items-center rounded-full text-base font-bold",
+                    user.gender === Gender.FEMALE ? "bg-female-soft text-female" : "bg-primary-soft text-primary",
+                  )}
+                >
+                  {initials(user.name)}
+                </span>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-bold text-stone-900">
+                  <p className="flex items-center gap-1.5 truncate font-bold text-foreground">
                     {user.name}
-                    {user.id === currentUserId ? <span className="ml-2 text-xs text-emerald-700">(আপনি)</span> : null}
+                    {user.id === currentUserId ? <span className="text-xs font-medium text-muted-foreground">(আপনি)</span> : null}
                   </p>
-                  <p className="truncate text-xs text-stone-500">{user.email}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <RoleBadge role={user.role} />
-                    <GenderBadge gender={user.gender} />
-                    <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${user.isActive ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"}`}>{user.isActive ? "সক্রিয়" : "নিষ্ক্রিয়"}</span>
+                  <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <Badge variant={roleVariant[user.role]}>
+                      {user.role === Role.ADMIN ? <ShieldCheck className="size-3" /> : <UserRound className="size-3" />}
+                      {roleLabels[user.role]}
+                    </Badge>
+                    <Badge variant={user.gender === Gender.FEMALE ? "female" : user.gender === Gender.MALE ? "soft" : "warning"}>{genderLabels[user.gender]}</Badge>
+                    {!user.isActive ? <Badge variant="danger">নিষ্ক্রিয়</Badge> : null}
+                    {user.hideAmalnama ? (
+                      <Badge variant="secondary">
+                        <EyeOff className="size-3" /> আমলনামা গোপন
+                      </Badge>
+                    ) : null}
                   </div>
+                  <p className="mt-2 text-[11px] text-subtle-foreground">
+                    যোগদান {new Date(user.joinedAt).toLocaleDateString("bn-BD", { day: "numeric", month: "short", year: "numeric" })}
+                    {user.hideAmalnama ? "" : ` • ${user.entryCount.toLocaleString("bn-BD")} দিনের আমলনামা`}
+                  </p>
                 </div>
               </div>
-              <div className="mt-3 flex items-center justify-between gap-3">
-                <p className="text-[11px] leading-5 text-stone-500">
-                  {user.hideAmalnama ? "আমলনামা লুকানো হয়েছে" : <><b>{user.entryCount}</b> আমলনামা · <b>{user.bookCount}</b> বই</>}
-                  <br />
-                  {new Intl.DateTimeFormat("bn-BD", { dateStyle: "medium" }).format(new Date(user.joinedAt))}
-                </p>
-                <div className="flex shrink-0 gap-2">
-                  <Button size="sm" variant="outline" onClick={() => openEdit(user)} disabled={isPending}><Pencil className="size-3.5" /> Edit</Button>
-                  <Button size="sm" variant="outline" onClick={() => remove(user)} disabled={isPending || user.id === currentUserId} className="border-red-200 text-red-700 hover:bg-red-50" aria-label="Delete"><Trash2 className="size-3.5" /></Button>
-                </div>
+              <div className="mt-3 flex gap-2 border-t border-hairline pt-3">
+                <Button size="sm" variant="soft" className="flex-1" onClick={() => setEditor({ mode: "edit", user })}>
+                  <Pencil className="size-3.5" /> সম্পাদনা
+                </Button>
+                <Button size="sm" variant="outline" className="flex-1" onClick={() => setEditor({ mode: "password", user })}>
+                  <KeyRound className="size-3.5" /> পাসওয়ার্ড
+                </Button>
+                <Button
+                  size="icon-sm"
+                  variant="danger-soft"
+                  disabled={user.id === currentUserId}
+                  onClick={() => setEditor({ mode: "delete", user })}
+                  aria-label={`${user.name} মুছে ফেলুন`}
+                >
+                  <Trash2 className="size-4" />
+                </Button>
               </div>
             </li>
           ))}
-          {filtered.length === 0 ? <li className="px-4 py-10 text-center text-sm text-stone-500">কোনো ব্যবহারকারী পাওয়া যায়নি।</li> : null}
         </ul>
-      </section>
+      )}
 
-      {mode ? (
-        <div className="fixed inset-0 z-50 grid place-items-center overflow-y-auto bg-emerald-950/65 p-4 backdrop-blur-sm" role="dialog" aria-modal="true" aria-labelledby="user-editor-title">
-          <form onSubmit={submit} className="my-8 w-full max-w-xl rounded-2xl bg-white p-6 shadow-2xl sm:p-8">
-            <div className="flex items-start justify-between gap-4">
-              <div><p className="text-xs font-black uppercase tracking-[.18em] text-emerald-700">Admin control</p><h2 id="user-editor-title" className="mt-1 text-2xl font-black text-emerald-950">{mode === "create" ? "নতুন ব্যবহারকারী" : "ব্যবহারকারী সম্পাদনা"}</h2></div>
-              <button type="button" onClick={closeEditor} className="grid size-9 place-items-center rounded-full text-stone-500 hover:bg-stone-100" aria-label="বন্ধ করুন"><X className="size-5" /></button>
-            </div>
-            {selected ? <input type="hidden" name="userId" value={selected.id} /> : null}
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              <Field label="পূর্ণ নাম"><input name="name" required minLength={2} maxLength={100} defaultValue={selected?.name} className={fieldClass} /></Field>
-              <Field label="ইমেইল"><input name="email" type="email" required defaultValue={selected?.email} className={fieldClass} /></Field>
-              <Field label="Role"><select name="role" defaultValue={selected?.role ?? Role.MEMBER} className={fieldClass}>{Object.values(Role).map((role) => <option key={role} value={role}>{roleLabels[role]}</option>)}</select></Field>
-              <Field label="লিঙ্গ"><select name="gender" required defaultValue={([Gender.MALE, Gender.FEMALE] as Gender[]).includes(selected?.gender as Gender) ? selected?.gender : ""} className={fieldClass}><option value="" disabled>লিঙ্গ নির্বাচন করুন</option>{([Gender.MALE, Gender.FEMALE] as Gender[]).map((value) => <option key={value} value={value}>{genderLabels[value]}</option>)}</select></Field>
-              <Field label={mode === "create" ? "পাসওয়ার্ড" : "নতুন পাসওয়ার্ড (ঐচ্ছিক)"}><input name="password" type="password" required={mode === "create"} minLength={8} maxLength={128} autoComplete="new-password" placeholder={mode === "create" ? "কমপক্ষে ৮ অক্ষর" : "পরিবর্তন না করলে খালি রাখুন"} className={fieldClass} /></Field>
-            </div>
-            <label className="mt-5 flex cursor-pointer items-center gap-3 rounded-2xl border border-stone-200 bg-stone-50 p-4"><input name="isActive" type="checkbox" defaultChecked={selected?.isActive ?? true} className="size-4 accent-emerald-800" /><span><b className="block text-sm text-stone-800">Account সক্রিয়</b><small className="text-stone-500">বন্ধ থাকলে ব্যবহারকারী login করতে পারবেন না।</small></span></label>
-            {selected?.id === currentUserId ? <p className="mt-4 rounded-xl bg-amber-50 p-3 text-sm text-amber-800">নিজের admin role ও active status পরিবর্তন করা যাবে না। নাম, ইমেইল ও password পরিবর্তন করা যাবে।</p> : null}
-            <div className="mt-6 flex justify-end gap-3"><Button type="button" variant="outline" onClick={closeEditor} disabled={isPending}>বাতিল</Button><Button disabled={isPending}>{isPending ? "সংরক্ষণ হচ্ছে…" : mode === "create" ? "ব্যবহারকারী তৈরি করুন" : "পরিবর্তন সংরক্ষণ করুন"}</Button></div>
+      {/* Create / edit */}
+      <Sheet
+        open={editor?.mode === "create" || editor?.mode === "edit"}
+        onClose={close}
+        title={editing ? "ব্যবহারকারী সম্পাদনা" : "নতুন ব্যবহারকারী"}
+        description={editing ? editing.email : "সদস্য, উস্তাদজি বা অ্যাডমিন অ্যাকাউন্ট তৈরি করুন।"}
+      >
+        <form key={editing?.id ?? "new"} onSubmit={(event) => submit(event, editing ? updateManagedUser : createManagedUser)} className="space-y-4">
+          {editing ? <input type="hidden" name="userId" value={editing.id} /> : null}
+          <Field label="নাম" htmlFor="u-name">
+            <Input id="u-name" name="name" required minLength={2} defaultValue={editing?.name} autoComplete="off" />
+          </Field>
+          <Field label="ইমেইল" htmlFor="u-email">
+            <Input id="u-email" name="email" type="email" required defaultValue={editing?.email} autoComplete="off" />
+          </Field>
+          {!editing ? (
+            <Field label="পাসওয়ার্ড" htmlFor="u-password" hint="কমপক্ষে ৮ অক্ষর। ব্যবহারকারী পরে প্রোফাইল থেকে পরিবর্তন করতে পারবেন।">
+              <Input id="u-password" name="password" type="text" required minLength={8} autoComplete="new-password" />
+            </Field>
+          ) : null}
+          <div className="grid grid-cols-2 gap-3">
+            <Field label="রোল" htmlFor="u-role">
+              <Select id="u-role" name="role" defaultValue={editing?.role ?? Role.MEMBER} disabled={isSelf}>
+                {Object.values(Role).map((role) => (
+                  <option key={role} value={role}>
+                    {roleLabels[role]}
+                  </option>
+                ))}
+              </Select>
+              {isSelf ? <input type="hidden" name="role" value={Role.ADMIN} /> : null}
+            </Field>
+            <Field label="লিঙ্গ" htmlFor="u-gender">
+              <Select id="u-gender" name="gender" required defaultValue={editing && editing.gender !== Gender.OTHER ? editing.gender : ""}>
+                <option value="" disabled>
+                  নির্বাচন করুন
+                </option>
+                <option value={Gender.MALE}>পুরুষ</option>
+                <option value={Gender.FEMALE}>নারী</option>
+              </Select>
+            </Field>
+          </div>
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-hairline bg-surface-sunken p-3">
+            <input type="checkbox" name="isActive" defaultChecked={editing?.isActive ?? true} disabled={isSelf} className="mt-0.5 size-4" />
+            {isSelf ? <input type="hidden" name="isActive" value="on" /> : null}
+            <span>
+              <span className="block text-sm font-semibold text-foreground">অ্যাকাউন্ট সক্রিয়</span>
+              <span className="block text-xs leading-5 text-muted-foreground">নিষ্ক্রিয় করলে সব ডিভাইস থেকে সাথে সাথে লগআউট হয়ে যাবে।</span>
+            </span>
+          </label>
+          <p className="rounded-xl bg-surface-sunken px-3 py-2 text-xs leading-5 text-muted-foreground">
+            <UsersRound className="mr-1 inline size-3.5" />
+            সদস্য: নিজের আমলনামা • উস্তাদজি: সদস্যদের আমলনামা দেখা, মন্তব্য, রিভিউ, নোটিশ ও নিজের আমল আইটেম • অ্যাডমিন: সবকিছু।
+          </p>
+          <Button type="submit" className="w-full" disabled={isPending}>
+            {isPending ? "সংরক্ষণ হচ্ছে…" : editing ? "পরিবর্তন সংরক্ষণ" : "ব্যবহারকারী তৈরি করুন"}
+          </Button>
+        </form>
+      </Sheet>
+
+      {/* Password reset */}
+      <Sheet open={editor?.mode === "password"} onClose={close} title="পাসওয়ার্ড রিসেট" description={editor?.mode === "password" ? `${editor.user.name} — ${editor.user.email}` : undefined}>
+        {editor?.mode === "password" ? (
+          <form onSubmit={(event) => submit(event, resetManagedUserPassword)} className="space-y-4">
+            <input type="hidden" name="userId" value={editor.user.id} />
+            <Field label="নতুন পাসওয়ার্ড" htmlFor="u-newpass" hint="কমপক্ষে ৮ অক্ষর। ব্যবহারকারী সব ডিভাইস থেকে লগআউট হবেন।">
+              <Input id="u-newpass" name="password" type="text" required minLength={8} autoComplete="new-password" />
+            </Field>
+            <Button type="submit" className="w-full" disabled={isPending}>
+              <KeyRound className="size-4" /> {isPending ? "সেট হচ্ছে…" : "পাসওয়ার্ড সেট করুন"}
+            </Button>
           </form>
-        </div>
-      ) : null}
+        ) : null}
+      </Sheet>
+
+      {/* Delete confirm */}
+      <Sheet open={editor?.mode === "delete"} onClose={close} title="অ্যাকাউন্ট মুছে ফেলবেন?">
+        {editor?.mode === "delete" ? (
+          <div className="space-y-4">
+            <p className="text-sm leading-6 text-muted-foreground">
+              <strong className="text-foreground">{editor.user.name}</strong>-এর অ্যাকাউন্ট, আমলনামা, বই, রিভিউ ও মন্তব্য স্থায়ীভাবে মুছে যাবে। এটি আর ফেরানো যাবে না। শুধু সাময়িক বন্ধ রাখতে চাইলে “সম্পাদনা” থেকে নিষ্ক্রিয় করুন।
+            </p>
+            <div className="flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={close} disabled={isPending}>
+                বাতিল
+              </Button>
+              <Button variant="danger" className="flex-1" disabled={isPending} onClick={() => run(() => deleteManagedUser(editor.user.id))}>
+                <Trash2 className="size-4" /> {isPending ? "মুছছে…" : "স্থায়ীভাবে মুছুন"}
+              </Button>
+            </div>
+          </div>
+        ) : null}
+      </Sheet>
     </div>
   );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return <label className="space-y-2"><span className="block text-sm font-bold text-stone-700">{label}</span>{children}</label>;
-}
-
-function RoleBadge({ role }: { role: Role }) {
-  const style = role === Role.ADMIN ? "bg-violet-100 text-violet-800" : role === Role.USTADH ? "bg-sky-100 text-sky-800" : "bg-stone-100 text-stone-700";
-  return <span className={`inline-flex rounded-full px-3 py-1 text-xs font-bold ${style}`}>{roleLabels[role]}</span>;
-}
-
-function GenderBadge({ gender }: { gender: Gender }) {
-  // Legacy rows can still hold `OTHER` (never set) — flag them loudly so the
-  // admin sets পুরুষ/নারী: an unset gender means the member only sees the
-  // general (ALL) amals, not the men's/women's amalnama.
-  if (gender === Gender.OTHER) return <span className="inline-flex rounded-full border border-amber-200 bg-amber-100 px-2.5 py-1 text-[11px] font-bold text-amber-800" title="এই সদস্যের লিঙ্গ নির্ধারিত হয়নি — Edit করে পুরুষ/নারী নির্বাচন করুন">লিঙ্গ নির্ধারিত নয়</span>;
-  const style = gender === Gender.FEMALE ? "bg-rose-100 text-rose-800" : "bg-emerald-100 text-emerald-800";
-  return <span className={`inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold ${style}`}>{genderLabels[gender]}</span>;
-}
-
-function Stat({ label, value, icon: Icon, tone }: { label: string; value: number; icon: typeof Users; tone: "emerald" | "sky" | "violet" | "amber" }) {
-  const colors = { emerald: "bg-emerald-100 text-emerald-900", sky: "bg-sky-100 text-sky-900", violet: "bg-violet-100 text-violet-900", amber: "bg-amber-100 text-amber-900" };
-  return <div className="rounded-2xl border border-stone-200 bg-white p-5 shadow-sm"><div className={`grid size-11 place-items-center rounded-2xl ${colors[tone]}`}><Icon className="size-5" /></div><p className="mt-4 text-3xl font-black text-emerald-950">{value.toLocaleString("bn-BD")}</p><p className="mt-1 text-sm text-stone-500">{label}</p></div>;
 }

@@ -1,259 +1,90 @@
-"use client";
+import { Bookmark, BookMarked, ChevronRight, Library } from "lucide-react";
+import type { Metadata } from "next";
+import Link from "next/link";
 
-import { BookMarked, Check, ChevronLeft, ChevronRight, Copy, Library, Search } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { ContinueReading, JumpToHadith } from "@/components/hadith/library-widgets";
+import { Button } from "@/components/ui/button";
+import { BOOK_GROUPS, bn, getBookTotal, getSections, HADITH_BOOKS } from "@/lib/hadith";
 
-import { PanelSkeleton } from "@/components/design/empty-state";
-import { PageHeader } from "@/components/design/page-header";
-import { HADITH_BOOKS, type LiveHadith } from "@/lib/hadith";
+export const metadata: Metadata = { title: "হাদীস লাইব্রেরি" };
 
-type ChapterResponse = LiveHadith[];
-
-export default function HadithPage() {
-  const [bookId, setBookId] = useState("bukhari");
-  const [chapter, setChapter] = useState(1);
-  const [hadiths, setHadiths] = useState<LiveHadith[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(false);
-  const [query, setQuery] = useState("");
-  const [copied, setCopied] = useState<number | null>(null);
-
-  const book = HADITH_BOOKS.find((b) => b.id === bookId)!;
-
-  useEffect(() => {
-    let active = true;
-    fetch(
-      book.source === "extended"
-        ? `/api/hadith/${book.id}/${chapter}`
-        : `https://cdn.jsdelivr.net/gh/md-rifatkhan/hadithbangla@main/${book.folder}/Chapter/${chapter}.json`,
-    )
-      .then((r) => {
-        if (!r.ok) throw new Error();
-        return r.json() as Promise<ChapterResponse>;
-      })
-      .then((data) => {
-        if (active) setHadiths(Array.isArray(data) ? data : []);
-      })
-      .catch(() => active && setError(true))
-      .finally(() => active && setLoading(false));
-    return () => {
-      active = false;
-    };
-  }, [book.folder, book.id, book.source, chapter]);
-
-  const filtered = useMemo(
-    () => hadiths.filter((h) => `${h.hadith_id} ${h.narrator} ${h.bn}`.toLowerCase().includes(query.toLowerCase())),
-    [hadiths, query],
-  );
-
-  async function copy(h: LiveHadith) {
-    await navigator.clipboard.writeText(`${h.bn}\n\n— ${book.nameBn}, হাদীস ${h.hadith_id}`);
-    setCopied(h.hadith_id);
-    setTimeout(() => setCopied(null), 1600);
-  }
-
-  function selectBook(id: string) {
-    setLoading(true);
-    setError(false);
-    setBookId(id);
-    setChapter(1);
-    setQuery("");
-  }
-
+export default function HadithLibraryPage() {
   return (
-    <div className="mx-auto max-w-[1500px] space-y-5 sm:space-y-6">
-      <PageHeader
-        eyebrow="বাংলা হাদীস লাইব্রেরি"
-        title="১০টি গুরুত্বপূর্ণ হাদীস গ্রন্থ"
-        description="আরবি মূলসহ ১০টি গুরুত্বপূর্ণ গ্রন্থ পড়ুন। বাংলা অনুবাদ পাওয়া না গেলে উৎসের English translation স্পষ্টভাবে দেখানো হয়।"
-      />
-
-      {/* ── Book picker ─────────────────────────────────────────────── */}
-      <div className="rounded-2xl bg-emerald-950 p-5 text-white shadow-raised sm:p-7">
-        <p className="text-xs font-black uppercase tracking-[0.2em] text-amber-300">গ্রন্থ নির্বাচন করুন</p>
-        <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-5">
-          {HADITH_BOOKS.map((b) => (
-            <button
-              key={b.id}
-              type="button"
-              onClick={() => selectBook(b.id)}
-              aria-pressed={bookId === b.id}
-              className={`min-h-11 rounded-2xl border p-4 text-left transition ${
-                bookId === b.id
-                  ? "border-amber-300 bg-amber-400 text-emerald-950 shadow-sm"
-                  : "border-emerald-700 bg-emerald-900 hover:border-emerald-400 hover:bg-emerald-800"
-              }`}
-            >
-              <BookMarked className="size-5" aria-hidden />
-              <b className="mt-3 block text-sm leading-5">{b.nameBn}</b>
-              <small className={bookId === b.id ? "text-emerald-800" : "text-emerald-300"}>
-                {b.totalHadith.toLocaleString("bn-BD")} হাদীস
-              </small>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="grid gap-5 lg:grid-cols-[290px_1fr] lg:gap-6">
-        {/* ── Chapter sidebar ───────────────────────────────────────── */}
-        <aside className="surface h-fit rounded-2xl p-5 lg:sticky lg:top-24">
-          <div className="grid size-12 place-items-center rounded-2xl bg-surface-sunken text-emerald-800">
-            <Library className="size-6" aria-hidden />
+    <div className="space-y-6 sm:space-y-8">
+      <section className="hero-surface relative overflow-hidden rounded-card px-5 py-6 shadow-raised sm:px-8 sm:py-8">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <p className="flex items-center gap-2 text-xs font-bold tracking-wide text-on-hero-muted">
+              <Library className="size-4" /> হাদীস লাইব্রেরি
+            </p>
+            <h1 className="mt-2 text-2xl font-bold leading-tight sm:text-3xl">রাসূলুল্লাহ ﷺ-এর বাণী পড়ুন</h1>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-on-hero-muted">
+              কুতুবে সিত্তাহসহ {bn(HADITH_BOOKS.length)}টি গ্রন্থ — আরবি মূল, বাংলা অনুবাদ, হাদীসের মান, বুকমার্ক ও শেয়ার।
+            </p>
           </div>
-          <h2 className="mt-4 text-xl font-bold text-emerald-950">{book.nameBn}</h2>
-          <p className="mt-2 text-sm leading-6 text-stone-500">{book.description}</p>
-
-          <div className="hairline mt-6 pt-4">
-            <label className="text-xs font-bold text-stone-500" htmlFor="hadith-chapter">
-              অধ্যায় নম্বর
-            </label>
-            <div className="mt-2 flex gap-2">
-              <button
-                type="button"
-                disabled={chapter <= 1}
-                onClick={() => {
-                  setLoading(true);
-                  setError(false);
-                  setChapter((c) => Math.max(1, c - 1));
-                }}
-                aria-label="আগের অধ্যায়"
-                className="grid size-11 shrink-0 place-items-center rounded-xl border border-hairline bg-white text-stone-600 transition hover:border-emerald-300 hover:text-emerald-800 disabled:opacity-30"
-              >
-                <ChevronLeft className="size-4" aria-hidden />
-              </button>
-              <input
-                id="hadith-chapter"
-                type="number"
-                min="1"
-                value={chapter}
-                onChange={(e) => {
-                  setLoading(true);
-                  setError(false);
-                  setChapter(Math.max(1, Number(e.target.value) || 1));
-                }}
-                className="h-11 min-w-0 flex-1 rounded-xl border border-hairline bg-white text-center font-bold outline-none focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
-              />
-              <button
-                type="button"
-                onClick={() => {
-                  setLoading(true);
-                  setError(false);
-                  setChapter((c) => c + 1);
-                }}
-                aria-label="পরের অধ্যায়"
-                className="grid size-11 shrink-0 place-items-center rounded-xl border border-hairline bg-white text-stone-600 transition hover:border-emerald-300 hover:text-emerald-800"
-              >
-                <ChevronRight className="size-4" aria-hidden />
-              </button>
-            </div>
-          </div>
-
-          <div className="hairline mt-5 pt-4">
-            <p className="mb-2 text-xs font-black uppercase tracking-[0.16em] text-stone-400">অধ্যায়সমূহ</p>
-            <div className="no-scrollbar max-h-[420px] space-y-1 overflow-y-auto pr-1">
-              {Array.from({ length: book.chapters }, (_, index) => index + 1).map((number) => (
-                <button
-                  key={number}
-                  type="button"
-                  onClick={() => {
-                    setLoading(true);
-                    setError(false);
-                    setChapter(number);
-                  }}
-                  aria-current={chapter === number ? "true" : undefined}
-                  className={`flex min-h-11 w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm transition ${
-                    chapter === number
-                      ? "bg-emerald-950 font-semibold text-white"
-                      : "text-stone-600 hover:bg-surface-sunken hover:text-emerald-900"
-                  }`}
-                >
-                  <span
-                    className={`grid size-7 shrink-0 place-items-center rounded-lg text-xs font-bold ${
-                      chapter === number ? "bg-amber-300 text-emerald-950" : "bg-surface-sunken text-stone-500"
-                    }`}
-                  >
-                    {number}
-                  </span>
-                  <span>অধ্যায় {number}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <p className="mt-4 text-[11px] leading-5 text-stone-400">
-            তথ্য: Hadith Bangla এবং pinned open Hadith datasets। উদ্ধৃতির সময় মূল গ্রন্থ যাচাই করুন।
+          <p lang="ar" className="arabic-text hidden shrink-0 text-3xl text-on-hero/80 sm:block">
+            قَالَ رَسُولُ اللَّهِ ﷺ
           </p>
-        </aside>
+        </div>
+        <div className="mt-5 rounded-2xl bg-black/15 p-3 ring-1 ring-white/10 [&_input]:bg-white/95 [&_input]:text-[#0f1f1a] [&_select]:bg-white/95 [&_select]:text-[#0f1f1a]">
+          <p className="mb-2 text-xs font-semibold text-on-hero-muted">হাদীস নম্বর দিয়ে সরাসরি খুঁজুন</p>
+          <JumpToHadith />
+        </div>
+      </section>
 
-        {/* ── Results ───────────────────────────────────────────────── */}
-        <section aria-label="হাদীস তালিকা">
-          <div className="relative mb-5">
-            <Search className="absolute left-4 top-4 size-4 text-stone-400" aria-hidden />
-            <input
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="এই অধ্যায়ে শব্দ, রাবি বা হাদীস নম্বর খুঁজুন"
-              aria-label="হাদীস অনুসন্ধান"
-              className="h-12 w-full rounded-2xl border border-hairline bg-white pl-11 pr-4 outline-none transition focus:border-emerald-600 focus:ring-4 focus:ring-emerald-600/10"
-            />
-          </div>
+      <ContinueReading />
 
-          {loading ? (
-            <PanelSkeleton count={3} />
-          ) : error ? (
-            <div className="surface rounded-2xl border border-amber-200 bg-amber-50 px-5 py-10 text-center">
-              <b className="text-amber-900">এই অধ্যায়ের তথ্য পাওয়া যায়নি</b>
-              <p className="mt-2 text-sm text-amber-800">অধ্যায় নম্বর পরিবর্তন করে আবার চেষ্টা করুন।</p>
+      {BOOK_GROUPS.map((group) => {
+        const books = HADITH_BOOKS.filter((book) => book.group === group.id);
+        return (
+          <section key={group.id} aria-labelledby={`group-${group.id}`} className="space-y-3">
+            <div className="flex items-end justify-between gap-3">
+              <div>
+                <h2 id={`group-${group.id}`} className="text-lg font-bold text-foreground">
+                  {group.title}
+                </h2>
+                {group.note ? <p className="text-xs text-muted-foreground">{group.note}</p> : null}
+              </div>
+              {group.id === "sitta" ? (
+                <Button asChild variant="ghost" size="sm">
+                  <Link href="/dashboard/hadith/bookmarks">
+                    <Bookmark className="size-4" /> বুকমার্ক
+                  </Link>
+                </Button>
+              ) : null}
             </div>
-          ) : filtered.length === 0 ? (
-            <div className="surface rounded-2xl border-dashed px-5 py-10 text-center text-stone-500">
-              কোনো হাদীস মেলেনি।
-            </div>
-          ) : (
-            <div className="space-y-4 sm:space-y-5">
-              {filtered.map((h) => (
-                <article key={h.hadith_id} className="surface rounded-2xl p-5 sm:p-6">
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-full bg-emerald-950 px-3 py-1 text-xs font-bold text-white">
-                        হাদীস {h.hadith_id}
+            <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+              {books.map((book) => (
+                <Link
+                  key={book.id}
+                  href={`/dashboard/hadith/${book.id}`}
+                  className="surface group flex gap-4 rounded-card p-4 transition hover:-translate-y-0.5 hover:border-hairline-strong hover:shadow-md active:scale-[0.99]"
+                >
+                  <span className="grid size-12 shrink-0 place-items-center rounded-2xl bg-primary-soft text-primary">
+                    <BookMarked className="size-6" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="flex items-start justify-between gap-2">
+                      <span className="font-bold leading-6 text-foreground">{book.nameBn}</span>
+                      <span lang="ar" className="arabic-text shrink-0 text-base leading-6 text-muted-foreground">
+                        {book.nameAr}
                       </span>
-                      <span className="rounded-full bg-surface-sunken px-3 py-1 text-xs font-bold text-emerald-800">
-                        {h.grade}
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => copy(h)}
-                      className="inline-flex h-11 items-center gap-2 rounded-full bg-surface-sunken px-4 text-xs font-bold text-stone-600 transition hover:bg-emerald-100 hover:text-emerald-900 active:scale-[0.985]"
-                    >
-                      {copied === h.hadith_id ? <Check className="size-4" aria-hidden /> : <Copy className="size-4" aria-hidden />}
-                      {copied === h.hadith_id ? "কপি হয়েছে" : "কপি করুন"}
-                    </button>
-                  </div>
-
-                  <p dir="rtl" className="mt-6 text-right font-serif text-2xl leading-[2.15] text-emerald-950">
-                    {h.ar}
-                  </p>
-
-                  <div className="hairline mt-5 pt-4">
-                    <p className="text-sm font-bold text-emerald-800">রাবি: {h.narrator}</p>
-                    <p className="mt-3 text-xs font-black uppercase tracking-[0.14em] text-stone-400">
-                      {book.translationLanguage === "bn" ? "বাংলা অনুবাদ" : "English translation"}
-                    </p>
-                    <p className="mt-2 whitespace-pre-line text-base leading-8 text-stone-700">{h.bn}</p>
-                    {h.note ? (
-                      <p className="mt-4 rounded-2xl bg-surface-sunken p-4 text-sm leading-7 text-stone-600">
-                        টীকা: {h.note}
-                      </p>
-                    ) : null}
-                  </div>
-                </article>
+                    </span>
+                    <span className="mt-0.5 block text-xs text-muted-foreground">{book.compilerBn}</span>
+                    <span className="mt-2 line-clamp-2 block text-sm leading-6 text-muted-foreground">{book.description}</span>
+                    <span className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold">
+                      <span className="rounded-full bg-surface-sunken px-2.5 py-0.5 text-foreground">{bn(getBookTotal(book.id))} হাদীস</span>
+                      <span className="rounded-full bg-surface-sunken px-2.5 py-0.5 text-foreground">{bn(getSections(book.id).length)} কিতাব</span>
+                      {book.language === "en" ? <span className="rounded-full bg-info-soft px-2.5 py-0.5 text-info">ইংরেজি অনুবাদ</span> : null}
+                      <ChevronRight className="ml-auto size-4 text-subtle-foreground transition group-hover:translate-x-0.5 group-hover:text-primary" />
+                    </span>
+                  </span>
+                </Link>
               ))}
             </div>
-          )}
-        </section>
-      </div>
+          </section>
+        );
+      })}
     </div>
   );
 }

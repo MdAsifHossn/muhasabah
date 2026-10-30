@@ -37,6 +37,7 @@ enum CycleStatus {
 
 enum AmalCategory {
   SALAH
+  JUMUAH
   QURAN
   DHIKR
   SUNNAH
@@ -106,18 +107,21 @@ model User {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  sessions             Session[]
-  accounts             Account[]
-  cyclesCreated        Cycle[]          @relation("CycleCreator")
-  dailyEntries         DailyAmalEntry[]
-  reviewsReceived      UstadhReview[]   @relation("ReviewMember")
-  reviewsWritten       UstadhReview[]   @relation("ReviewAuthor")
-  books                Book[]
-  readingLogs          BookReadingLog[]
-  commentsReceived     AmalComment[]    @relation("AmalCommentMember")
-  commentsWritten      AmalComment[]    @relation("AmalCommentAuthor")
+  sessions         Session[]
+  accounts         Account[]
+  cyclesCreated    Cycle[]          @relation("CycleCreator")
+  dailyEntries     DailyAmalEntry[]
+  reviewsReceived  UstadhReview[]   @relation("ReviewMember")
+  reviewsWritten   UstadhReview[]   @relation("ReviewAuthor")
+  books            Book[]
+  readingLogs      BookReadingLog[]
+  commentsReceived AmalComment[]    @relation("AmalCommentMember")
+  commentsWritten  AmalComment[]    @relation("AmalCommentAuthor")
 
-  quranProgress        QuranProgress?
+  quranProgress QuranProgress?
+  announcements Announcement[]
+  messageThread Message[]      @relation("MessageThread")
+  messagesSent  Message[]      @relation("MessageSender")
 
   @@index([role, isActive])
 }
@@ -168,16 +172,16 @@ model Verification {
 }
 
 model Cycle {
-  id          String      @id @default(auto()) @map("_id") @db.ObjectId
+  id          String           @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   description String?
   startDate   DateTime
   endDate     DateTime
-  status      CycleStatus @default(DRAFT)
-  createdById String      @db.ObjectId
-  createdBy   User        @relation("CycleCreator", fields: [createdById], references: [id])
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
+  status      CycleStatus      @default(DRAFT)
+  createdById String           @db.ObjectId
+  createdBy   User             @relation("CycleCreator", fields: [createdById], references: [id])
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
   entries     DailyAmalEntry[]
   reviews     UstadhReview[]
 
@@ -186,29 +190,29 @@ model Cycle {
 }
 
 model AmalItem {
-  id           String        @id @default(auto()) @map("_id") @db.ObjectId
-  titleBn      String
-  titleEn      String?
-  description  String?
-  category     AmalCategory
-  inputType    AmalInputType
-  targetValue  Float?
-  unit         String?
-  points       Float         @default(1)
-  order        Int
-  isActive     Boolean       @default(true)
-  isRequired   Boolean       @default(false)
+  id             String        @id @default(auto()) @map("_id") @db.ObjectId
+  titleBn        String
+  titleEn        String?
+  description    String?
+  category       AmalCategory
+  inputType      AmalInputType
+  targetValue    Float?
+  unit           String?
+  points         Float         @default(1)
+  order          Int
+  isActive       Boolean       @default(true)
+  isRequired     Boolean       @default(false)
   /// On a member's period (মাসিক) day this amal does not apply — it is shown
   /// as "—" in reports and never counts as missed. Ustad/Admin controls it.
-  exemptOnPeriod Boolean     @default(false)
+  exemptOnPeriod Boolean       @default(false)
   /// `ALL` = everyone (default for the seeded list), `MALE`/`FEMALE` = only
   /// members of that gender receive this amal in their daily Amalnama.
-  genderScope  AmalAudience  @default(ALL)
-  specificDay  Weekday?
+  genderScope    AmalAudience  @default(ALL)
+  specificDay    Weekday?
   /// Creator of the item. `null` means the system/admin seed default list.
-  createdById  String?       @db.ObjectId
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  createdById    String?       @db.ObjectId
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
   @@index([isActive, order])
   @@index([category, order])
@@ -236,19 +240,19 @@ model DailyAmalEntry {
   user                 User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   cycleId              String           @db.ObjectId
   cycle                Cycle            @relation(fields: [cycleId], references: [id], onDelete: Cascade)
-  date                  DateTime
-  status                DailyEntryStatus @default(DRAFT)
-  responses             AmalResponse[]
-  totalScore            Float            @default(0)
-  maxPossibleScore      Float            @default(0)
+  date                 DateTime
+  status               DailyEntryStatus @default(DRAFT)
+  responses            AmalResponse[]
+  totalScore           Float            @default(0)
+  maxPossibleScore     Float            @default(0)
   completionPercentage Float            @default(0)
-  personalNote          String?
+  personalNote         String?
   /// Member marked this day as menstrual — prayer/fasting amals are exempt
   /// (shown as "—" in reports and never counted as missed).
-  isPeriodDay           Boolean          @default(false)
-  submittedAt           DateTime?
-  createdAt             DateTime         @default(now())
-  updatedAt             DateTime         @updatedAt
+  isPeriodDay          Boolean          @default(false)
+  submittedAt          DateTime?
+  createdAt            DateTime         @default(now())
+  updatedAt            DateTime         @updatedAt
 
   @@unique([userId, cycleId, date])
   @@index([cycleId])
@@ -276,18 +280,18 @@ model UstadhReview {
 }
 
 model Book {
-  id          String     @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String     @db.ObjectId
-  user        User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id          String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String           @db.ObjectId
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   title       String
   author      String?
   translator  String?
   publisher   String?
   totalPages  Int?
-  status      BookStatus @default(PLANNED)
+  status      BookStatus       @default(PLANNED)
   notes       String?
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
   readingLogs BookReadingLog[]
 
   @@index([userId, status])
@@ -313,29 +317,68 @@ model BookReadingLog {
 /// Per-user Quran reading tracker: where the reader stopped (resume across
 /// devices) plus the cumulative set of global ayah numbers already read.
 model QuranProgress {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  userId      String   @unique @db.ObjectId
-  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @unique @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   /// Reader mode the user was in: "surah" | "juz"
-  mode        String   @default("surah")
+  mode        String @default("surah")
   /// Surah number currently open (always populated, also for juz mode)
-  surah       Int      @default(1)
+  surah       Int    @default(1)
   /// Juz number when mode = "juz"
   juz         Int?
   /// Last read ayah inside `surah`
-  ayahInSurah Int      @default(1)
+  ayahInSurah Int    @default(1)
   /// Last read global ayah number (1..6236) — canonical resume anchor
-  globalAyah  Int      @default(1)
+  globalAyah  Int    @default(1)
 
   /// Reading preferences restored together with the position
-  viewMode    String?
-  fontSize    String?
-  reciter     String?
+  viewMode String?
+  fontSize String?
+  reciter  String?
 
   /// Cumulative coverage: every global ayah number the user has read so far
-  readAyahs   Int[]    @default([])
+  readAyahs Int[] @default([])
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+/// Notice board: an Ustadh/Admin posts guidance or news for members.
+/// `audience` lets a notice reach only brothers (MALE) or sisters (FEMALE).
+model Announcement {
+  id        String       @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  body      String
+  audience  AmalAudience @default(ALL)
+  pinned    Boolean      @default(false)
+  authorId  String       @db.ObjectId
+  author    User         @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([pinned, createdAt])
+  @@index([authorId])
+}
+
+/// Private conversation between a member and the Ustadh team. One thread per
+/// member (`memberId`); the member and any USTADH/ADMIN may post in it.
+/// Senders can edit or delete (soft) their own messages.
+model Message {
+  id           String    @id @default(auto()) @map("_id") @db.ObjectId
+  memberId     String    @db.ObjectId
+  member       User      @relation("MessageThread", fields: [memberId], references: [id], onDelete: Cascade)
+  senderId     String    @db.ObjectId
+  sender       User      @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
+  body         String
+  editedAt     DateTime?
+  deletedAt    DateTime?
+  /// Read receipts per side of the thread.
+  readByMember Boolean   @default(false)
+  readByStaff  Boolean   @default(false)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([memberId, createdAt])
+  @@index([readByStaff, createdAt])
 }

@@ -4,124 +4,215 @@ import { AmalAudience, AmalCategory, AmalInputType, CycleStatus, Role, Weekday }
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
+import { syncAmalCatalog } from "../../../prisma/amal-catalog";
+import { actionError } from "@/lib/action-error";
+import { endOfBangladeshDay, startOfBangladeshDay } from "@/lib/dates";
 import { requireAdmin, requireUstadhOrAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 const objectId = z.string().regex(/^[a-f\d]{24}$/i);
 
-/** Keep every amal-item surface fresh after a mutation. */
-function revalidateAmalItemPages() {
-  revalidatePath("/dashboard/amal-items");
-  revalidatePath("/dashboard/amal-items/men");
-  revalidatePath("/dashboard/amal-items/women");
-  revalidatePath("/dashboard/admin/amal-items");
-  revalidatePath("/dashboard/amalnama/list");
-  revalidatePath("/dashboard/amalnama");
-  revalidatePath("/dashboard/amalnama/grid");
+/** Any amal-item / cycle / review change touches the whole dashboard (forms, reports, panels). */
+function refreshDashboard() {
+  revalidatePath("/dashboard", "layout");
 }
 
-type AmalItemSession = Awaited<ReturnType<typeof requireUstadhOrAdmin>>;
+type StaffSession = Awaited<ReturnType<typeof requireUstadhOrAdmin>>;
 
 /**
  * Ownership rule, always re-checked from the database:
  * - ADMIN may modify any amal item.
- * - USTADH may modify only items where `createdById === their id`.
- * - `createdById === null` is the legacy/system default list → ADMIN only.
+ * - USTADH may modify only items they created (`createdById === their id`).
+ * - `createdById === null` is the system default list → ADMIN only.
  */
-async function requireAmalItem(session: AmalItemSession, itemId: string) {
+async function requireAmalItem(session: StaffSession, itemId: string) {
   const item = await prisma.amalItem.findUnique({ where: { id: itemId } });
-  if (!item) throw new Error("আমল আইটেম পাওয়া যায়নি।");
-  const isAdmin = (session.user.role as Role) === Role.ADMIN;
+  if (!item) throw actionError(404, "আমল আইটেম পাওয়া যায়নি।");
+  const isAdmin = session.user.role === Role.ADMIN;
   const isOwner = item.createdById !== null && item.createdById === session.user.id;
-  if (!isAdmin && !isOwner) throw new Error("এই আমল আইটেম পরিবর্তন করার অনুমতি আপনার নেই।");
+  if (!isAdmin && !isOwner) throw actionError(403, "এই আমল আইটেম পরিবর্তন করার অনুমতি আপনার নেই — শুধু নিজের যোগ করা আমল সম্পাদনা করা যায়।");
   return item;
 }
 
-export async function updateMember(formData: FormData) {
-  const session = await requireAdmin();
-  const parsed = z.object({ userId: objectId, operation: z.enum(["toggle", "role"]), role: z.enum(Role).optional() }).safeParse({ userId: formData.get("userId"), operation: formData.get("operation"), role: formData.get("role") || undefined });
-  if (!parsed.success) throw new Error("সদস্যের তথ্য সঠিক নয়।");
-  if (parsed.data.userId === session.user.id) throw new Error("নিজের admin access পরিবর্তন করা যাবে না।");
-  const user = await prisma.user.findUnique({ where: { id: parsed.data.userId }, select: { isActive: true } });
-  if (!user) throw new Error("সদস্য পাওয়া যায়নি।");
-  if (parsed.data.operation === "toggle") await prisma.user.update({ where: { id: parsed.data.userId }, data: { isActive: !user.isActive } });
-  else await prisma.user.update({ where: { id: parsed.data.userId }, data: { role: parsed.data.role ?? Role.MEMBER } });
-  revalidatePath("/dashboard/admin/members");
-  revalidatePath("/dashboard/admin");
-}
+/** HTML checkbox: present ("on") = true, absent = false. */
+const checkbox = (formData: FormData, name: string) => formData.get(name) === "on" || formData.get(name) === "true";
+const optionalText = (value: FormDataEntryValue | null) => {
+  const text = typeof value === "string" ? value.trim() : "";
+  return text ? text : undefined;
+};
 
-/** Checkbox-style fields: present = on, absent = off. */
-const flag = z.coerce.boolean().optional();
-const orderField = z.coerce.number().int().min(1).max(9999).optional();
+const itemSchema = z.object({
+  titleBn: z.string().trim().min(2, "আমলের নাম অন্তত ২ অক্ষর").max(160),
+  description: z.string().trim().max(500).optional(),
+  category: z.enum(AmalCategory),
+  inputType: z.enum(AmalInputType),
+  targetValue: z.coerce.number().min(0).max(100000).optional(),
+  unit: z.string().trim().max(40).optional(),
+  points: z.coerce.number().positive("পয়েন্ট ০-এর বেশি হতে হবে").max(100),
+  specificDay: z.enum(Weekday).optional(),
+  genderScope: z.enum(AmalAudience).default(AmalAudience.ALL),
+});
+
+function parseItem(formData: FormData) {
+  const parsed = itemSchema.safeParse({
+    titleBn: formData.get("titleBn"),
+    description: optionalText(formData.get("description")),
+    category: formData.get("category"),
+    inputType: formData.get("inputType"),
+    targetValue: optionalText(formData.get("targetValue")),
+    unit: optionalText(formData.get("unit")),
+    points: formData.get("points"),
+    specificDay: optionalText(formData.get("specificDay")),
+    genderScope: optionalText(formData.get("genderScope")),
+  });
+  if (!parsed.success) throw actionError(400, parsed.error.issues[0]?.message ?? "আমল আইটেমের তথ্য সঠিক নয়।");
+  // Yes/No and free-text amals never carry a numeric target.
+  const numeric = parsed.data.inputType !== AmalInputType.BOOLEAN && parsed.data.inputType !== AmalInputType.TEXT;
+  return {
+    ...parsed.data,
+    description: parsed.data.description ?? null,
+    targetValue: numeric ? (parsed.data.targetValue ?? null) : null,
+    unit: numeric ? (parsed.data.unit ?? null) : null,
+    specificDay: parsed.data.specificDay ?? null,
+    isActive: checkbox(formData, "isActive"),
+    isRequired: checkbox(formData, "isRequired"),
+    exemptOnPeriod: checkbox(formData, "exemptOnPeriod"),
+  };
+}
 
 export async function createAmalItem(formData: FormData) {
   const session = await requireUstadhOrAdmin();
-  const parsed = z.object({ titleBn: z.string().trim().min(2).max(160), description: z.string().trim().max(500).optional(), category: z.enum(AmalCategory), inputType: z.enum(AmalInputType), targetValue: z.coerce.number().min(0).optional(), unit: z.string().trim().max(40).optional(), points: z.coerce.number().positive().max(100), order: orderField, specificDay: z.enum(Weekday).optional(), genderScope: z.enum(AmalAudience).default(AmalAudience.ALL), isActive: flag, isRequired: flag, exemptOnPeriod: flag }).safeParse({ titleBn: formData.get("titleBn"), description: formData.get("description") || undefined, category: formData.get("category"), inputType: formData.get("inputType"), targetValue: formData.get("targetValue") || undefined, unit: formData.get("unit") || undefined, points: formData.get("points"), order: formData.get("order") || undefined, specificDay: formData.get("specificDay") || undefined, genderScope: formData.get("genderScope") || undefined, isActive: formData.get("isActive"), isRequired: formData.get("isRequired"), exemptOnPeriod: formData.get("exemptOnPeriod") });
-  if (!parsed.success) throw new Error("আমল আইটেমের তথ্য সঠিক নয়।");
-  const { order, isActive, isRequired, exemptOnPeriod, ...data } = parsed.data;
-  if (order !== undefined) {
-    // Keep the explicit ordering stable: push the tail back by one when needed.
-    await prisma.amalItem.updateMany({ where: { order: { gte: order } }, data: { order: { increment: 1 } } });
-  }
+  const data = parseItem(formData);
   const last = await prisma.amalItem.findFirst({ orderBy: { order: "desc" }, select: { order: true } });
-  await prisma.amalItem.create({ data: { ...data, order: order ?? (last?.order ?? 0) + 1, isActive: isActive ?? true, isRequired: isRequired ?? false, exemptOnPeriod: exemptOnPeriod ?? false, createdById: session.user.id } });
-  revalidateAmalItemPages();
+  await prisma.amalItem.create({ data: { ...data, order: (last?.order ?? 0) + 10, createdById: session.user.id } });
+  refreshDashboard();
 }
 
 export async function updateAmalItem(formData: FormData) {
   const session = await requireUstadhOrAdmin();
-  const parsed = z.object({ itemId: objectId, operation: z.enum(["toggle", "weight", "edit"]), points: z.coerce.number().positive().max(100).optional(), titleBn: z.string().trim().min(2).max(160).optional(), description: z.string().trim().max(500).optional(), category: z.enum(AmalCategory).optional(), inputType: z.enum(AmalInputType).optional(), targetValue: z.coerce.number().min(0).optional(), unit: z.string().trim().max(40).optional(), specificDay: z.enum(Weekday).optional(), genderScope: z.enum(AmalAudience).optional(), order: orderField, isActive: flag, isRequired: flag, exemptOnPeriod: flag }).safeParse({ itemId: formData.get("itemId"), operation: formData.get("operation"), points: formData.get("points") || undefined, titleBn: formData.get("titleBn") || undefined, description: formData.get("description") || undefined, category: formData.get("category") || undefined, inputType: formData.get("inputType") || undefined, targetValue: formData.get("targetValue") || undefined, unit: formData.get("unit") || undefined, specificDay: formData.get("specificDay") || undefined, genderScope: formData.get("genderScope") || undefined, order: formData.get("order") || undefined, isActive: formData.get("operation") === "edit" ? formData.get("isActive") : undefined, isRequired: formData.get("isRequired"), exemptOnPeriod: formData.get("exemptOnPeriod") });
-  if (!parsed.success) throw new Error("আমল আইটেম update করা যায়নি।");
-  await requireAmalItem(session, parsed.data.itemId);
-  const item = await prisma.amalItem.findUnique({ where: { id: parsed.data.itemId } });
-  if (!item) throw new Error("আমল আইটেম পাওয়া যায়নি।");
-  if (parsed.data.operation === "toggle") {
-    await prisma.amalItem.update({ where: { id: item.id }, data: { isActive: !item.isActive } });
-  } else if (parsed.data.operation === "weight") {
-    await prisma.amalItem.update({ where: { id: item.id }, data: { points: parsed.data.points ?? item.points } });
-  } else {
-    const { titleBn, category, inputType, points, genderScope, order, isActive, isRequired, exemptOnPeriod } = parsed.data;
-    if (!titleBn || !category || !inputType || points === undefined || !genderScope) throw new Error("আমল আইটেমের তথ্য সঠিক নয়।");
-    if (order !== undefined && order !== item.order) await prisma.amalItem.updateMany({ where: { id: { not: item.id }, order: { gte: order } }, data: { order: { increment: 1 } } });
-    await prisma.amalItem.update({ where: { id: item.id }, data: { titleBn, category, inputType, points, genderScope, order: order ?? item.order, isActive: isActive ?? item.isActive, isRequired: isRequired ?? item.isRequired, exemptOnPeriod: exemptOnPeriod ?? item.exemptOnPeriod, description: parsed.data.description ?? null, targetValue: parsed.data.targetValue ?? null, unit: parsed.data.unit ?? null, specificDay: parsed.data.specificDay ?? null } });
-  }
-  revalidateAmalItemPages();
+  const itemId = objectId.safeParse(formData.get("itemId"));
+  if (!itemId.success) throw actionError(400, "আমল আইটেম ID সঠিক নয়।");
+  const item = await requireAmalItem(session, itemId.data);
+  await prisma.amalItem.update({ where: { id: item.id }, data: parseItem(formData) });
+  refreshDashboard();
 }
 
-export async function deleteAmalItem(formData: FormData) {
+/** Quick on/off switch from the item card. */
+export async function toggleAmalItem(itemId: string) {
   const session = await requireUstadhOrAdmin();
-  const parsed = z.object({ itemId: objectId }).safeParse({ itemId: formData.get("itemId") });
-  if (!parsed.success) throw new Error("আমল আইটেমের তথ্য সঠিক নয়।");
-  const item = await requireAmalItem(session, parsed.data.itemId);
+  if (!objectId.safeParse(itemId).success) throw actionError(400, "আমল আইটেম ID সঠিক নয়।");
+  const item = await requireAmalItem(session, itemId);
+  await prisma.amalItem.update({ where: { id: item.id }, data: { isActive: !item.isActive } });
+  refreshDashboard();
+}
+
+/** Swap an item with its neighbour above / below in the global display order. */
+export async function moveAmalItem(itemId: string, direction: "up" | "down") {
+  const session = await requireUstadhOrAdmin();
+  if (!objectId.safeParse(itemId).success || (direction !== "up" && direction !== "down")) throw actionError(400, "তথ্য সঠিক নয়।");
+  const item = await requireAmalItem(session, itemId);
+  const neighbour = await prisma.amalItem.findFirst({
+    where: direction === "up" ? { order: { lt: item.order } } : { order: { gt: item.order } },
+    orderBy: { order: direction === "up" ? "desc" : "asc" },
+    select: { id: true, order: true },
+  });
+  if (!neighbour) return;
+  await prisma.$transaction([
+    prisma.amalItem.update({ where: { id: item.id }, data: { order: neighbour.order } }),
+    prisma.amalItem.update({ where: { id: neighbour.id }, data: { order: item.order } }),
+  ]);
+  refreshDashboard();
+}
+
+/**
+ * Delete only if no member ever recorded it; otherwise switch it off so past
+ * Amalnama reports keep their history.
+ */
+export async function deleteAmalItem(itemId: string): Promise<{ archived: boolean }> {
+  const session = await requireUstadhOrAdmin();
+  if (!objectId.safeParse(itemId).success) throw actionError(400, "আমল আইটেম ID সঠিক নয়।");
+  const item = await requireAmalItem(session, itemId);
+  const used = await prisma.dailyAmalEntry.count({ where: { responses: { some: { amalItemId: item.id } } } });
+  if (used) {
+    await prisma.amalItem.update({ where: { id: item.id }, data: { isActive: false } });
+    refreshDashboard();
+    return { archived: true };
+  }
   await prisma.amalItem.delete({ where: { id: item.id } });
-  revalidateAmalItemPages();
+  refreshDashboard();
+  return { archived: false };
+}
+
+/** Re-apply the default (system) amal list — men / women / Friday. Admin only. */
+export async function resyncAmalCatalog() {
+  await requireAdmin();
+  const result = await syncAmalCatalog(prisma);
+  refreshDashboard();
+  return result;
+}
+
+const dateInput = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "তারিখ সঠিক নয়।");
+
+/** `YYYY-MM-DD` from a date input is a Bangladesh calendar day (00:00 Asia/Dhaka = 18:00 UTC the day before). */
+function bangladeshDay(value: string) {
+  return new Date(`${value}T00:00:00+06:00`);
 }
 
 export async function createCycle(formData: FormData) {
   const session = await requireAdmin();
-  const parsed = z.object({ title: z.string().trim().min(2).max(120), description: z.string().trim().max(1000).optional(), startDate: z.coerce.date(), endDate: z.coerce.date() }).safeParse({ title: formData.get("title"), description: formData.get("description") || undefined, startDate: formData.get("startDate"), endDate: formData.get("endDate") });
-  if (!parsed.success || parsed.data.endDate < parsed.data.startDate) throw new Error("সাইকেলের তারিখ সঠিক নয়।");
-  await prisma.cycle.create({ data: { ...parsed.data, createdById: session.user.id } });
-  revalidatePath("/dashboard/admin/cycles");
+  const parsed = z
+    .object({ title: z.string().trim().min(2, "সাইকেলের নাম লিখুন").max(120), description: z.string().trim().max(1000).optional(), startDate: dateInput, endDate: dateInput })
+    .safeParse({ title: formData.get("title"), description: optionalText(formData.get("description")), startDate: formData.get("startDate"), endDate: formData.get("endDate") });
+  if (!parsed.success) throw actionError(400, parsed.error.issues[0]?.message ?? "সাইকেলের তথ্য সঠিক নয়।");
+  const startDate = startOfBangladeshDay(bangladeshDay(parsed.data.startDate));
+  const endDate = endOfBangladeshDay(bangladeshDay(parsed.data.endDate));
+  if (endDate < startDate) throw actionError(400, "শেষ তারিখ শুরুর তারিখের আগে হতে পারে না।");
+  await prisma.cycle.create({
+    data: { title: parsed.data.title, description: parsed.data.description ?? null, startDate, endDate, status: CycleStatus.DRAFT, createdById: session.user.id },
+  });
+  refreshDashboard();
 }
 
 export async function changeCycleStatus(formData: FormData) {
   await requireAdmin();
   const parsed = z.object({ cycleId: objectId, status: z.enum(CycleStatus) }).safeParse({ cycleId: formData.get("cycleId"), status: formData.get("status") });
-  if (!parsed.success) throw new Error("সাইকেল status সঠিক নয়।");
-  if (parsed.data.status === CycleStatus.ACTIVE) await prisma.cycle.updateMany({ where: { status: CycleStatus.ACTIVE, id: { not: parsed.data.cycleId } }, data: { status: CycleStatus.COMPLETED } });
+  if (!parsed.success) throw actionError(400, "সাইকেলের অবস্থা সঠিক নয়।");
+  // Only one cycle may be active: activating one completes the previous active cycle.
+  if (parsed.data.status === CycleStatus.ACTIVE)
+    await prisma.cycle.updateMany({ where: { status: CycleStatus.ACTIVE, id: { not: parsed.data.cycleId } }, data: { status: CycleStatus.COMPLETED } });
   await prisma.cycle.update({ where: { id: parsed.data.cycleId }, data: { status: parsed.data.status } });
-  revalidatePath("/dashboard", "layout");
+  refreshDashboard();
 }
 
+/** Cycle review — written by an Ustadh or an Admin, optionally shown to the member. */
 export async function saveReview(formData: FormData) {
-  const session = await requireAdmin();
-  const parsed = z.object({ memberId: objectId, cycleId: objectId, comment: z.string().trim().min(3).max(3000), isVisibleToMember: z.coerce.boolean() }).safeParse({ memberId: formData.get("memberId"), cycleId: formData.get("cycleId"), comment: formData.get("comment"), isVisibleToMember: formData.get("isVisibleToMember") === "on" });
-  if (!parsed.success) throw new Error("রিভিউ তথ্য সঠিক নয়।");
-  const member = await prisma.user.findUnique({ where: { id: parsed.data.memberId }, select: { id: true, hideAmalnama: true } });
-  if (!member) throw new Error("সদস্য পাওয়া যায়নি।");
-  if (member.hideAmalnama) throw new Error("সদস্যটি তার আমলনামা লুকিয়ে রেখেছেন — রিভিউ দেওয়া যাচ্ছে না।");
-  await prisma.ustadhReview.upsert({ where: { memberId_cycleId_reviewerId: { memberId: parsed.data.memberId, cycleId: parsed.data.cycleId, reviewerId: session.user.id } }, update: { comment: parsed.data.comment, isVisibleToMember: parsed.data.isVisibleToMember }, create: { ...parsed.data, reviewerId: session.user.id } });
-  revalidatePath("/dashboard/admin/reviews");
-  revalidatePath("/dashboard/reviews");
+  const session = await requireUstadhOrAdmin();
+  const parsed = z
+    .object({ memberId: objectId, cycleId: objectId, comment: z.string().trim().min(3, "রিভিউ অন্তত ৩ অক্ষর").max(3000), isVisibleToMember: z.boolean() })
+    .safeParse({ memberId: formData.get("memberId"), cycleId: formData.get("cycleId"), comment: formData.get("comment"), isVisibleToMember: checkbox(formData, "isVisibleToMember") });
+  if (!parsed.success) throw actionError(400, parsed.error.issues[0]?.message ?? "রিভিউ তথ্য সঠিক নয়।");
+  const [member, cycle] = await Promise.all([
+    prisma.user.findUnique({ where: { id: parsed.data.memberId }, select: { id: true, hideAmalnama: true } }),
+    prisma.cycle.findUnique({ where: { id: parsed.data.cycleId }, select: { id: true } }),
+  ]);
+  if (!member) throw actionError(404, "সদস্য পাওয়া যায়নি।");
+  if (!cycle) throw actionError(404, "সাইকেল পাওয়া যায়নি।");
+  if (member.hideAmalnama) throw actionError(403, "সদস্যটি তার আমলনামা লুকিয়ে রেখেছেন — রিভিউ দেওয়া যাচ্ছে না।");
+  await prisma.ustadhReview.upsert({
+    where: { memberId_cycleId_reviewerId: { memberId: member.id, cycleId: cycle.id, reviewerId: session.user.id } },
+    update: { comment: parsed.data.comment, isVisibleToMember: parsed.data.isVisibleToMember },
+    create: { ...parsed.data, reviewerId: session.user.id },
+  });
+  refreshDashboard();
+}
+
+/** Reviewer (or Admin) deletes a review. */
+export async function deleteReview(reviewId: string) {
+  const session = await requireUstadhOrAdmin();
+  if (!objectId.safeParse(reviewId).success) throw actionError(400, "রিভিউ ID সঠিক নয়।");
+  const review = await prisma.ustadhReview.findUnique({ where: { id: reviewId }, select: { reviewerId: true } });
+  if (!review) throw actionError(404, "রিভিউ পাওয়া যায়নি।");
+  if (review.reviewerId !== session.user.id && session.user.role !== Role.ADMIN) throw actionError(403, "শুধু রিভিউ লেখক বা অ্যাডমিন মুছতে পারবেন।");
+  await prisma.ustadhReview.delete({ where: { id: reviewId } });
+  refreshDashboard();
 }

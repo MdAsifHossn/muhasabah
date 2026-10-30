@@ -1,3 +1,5 @@
+import { stripBismillah } from "@/lib/quran";
+
 type SurahMeta = { number: number; englishName: string };
 type QuranAyah = {
   number: number;
@@ -15,7 +17,6 @@ export type ReaderAyah = {
 };
 
 const editions = ["quran-uthmani", "bn.bengali"] as const;
-const bismillahPattern = /^\uFEFF?\s*بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ\s*/;
 
 /** Supported reciters (alquran.cloud audio editions). */
 const reciters = [
@@ -85,7 +86,8 @@ export async function GET(request: Request, context: { params: Promise<{ mode: s
         page: item.page ?? 1,
         surahNumber,
         surahName,
-        arabic: surahNumber !== 1 && surahNumber !== 9 && item.numberInSurah === 1 ? item.text.replace(bismillahPattern, "") : item.text.replace(/^\uFEFF/, ""),
+        // Ayah 1 never repeats the bismillah \u2014 the reader shows it once as a header.
+        arabic: stripBismillah(item.text, surahNumber, item.numberInSurah),
         bangla: banglaMap.get(item.number)?.text ?? "",
         // Each ayah keeps its own audio URL — no merging of ayahs anywhere.
         audio: audio.get(item.number) ?? `https://cdn.islamic.network/quran/audio/128/ar.alafasy/${item.number}.mp3`,

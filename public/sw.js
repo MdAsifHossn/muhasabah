@@ -9,7 +9,9 @@
  *   to QURAN_CACHE_MAX entries there too.
  */
 
-const VERSION = "v1";
+const VERSION = "v2";
+/** On a dev server chunk URLs are NOT content-hashed, so caching them serves stale CSS/JS. */
+const IS_DEV_HOST = ["localhost", "127.0.0.1", "[::1]"].includes(self.location.hostname);
 const PAGE_CACHE = `muhasabah-pages-${VERSION}`;
 const ASSET_CACHE = `muhasabah-assets-${VERSION}`;
 const RUNTIME_CACHE = `muhasabah-runtime-${VERSION}`;
@@ -248,6 +250,8 @@ self.addEventListener("fetch", (event) => {
 
   const url = new URL(request.url);
   if (!KNOWN_HOSTS.includes(url.origin)) return;
+  // Never intercept build output or RSC payloads on a dev host.
+  if (IS_DEV_HOST && url.origin === self.location.origin && !isQuranApi(url)) return;
 
   // Pages: network-first so updates are never stale.
   if (request.mode === "navigate") {

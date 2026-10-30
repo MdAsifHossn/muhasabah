@@ -13,30 +13,17 @@ export interface CardSectionProps {
   contentClassName?: string;
 }
 
-/**
- * Card + section heading in one rhythm: heading row, hairline divider, body.
- * Every dashboard panel uses this so titles, spacing and dividers line up.
- */
-export function CardSection({
-  title,
-  description,
-  action,
-  children,
-  className,
-  contentClassName,
-}: CardSectionProps) {
+/** Card + section heading in one rhythm: heading row, hairline divider, body. */
+export function CardSection({ title, description, action, children, className, contentClassName }: CardSectionProps) {
   const hasHeader = Boolean(title || description || action);
-
   return (
     <Card className={className}>
       <CardContent>
         {hasHeader ? (
           <div className="hairline mb-4 flex items-start justify-between gap-3 pb-3 sm:mb-5 sm:pb-4">
             <div className="min-w-0">
-              {title ? (
-                <h2 className="text-base font-bold leading-6 text-emerald-950 sm:text-lg">{title}</h2>
-              ) : null}
-              {description ? <p className="mt-1 text-sm leading-6 text-stone-500">{description}</p> : null}
+              {title ? <h2 className="text-base font-bold leading-6 text-foreground sm:text-lg">{title}</h2> : null}
+              {description ? <p className="mt-1 text-sm leading-6 text-muted-foreground">{description}</p> : null}
             </div>
             {action ? <div className="shrink-0 text-sm">{action}</div> : null}
           </div>

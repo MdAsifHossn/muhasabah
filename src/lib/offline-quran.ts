@@ -1,3 +1,4 @@
+import { stripBismillah } from "@/lib/quran";
 /**
  * Offline Quran helpers: everything the "কুরআন অফলাইনে সেভ করুন" page needs to
  * save surahs into the service worker's cache, remember what it saved, and read
@@ -279,6 +280,11 @@ async function readSurahFromCache(surah: number): Promise<OfflineAyah[] | null> 
  * and an unsaved one gets the worker's explicit 504. If the request itself
  * fails (worker not active yet) we fall back to a direct cache read.
  */
+/** Same bismillah rule as the reader: also cleans payloads cached before the fix. */
+function cleanAyahs(ayahs: OfflineAyah[]): OfflineAyah[] {
+  return ayahs.map((ayah) => ({ ...ayah, arabic: stripBismillah(ayah.arabic, ayah.surahNumber, ayah.numberInSurah) }));
+}
+
 export async function fetchSurah(surah: number, signal?: AbortSignal): Promise<SurahReadResult> {
   let response: Response;
   try {
@@ -286,14 +292,14 @@ export async function fetchSurah(surah: number, signal?: AbortSignal): Promise<S
   } catch (error) {
     if (signal?.aborted) throw error;
     const cached = await readSurahFromCache(surah);
-    if (cached) return { ayahs: cached, cacheState: "hit" };
+    if (cached) return { ayahs: cleanAyahs(cached), cacheState: "hit" };
     throw new OfflineQuranError("network", "ইন্টারনেট সংযোগ নেই");
   }
 
   const cacheState = response.headers.get("X-SW-Cache");
   if (response.status === 504) {
     const cached = await readSurahFromCache(surah);
-    if (cached) return { ayahs: cached, cacheState: "hit" };
+    if (cached) return { ayahs: cleanAyahs(cached), cacheState: "hit" };
     throw new OfflineQuranError("offline-miss", "অফলাইনে নেই");
   }
   if (!response.ok) throw new OfflineQuranError("server", `সারভার থেকে ${response.status}`);
@@ -302,7 +308,7 @@ export async function fetchSurah(surah: number, signal?: AbortSignal): Promise<S
   if (!payload || !Array.isArray(payload.ayahs) || payload.ayahs.length === 0) {
     throw new OfflineQuranError("invalid", "ডেটা পাওয়া যায়নি");
   }
-  return { ayahs: payload.ayahs, cacheState };
+  return { ayahs: cleanAyahs(payload.ayahs), cacheState };
 }
 
 /* ── cache maintenance ───────────────────────────────────────────────── */

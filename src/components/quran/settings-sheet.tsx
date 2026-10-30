@@ -1,73 +1,117 @@
 "use client";
 
-import { Sheet, sheetButtonClass } from "@/components/quran/sheet";
-import type { FontSize, ViewMode } from "@/components/quran/types";
+import { Check, Minus, Moon, Plus, ScrollText, Sun } from "lucide-react";
+import { useTheme } from "next-themes";
+
+import { optionClass, Sheet } from "@/components/quran/sheet";
+import type { ReaderPrefs } from "@/components/quran/storage";
+import { ARABIC_STEPS, BANGLA_STEPS, RECITERS, type ViewMode } from "@/components/quran/types";
+import { BISMILLAH } from "@/lib/quran";
 import { cn } from "@/lib/utils";
 
-const VIEW_OPTIONS: [ViewMode, string][] = [
-  ["both", "আরবি + বাংলা"],
-  ["arabic", "শুধু আরবি"],
-  ["bangla", "শুধু বাংলা"],
-  ["mushaf", "মুশাফ পাতা"],
+const VIEWS: { value: ViewMode; label: string; hint: string }[] = [
+  { value: "both", label: "আরবি + অর্থ", hint: "আয়াতভিত্তিক কার্ড" },
+  { value: "mushaf", label: "মুসহাফ", hint: "টানা আরবি পাঠ" },
+  { value: "arabic", label: "শুধু আরবি", hint: "কার্ড, অর্থ ছাড়া" },
+  { value: "bangla", label: "শুধু অর্থ", hint: "বাংলা অনুবাদ" },
 ];
 
-const SIZE_OPTIONS: [FontSize, string][] = [
-  ["small", "ছোট"],
-  ["medium", "মাঝারি"],
-  ["large", "বড়"],
-];
+function Stepper({ label, value, max, onChange }: { label: string; value: number; max: number; onChange: (value: number) => void }) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <span className="text-sm font-semibold">{label}</span>
+      <div className="flex items-center gap-1 rounded-xl border border-hairline bg-surface-sunken p-1">
+        <button type="button" aria-label={`${label} ছোট`} disabled={value <= 0} onClick={() => onChange(value - 1)} className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-surface disabled:opacity-40">
+          <Minus className="size-4" />
+        </button>
+        <div className="flex gap-1 px-1" aria-hidden>
+          {Array.from({ length: max + 1 }, (_, index) => (
+            <span key={index} className={cn("h-2 w-2 rounded-full", index <= value ? "bg-primary" : "bg-hairline-strong")} />
+          ))}
+        </div>
+        <button type="button" aria-label={`${label} বড়`} disabled={value >= max} onClick={() => onChange(value + 1)} className="grid size-9 place-items-center rounded-lg text-muted-foreground hover:bg-surface disabled:opacity-40">
+          <Plus className="size-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export function SettingsSheet({
   open,
-  viewMode,
-  fontSize,
-  onViewMode,
-  onFontSize,
   onClose,
+  prefs,
+  onChange,
 }: {
   open: boolean;
-  viewMode: ViewMode;
-  fontSize: FontSize;
-  onViewMode: (value: ViewMode) => void;
-  onFontSize: (value: FontSize) => void;
   onClose: () => void;
+  prefs: ReaderPrefs;
+  onChange: (patch: Partial<ReaderPrefs>) => void;
 }) {
+  const { resolvedTheme, setTheme } = useTheme();
+  const appearance = prefs.theme === "sepia" ? "sepia" : resolvedTheme === "dark" ? "dark" : "light";
+
   return (
-    <Sheet open={open} title="পাঠ সেটিংস" onClose={onClose}>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-stone-400">কীভাবে পড়বেন</p>
-      <div className="mt-2 grid grid-cols-2 gap-2">
-        {VIEW_OPTIONS.map(([value, label]) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => onViewMode(value)}
-            className={sheetButtonClass(viewMode === value)}
-          >
-            {label}
-          </button>
-        ))}
-      </div>
+    <Sheet open={open} onClose={onClose} title="পড়ার সেটিংস">
+      <div className="space-y-6">
+        <section>
+          <h3 className="mb-2 text-xs font-bold tracking-wide text-muted-foreground">পড়ার ধরন</h3>
+          <div className="grid grid-cols-2 gap-2">
+            {VIEWS.map((view) => (
+              <button key={view.value} type="button" onClick={() => onChange({ view: view.value })} className={cn(optionClass(prefs.view === view.value), "text-left")}>
+                <span className="block">{view.label}</span>
+                <span className="block text-[11px] font-normal opacity-75">{view.hint}</span>
+              </button>
+            ))}
+          </div>
+        </section>
 
-      <p className="mt-5 text-xs font-bold uppercase tracking-[0.16em] text-stone-400">লেখার আকার</p>
-      <div className="mt-2 grid grid-cols-3 gap-2">
-        {SIZE_OPTIONS.map(([value, label], index) => (
-          <button
-            key={value}
-            type="button"
-            onClick={() => onFontSize(value)}
-            className={cn("flex items-center justify-center gap-2", sheetButtonClass(fontSize === value))}
-          >
-            <span className={cn("font-serif leading-none", index === 0 && "text-sm", index === 1 && "text-base", index === 2 && "text-lg")}>
-              A
-            </span>
-            {label}
-          </button>
-        ))}
-      </div>
+        <section className="space-y-3">
+          <h3 className="text-xs font-bold tracking-wide text-muted-foreground">অক্ষরের আকার</h3>
+          <Stepper label="আরবি" value={prefs.arabicStep} max={ARABIC_STEPS.length - 1} onChange={(value) => onChange({ arabicStep: value })} />
+          <Stepper label="বাংলা অর্থ" value={prefs.banglaStep} max={BANGLA_STEPS.length - 1} onChange={(value) => onChange({ banglaStep: value })} />
+          <div className="rounded-xl border border-hairline bg-surface-sunken p-3">
+            <p dir="rtl" lang="ar" className="quran-text text-center" style={{ fontSize: ARABIC_STEPS[prefs.arabicStep] }}>
+              {BISMILLAH}
+            </p>
+            <p className="text-center font-bangla-serif text-muted-foreground" style={{ fontSize: BANGLA_STEPS[prefs.banglaStep] }}>
+              পরম করুণাময় অতি দয়ালু আল্লাহর নামে
+            </p>
+          </div>
+        </section>
 
-      <p className="mt-5 rounded-2xl bg-stone-50 p-3 text-xs leading-relaxed text-stone-500">
-        প্রতিটি আয়াতে ট্যাপ করলে সেই আয়াতের নিজস্ব তিলাওয়াত শুনা যাবে। অডিওতে কোনো টাইমলাইন বা প্রোগ্রেস বার দেখানো হয় না।
-      </p>
+        <section>
+          <h3 className="mb-2 text-xs font-bold tracking-wide text-muted-foreground">পাতার রং</h3>
+          <div className="grid grid-cols-3 gap-2">
+            <button type="button" onClick={() => { onChange({ theme: "app" }); setTheme("light"); }} className={optionClass(appearance === "light")}>
+              <Sun className="mx-auto size-4" /> আলো
+            </button>
+            <button type="button" onClick={() => onChange({ theme: "sepia" })} className={optionClass(appearance === "sepia")}>
+              <ScrollText className="mx-auto size-4" /> সেপিয়া
+            </button>
+            <button type="button" onClick={() => { onChange({ theme: "app" }); setTheme("dark"); }} className={optionClass(appearance === "dark")}>
+              <Moon className="mx-auto size-4" /> রাত
+            </button>
+          </div>
+        </section>
+
+        <section>
+          <h3 className="mb-2 text-xs font-bold tracking-wide text-muted-foreground">ক্বারী</h3>
+          <div className="space-y-1.5">
+            {RECITERS.map((reciter) => (
+              <button
+                key={reciter.id}
+                type="button"
+                onClick={() => onChange({ reciter: reciter.id })}
+                className={cn(optionClass(prefs.reciter === reciter.id), "flex w-full items-center justify-between text-left")}
+              >
+                {reciter.name}
+                {prefs.reciter === reciter.id ? <Check className="size-4" /> : null}
+              </button>
+            ))}
+          </div>
+        </section>
+      </div>
     </Sheet>
   );
 }

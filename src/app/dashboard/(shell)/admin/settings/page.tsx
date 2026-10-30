@@ -1,7 +1,63 @@
-import { Database, LockKeyhole, MapPin, Settings } from "lucide-react";
+import { CalendarClock, Database, KeyRound, ListChecks, LockKeyhole, MapPin, UsersRound } from "lucide-react";
 
-import { PageHeader } from "@/components/dashboard/common";
+import { CatalogSyncButton } from "@/components/admin/catalog-sync-button";
+import { PageHeader } from "@/components/design/page-header";
 import { Card, CardContent } from "@/components/ui/card";
+import { requireAdmin } from "@/lib/permissions";
+import { prisma } from "@/lib/prisma";
 
-const settings=[{icon:MapPin,title:"Application timezone",value:"Asia/Dhaka",note:"সব daily boundary ও cycle day এই timezone অনুযায়ী।"},{icon:LockKeyhole,title:"Registration",value:"Open for members",note:"নতুন registration স্বয়ংক্রিয়ভাবে MEMBER role পায়।"},{icon:Database,title:"Database",value:"MongoDB Atlas",note:"Prisma ORM-এর মাধ্যমে private application data সংরক্ষিত।"},{icon:Settings,title:"Edit policy",value:"Same-day editing",note:"Member আজকের submitted entry একই দিনে edit করতে পারবেন।"}];
-export default function AdminSettingsPage(){return <div className="mx-auto max-w-5xl space-y-7"><PageHeader eyebrow="Admin" title="Settings" description="বর্তমান system policy ও technical configuration-এর read-only summary।"/><div className="grid gap-4 sm:grid-cols-2">{settings.map(({icon:Icon,title,value,note})=><Card key={title}><CardContent className="flex gap-4"><div className="grid size-11 shrink-0 place-items-center rounded-xl bg-emerald-50 text-emerald-700"><Icon className="size-5"/></div><div><p className="text-sm text-stone-500">{title}</p><p className="mt-1 font-bold text-emerald-950">{value}</p><p className="mt-2 text-xs leading-5 text-stone-400">{note}</p></div></CardContent></Card>)}</div><div className="rounded-2xl border border-amber-200 bg-amber-50 p-5 text-sm leading-6 text-amber-900">Scoring weights Amal Items page থেকে পরিবর্তনযোগ্য। Password, secrets ও database URL কখনো UI-তে দেখানো হয় না।</div></div>}
+export const metadata = { title: "সেটিংস" };
+
+export default async function AdminSettingsPage() {
+  await requireAdmin();
+  const [systemItems, customItems] = await Promise.all([prisma.amalItem.count({ where: { createdById: null } }), prisma.amalItem.count({ where: { createdById: { not: null } } })]);
+
+  const settings = [
+    { icon: MapPin, title: "সময় অঞ্চল", value: "বাংলাদেশ (Asia/Dhaka)", note: "দিনের শুরু-শেষ, সপ্তাহের দিন (জুমা) ও সাইকেলের দিন এই সময় অনুযায়ী গণনা হয়।" },
+    { icon: UsersRound, title: "নিবন্ধন", value: "সবার জন্য খোলা", note: "নতুন নিবন্ধন সাধারণ সদস্য (MEMBER) হিসেবে শুরু হয়। উস্তাদজি/অ্যাডমিন রোল শুধু অ্যাডমিন দিতে পারেন।" },
+    { icon: CalendarClock, title: "আমলনামা সম্পাদনা", value: "আজ ও গতকাল", note: "সদস্য আজকের ও গতকালের আমলনামা পূরণ/সংশোধন করতে পারেন। জমা দেওয়ার পরও সংশোধন করা যায়।" },
+    { icon: LockKeyhole, title: "গোপনীয়তা", value: "সদস্য নিয়ন্ত্রিত", note: "সদস্য আমলনামা গোপন করলে উস্তাদ/অ্যাডমিন কোনো তথ্য দেখতে, মন্তব্য বা রিভিউ করতে পারবেন না।" },
+    { icon: KeyRound, title: "পাসওয়ার্ড", value: "প্রোফাইল ও অ্যাডমিন রিসেট", note: "সদস্য নিজে প্রোফাইল থেকে বদলাতে পারেন; অ্যাডমিন রিসেট করলে সব ডিভাইস থেকে লগআউট হয়।" },
+    { icon: Database, title: "ডাটাবেস", value: "MongoDB Atlas", note: "পাসওয়ার্ড, secret ও ডাটাবেস URL কখনো UI-তে দেখানো হয় না।" },
+  ];
+
+  return (
+    <div className="space-y-5">
+      <PageHeader eyebrow="অ্যাডমিন" title="সেটিংস" description="সিস্টেমের বর্তমান নীতি ও রক্ষণাবেক্ষণ।" />
+
+      <Card>
+        <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex gap-3">
+            <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary">
+              <ListChecks className="size-5" />
+            </span>
+            <div>
+              <h2 className="font-bold text-foreground">মূল আমল তালিকা</h2>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
+                ভাইদের জন্য তাকবীরে উলা, বোনদের জন্য আউয়াল ওয়াক্ত এবং শুক্রবারের জুমার আমলসহ ডিফল্ট তালিকা। এখন {systemItems.toLocaleString("bn-BD")}টি মূল ও {customItems.toLocaleString("bn-BD")}টি উস্তাদদের যোগ করা আমল আছে।
+              </p>
+            </div>
+          </div>
+          <CatalogSyncButton />
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-3 sm:grid-cols-2">
+        {settings.map(({ icon: Icon, title, value, note }) => (
+          <Card key={title}>
+            <CardContent className="flex gap-3">
+              <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface-sunken text-primary">
+                <Icon className="size-5" />
+              </span>
+              <div>
+                <p className="text-xs text-muted-foreground">{title}</p>
+                <p className="mt-0.5 font-bold text-foreground">{value}</p>
+                <p className="mt-1.5 text-xs leading-5 text-subtle-foreground">{note}</p>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}

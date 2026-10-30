@@ -1,187 +1,139 @@
 "use client";
 
+import { MapPin, Moon, Sun, Sunrise, Sunset } from "lucide-react";
 import { useEffect, useState } from "react";
-import { Moon, Sun, Sunrise, Sunset, Clock3 } from "lucide-react";
+
 import type { PrayerTiming } from "@/lib/prayer-times";
+import { cn } from "@/lib/utils";
 
 type Props = {
   timings: PrayerTiming;
   hijriDate: string;
   banglaDate: string;
   englishDate: string;
+  /** Tighter layout for the dashboard home (no big date header). */
+  compact?: boolean;
+  className?: string;
 };
 
-function getActiveWaqt(mins: PrayerTiming["minutes"], currentMinutes: number): string {
-  const { fajr, sunrise, ishraq, dhuhr, asr, maghrib, isha } = mins;
-  if (currentMinutes >= fajr && currentMinutes < sunrise) return "fajr";
-  if (currentMinutes >= sunrise && currentMinutes < ishraq) return "sunrise";
-  if (currentMinutes >= ishraq && currentMinutes < dhuhr) return "ishraq";
-  if (currentMinutes >= dhuhr && currentMinutes < asr) return "dhuhr";
-  if (currentMinutes >= asr && currentMinutes < maghrib) return "asr";
-  if (currentMinutes >= maghrib && currentMinutes < isha) return "maghrib";
-  return "isha";
-}
+type WaqtKey = "fajr" | "dhuhr" | "asr" | "maghrib" | "isha";
 
 function getDhakaMinutes(): number {
-  try {
-    const formatter = new Intl.DateTimeFormat("en-US", {
-      timeZone: "Asia/Dhaka",
-      hour: "numeric",
-      minute: "numeric",
-      hour12: false,
-    });
-    const parts = formatter.formatToParts(new Date());
-    const hour = parseInt(parts.find((p) => p.type === "hour")?.value ?? "0", 10);
-    const minute = parseInt(parts.find((p) => p.type === "minute")?.value ?? "0", 10);
-    return hour * 60 + minute;
-  } catch {
-    const now = new Date();
-    return now.getHours() * 60 + now.getMinutes();
-  }
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Dhaka", hour: "numeric", minute: "numeric", hour12: false }).formatToParts(new Date());
+  const hour = Number(parts.find((part) => part.type === "hour")?.value ?? 0) % 24;
+  const minute = Number(parts.find((part) => part.type === "minute")?.value ?? 0);
+  return hour * 60 + minute;
 }
 
-export function TodayPrayerCard({
-  timings,
-  hijriDate,
-  banglaDate,
-  englishDate,
-}: Props) {
-  const [activeWaqt, setActiveWaqt] = useState<string>(() =>
-    getActiveWaqt(timings.minutes, getDhakaMinutes())
-  );
+/**
+ * Current waqt: from its start until the next one begins. Between sunrise and
+ * dhuhr there is no fard waqt (null). Before fajr it is still isha.
+ */
+function getActiveWaqt(m: PrayerTiming["minutes"], now: number): WaqtKey | null {
+  if (now >= m.isha || now < m.fajr) return "isha";
+  if (now < m.sunrise) return "fajr";
+  if (now < m.dhuhr) return null;
+  if (now < m.asr) return "dhuhr";
+  if (now < m.maghrib) return "asr";
+  return "maghrib";
+}
+
+function getNextWaqt(m: PrayerTiming["minutes"], now: number): { key: WaqtKey; inMinutes: number } {
+  const order: WaqtKey[] = ["fajr", "dhuhr", "asr", "maghrib", "isha"];
+  for (const key of order) if (m[key] > now) return { key, inMinutes: m[key] - now };
+  return { key: "fajr", inMinutes: 24 * 60 - now + m.fajr };
+}
+
+const bn = new Intl.NumberFormat("bn-BD");
+function toBnTime(value: string) {
+  return value.replace(/\d+/g, (digits) => bn.format(Number(digits)).padStart(digits.length === 2 ? 2 : 1, "০")).replace("AM", "এএম").replace("PM", "পিএম");
+}
+function durationBn(minutes: number) {
+  const hours = Math.floor(minutes / 60);
+  const rest = minutes % 60;
+  return hours > 0 ? `${bn.format(hours)} ঘণ্টা ${bn.format(rest)} মিনিট` : `${bn.format(rest)} মিনিট`;
+}
+
+const LABELS: Record<WaqtKey, string> = { fajr: "ফজর", dhuhr: "যোহর", asr: "আসর", maghrib: "মাগরিব", isha: "এশা" };
+
+export function TodayPrayerCard({ timings, hijriDate, banglaDate, englishDate, compact = false, className }: Props) {
+  const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
-    function update() {
-      setActiveWaqt(getActiveWaqt(timings.minutes, getDhakaMinutes()));
-    }
+    const update = () => setNow(getDhakaMinutes());
     update();
-    const interval = setInterval(update, 30000);
-    return () => clearInterval(interval);
-  }, [timings.minutes]);
+    const interval = window.setInterval(update, 30000);
+    return () => window.clearInterval(interval);
+  }, []);
 
-  const prayers = [
-    { key: "fajr", label: "ফজর", time: timings.fajr, icon: Sunrise, tag: "ফরজ" },
-    { key: "ishraq", label: "ইশরাক", time: timings.ishraq, icon: Sun, tag: "নফল" },
-    { key: "dhuhr", label: "যোহর", time: timings.dhuhr, icon: Sun, tag: "ফরজ" },
-    { key: "asr", label: "আসর", time: timings.asr, icon: Sun, tag: "ফরজ" },
-    { key: "maghrib", label: "মাগরিব", time: timings.maghrib, icon: Sunset, tag: "ফরজ" },
-    { key: "isha", label: "এশা", time: timings.isha, icon: Moon, tag: "ফরজ" },
+  const active = now === null ? null : getActiveWaqt(timings.minutes, now);
+  const next = now === null ? null : getNextWaqt(timings.minutes, now);
+  const prayers: Array<{ key: WaqtKey; time: string; icon: typeof Sun }> = [
+    { key: "fajr", time: timings.fajr, icon: Sunrise },
+    { key: "dhuhr", time: timings.dhuhr, icon: Sun },
+    { key: "asr", time: timings.asr, icon: Sun },
+    { key: "maghrib", time: timings.maghrib, icon: Sunset },
+    { key: "isha", time: timings.isha, icon: Moon },
   ];
 
   return (
-    <div
-      id="today"
-      className="w-full self-center rounded-2xl border border-emerald-100 bg-white p-6 shadow-2xl shadow-emerald-950/10 sm:p-8"
-    >
-      {/* Date Header */}
-      <div className="flex items-start justify-between gap-4 border-b border-stone-100 pb-5">
-        <div className="space-y-2">
-          {/* Hijri Date + Location Tag */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="inline-flex items-center gap-2 rounded-full border border-emerald-200/90 bg-emerald-50/90 px-3.5 py-1 text-xs font-bold text-emerald-800 shadow-xs">
-              <Moon className="size-3.5 text-emerald-600" />
-              <span>{hijriDate}</span>
-            </div>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-stone-100 px-2.5 py-1 text-[11px] font-semibold text-stone-600">
-              <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              ঢাকা • লাইভ ওয়াক্ত
-            </span>
-          </div>
-
-          <p className="text-xl font-black text-emerald-950 sm:text-2xl">
-            {banglaDate}
-          </p>
-          <p className="text-xs font-medium text-stone-400">
-            {englishDate}
-          </p>
+    <section id="today" className={cn("surface w-full rounded-card p-4 sm:p-6", className)} aria-label="আজকের নামাজের সময়">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          {compact ? (
+            <h2 className="text-base font-bold text-foreground">আজকের নামাজের সময়</h2>
+          ) : (
+            <>
+              <p className="inline-flex items-center gap-1.5 rounded-full bg-primary-soft px-3 py-1 text-xs font-bold text-primary-soft-foreground">
+                <Moon className="size-3.5" /> {hijriDate}
+              </p>
+              <p className="mt-2 text-xl font-bold text-foreground sm:text-2xl">{banglaDate}</p>
+              <p className="text-xs text-muted-foreground">{englishDate}</p>
+            </>
+          )}
+          {next ? (
+            <p className="mt-1 text-xs font-medium text-muted-foreground">
+              পরবর্তী ওয়াক্ত: <b className="text-primary">{LABELS[next.key]}</b> — {durationBn(next.inMinutes)} পর
+            </p>
+          ) : null}
         </div>
-
-        <div className="rounded-2xl border border-emerald-100 bg-emerald-50 p-3 text-emerald-800 shadow-xs">
-          <Clock3 className="size-6" />
-        </div>
+        <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-surface-sunken px-2.5 py-1 text-[11px] font-semibold text-muted-foreground">
+          <MapPin className="size-3" /> {timings.district}
+        </span>
       </div>
 
-      {/* 6 Waqt Grid (Fajr, Ishraq, Dhuhr, Asr, Maghrib, Isha) */}
-      <div className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
-        {prayers.map(({ key, label, time, icon: Icon, tag }) => {
-          const isActive = activeWaqt === key;
+      <div className="mt-4 grid grid-cols-5 gap-1.5 sm:gap-2">
+        {prayers.map(({ key, time, icon: Icon }) => {
+          const isActive = active === key;
           return (
             <div
               key={key}
-              className={`relative rounded-2xl p-3 text-center transition-all ${
-                isActive
-                  ? "border-2 border-emerald-500 bg-emerald-50/90 shadow-md ring-2 ring-emerald-500/20"
-                  : "border border-stone-100 bg-[#f8faf9] hover:bg-emerald-50/40"
-              }`}
+              className={cn(
+                "rounded-xl px-1 py-2.5 text-center transition-colors",
+                isActive ? "bg-primary text-on-primary shadow-md" : "bg-surface-sunken text-foreground",
+              )}
             >
-              {isActive ? (
-                <div className="absolute -top-2 left-1/2 -translate-x-1/2">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-emerald-600 px-2 py-0.5 text-[9px] font-bold text-white shadow-xs">
-                    <span className="size-1 rounded-full bg-emerald-200 animate-ping" />
-                    চলমান
-                  </span>
-                </div>
-              ) : null}
-
-              <Icon
-                className={`mx-auto size-4 ${
-                  isActive ? "text-emerald-700" : "text-stone-400"
-                }`}
-              />
-              <div className="mt-1.5 flex items-center justify-center gap-1">
-                <p
-                  className={`text-xs ${
-                    isActive
-                      ? "font-black text-emerald-950"
-                      : "font-bold text-stone-600"
-                  }`}
-                >
-                  {label}
-                </p>
-                {tag === "নফল" ? (
-                  <span className="rounded bg-sky-100 px-1 py-0.2 text-[9px] font-semibold text-sky-800">
-                    নফল
-                  </span>
-                ) : null}
-              </div>
-              <p
-                className={`mt-1 text-xs sm:text-sm font-black ${
-                  isActive ? "text-emerald-950" : "text-stone-800"
-                }`}
-              >
-                {time}
-              </p>
+              <Icon className={cn("mx-auto size-4", isActive ? "text-on-primary" : "text-muted-foreground")} />
+              <p className="mt-1 text-[11px] font-bold sm:text-xs">{LABELS[key]}</p>
+              <p className="mt-0.5 text-[11px] font-semibold tabular-nums sm:text-sm">{toBnTime(time.replace(/ (AM|PM)$/, ""))}</p>
             </div>
           );
         })}
       </div>
 
-      {/* Fasting & Sun times: Sahari End, Sunrise, Iftar */}
-      <div className="mt-4 grid grid-cols-3 gap-2.5">
-        <div className="rounded-2xl border border-sky-100 bg-sky-50/90 p-3 text-sky-950 sm:p-3.5">
-          <p className="flex items-center gap-1.5 text-[11px] font-bold text-sky-900">
-            <Moon className="size-3.5 text-sky-700" />
-            সেহরি শেষ
-          </p>
-          <p className="mt-1 text-sm font-black sm:text-lg">{timings.sahariEnd}</p>
-        </div>
-
-        <div className="rounded-2xl border border-amber-100 bg-amber-50/90 p-3 text-amber-950 sm:p-3.5">
-          <p className="flex items-center gap-1.5 text-[11px] font-bold text-amber-900">
-            <Sunrise className="size-3.5 text-amber-700" />
-            সূর্যোদয়
-          </p>
-          <p className="mt-1 text-sm font-black sm:text-lg">{timings.sunrise}</p>
-        </div>
-
-        <div className="rounded-2xl border border-rose-100 bg-rose-50/90 p-3 text-rose-950 sm:p-3.5">
-          <p className="flex items-center gap-1.5 text-[11px] font-bold text-rose-900">
-            <Sun className="size-3.5 text-rose-700" />
-            ইফতার
-          </p>
-          <p className="mt-1 text-sm font-black sm:text-lg">{timings.iftar}</p>
-        </div>
+      <div className="mt-3 grid grid-cols-3 gap-2 text-center">
+        {[
+          { label: "সেহরি শেষ", value: timings.sahariEnd },
+          { label: "সূর্যোদয়", value: timings.sunrise },
+          { label: "ইফতার", value: timings.iftar },
+        ].map((row) => (
+          <div key={row.label} className="rounded-xl border border-hairline px-2 py-2">
+            <p className="text-[11px] font-medium text-muted-foreground">{row.label}</p>
+            <p className="text-sm font-bold tabular-nums text-foreground">{toBnTime(row.value)}</p>
+          </div>
+        ))}
       </div>
-    </div>
+      {timings.source === "fallback" ? <p className="mt-2 text-[10px] text-subtle-foreground">লাইভ সময় পাওয়া যায়নি — আনুমানিক সময় দেখানো হচ্ছে।</p> : null}
+    </section>
   );
 }

@@ -15,6 +15,8 @@ function sanitizeGender(value: unknown): Gender {
 
 export const auth = betterAuth({
   appName: "Muhasabah",
+  // Local dev servers may move to another port when 3000 is busy.
+  trustedOrigins: process.env.NODE_ENV === "development" ? ["http://localhost:3000", "http://localhost:3001", "http://localhost:3002"] : [],
   database: prismaAdapter(prisma, { provider: "mongodb" }),
   // Open sign-up: a new member is fully active right away and lands in the
   // dashboard without any admin approval.
@@ -28,6 +30,15 @@ export const auth = betterAuth({
     },
   },
   databaseHooks: {
+    // A deactivated member cannot open a new session (admin switch in user management).
+    session: {
+      create: {
+        before: async (session) => {
+          const owner = await prisma.user.findUnique({ where: { id: session.userId }, select: { isActive: true } });
+          if (!owner?.isActive) return false;
+        },
+      },
+    },
     user: {
       create: {
         before: async (user) => ({ data: { ...user, gender: sanitizeGender(user.gender) } }),

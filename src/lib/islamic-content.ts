@@ -1,19 +1,11 @@
 import { SURAH_LIST } from "@/lib/quran";
+import { fetchHadithSection } from "@/components/hadith/hadith-source";
 
 type QuranEdition = {
   data?: {
     text?: string;
     surah?: { number?: number; name?: string; englishName?: string };
     numberInSurah?: number;
-  };
-};
-type HadithPayload = {
-  hadith?: {
-    hadith_id?: number;
-    narrator?: string;
-    bn?: string;
-    ar?: string;
-    grade?: string;
   };
 };
 
@@ -121,28 +113,6 @@ export async function getDailyAyah(): Promise<DailyAyah> {
   }
 }
 
-export async function getDailyHadith(): Promise<DailyHadith> {
-  try {
-    const response = await fetch(
-      "https://cdn.jsdelivr.net/gh/md-rifatkhan/hadithbangla@main/Bukhari/hadith/1.json",
-      { next: { revalidate: 86400 }, signal: AbortSignal.timeout(8000) },
-    );
-    if (!response.ok) return fallbackHadith;
-    const json = (await response.json()) as HadithPayload;
-    const hadith = json.hadith;
-    if (!hadith?.bn || !hadith.ar) return fallbackHadith;
-    return {
-      arabic: hadith.ar,
-      bangla: hadith.bn,
-      narrator: hadith.narrator ?? "",
-      reference: `সহীহ বুখারী • হাদীস ${hadith.hadith_id ?? 1}`,
-      grade: hadith.grade ?? "সহিহ হাদিস",
-    };
-  } catch {
-    return fallbackHadith;
-  }
-}
-
 /** One surah-aware page of today's Qur'an portion (always ≤ 5 ayahs, contiguous). */
 export type QuranPage = {
   ayahs: DailyAyah[];
@@ -170,13 +140,6 @@ type SurahAyah = { number: number; numberInSurah: number; text: string };
 type SurahResponse = {
   data?: { number?: number; englishName?: string; ayahs?: SurahAyah[] };
 };
-type HadithEntry = {
-  hadith_id: number;
-  narrator: string;
-  bn: string;
-  ar: string;
-  grade: string;
-};
 type WindowAyah = SurahAyah & {
   bangla: string;
   surahNumber: number;
@@ -192,11 +155,9 @@ export const MAX_QURAN_PAGE_SIZE = 5;
 const MIN_QURAN_PAGE_SIZE = 3;
 
 /** Short timeout: the landing page must never stall on a slow upstream. */
-const SHORT_TIMEOUT_MS = 3000;
+const SHORT_TIMEOUT_MS = 8000;
 const QURAN_API = "https://api.alquran.cloud/v1";
 const AYAH_AUDIO_BASE = "https://cdn.islamic.network/quran/audio/128/ar.alafasy";
-const HADITH_CHAPTER_URL =
-  "https://cdn.jsdelivr.net/gh/md-rifatkhan/hadithbangla@main/Bukhari/Chapter/2.json";
 
 function fetchJson<T>(url: string): Promise<T | null> {
   return fetch(url, {
@@ -290,15 +251,49 @@ function pageReference(page: DailyAyah[]): string {
  * The hadith selection is completely independent of the Qur'an pagination.
  */
 export async function getDailyGuidance(): Promise<DailyGuidance> {
+  // Qur'an and hadith load independently — one failing source must never
+  // wipe out the other (a dead hadith URL used to replace all 40 ayahs with
+  // the single fallback ayah).
+  const day = Math.floor(Date.now() / 86400000);
+  const [quranPages, hadiths] = await Promise.all([getDailyQuranPages(day), getDailyHadiths(day)]);
+  return { quranPages, hadiths };
+}
+
+/** Today's 10 hadiths from Sahih al-Bukhari (Bangla + Arabic), rotating kitab by day. */
+async function getDailyHadiths(day: number): Promise<DailyHadith[]> {
+  const fallback = Array.from({ length: DAILY_HADITH_TARGET }, () => fallbackHadith);
   try {
-    const [meta, hadiths] = await Promise.all([
-      fetchJson<MetaResponse>(`${QURAN_API}/meta`),
-      fetchJson<HadithEntry[]>(HADITH_CHAPTER_URL),
-    ]);
+    // Kitabs 1–97; skip ones too short to fill the day.
+    for (let attempt = 0; attempt < 4; attempt++) {
+      const section = ((day + attempt * 7) % 97) + 1;
+      const payload = await Promise.race([
+        fetchHadithSection("bukhari", section),
+        new Promise<never>((_, reject) => setTimeout(() => reject(new Error("timeout")), 6000)),
+      ]);
+      const usable = payload.hadiths.filter((hadith) => hadith.text && hadith.arabic);
+      if (usable.length < DAILY_HADITH_TARGET) continue;
+      const start = (day * DAILY_HADITH_TARGET) % (usable.length - DAILY_HADITH_TARGET + 1);
+      return usable.slice(start, start + DAILY_HADITH_TARGET).map((hadith) => ({
+        arabic: hadith.arabic,
+        // Some Bangla texts open with the Arabic chapter note — keep only the Bangla.
+        bangla: hadith.text.replace(/^[^ঀ-৿]*(?=[ঀ-৿])/u, "").trim(),
+        narrator: hadith.narrator ?? "",
+        reference: `সহীহ বুখারী • হাদীস ${toBnDigits(hadith.number)}`,
+        grade: "সহীহ",
+      }));
+    }
+    return fallback;
+  } catch {
+    return fallback;
+  }
+}
+
+/** Today's 40-ayah window, paginated by surah. */
+async function getDailyQuranPages(day: number): Promise<QuranPage[]> {
+  try {
+    const meta = await fetchJson<MetaResponse>(`${QURAN_API}/meta`);
     const surahs = meta?.data?.surahs?.references;
     if (!surahs?.length) throw new Error("Surah meta unavailable");
-    if (!hadiths || hadiths.length < DAILY_HADITH_TARGET)
-      throw new Error("Daily hadith unavailable");
 
     // Cumulative offsets: index i starts at offsets[i] (0-based global index).
     const offsets: number[] = [];
@@ -312,7 +307,6 @@ export async function getDailyGuidance(): Promise<DailyGuidance> {
       surahs.map((surah) => [surah.number, surah.numberOfAyahs]),
     );
 
-    const day = Math.floor(Date.now() / 86400000);
     const start = (day * DAILY_QURAN_TARGET) % totalAyahs;
 
     const surahIndexOf = (globalIndex: number): number => {
@@ -411,24 +405,9 @@ export async function getDailyGuidance(): Promise<DailyGuidance> {
       audioUrls,
     }));
 
-    const hadithStart = (day * DAILY_HADITH_TARGET) % hadiths.length;
-    const dailyHadiths: DailyHadith[] = Array.from(
-      { length: DAILY_HADITH_TARGET },
-      (_, i) => {
-        const hadith = hadiths[(hadithStart + i) % hadiths.length];
-        return {
-          arabic: hadith.ar,
-          bangla: hadith.bn,
-          narrator: hadith.narrator,
-          reference: `সহীহ বুখারী • হাদীস ${hadith.hadith_id}`,
-          grade: hadith.grade,
-        };
-      },
-    );
-
     if (!quranPages.length) throw new Error("Empty Qur'an window");
-    return { quranPages, hadiths: dailyHadiths };
+    return quranPages;
   } catch {
-    return placeholderGuidance();
+    return placeholderGuidance().quranPages;
   }
 }

@@ -1,66 +1,54 @@
 "use client";
 
-/**
- * Sign-up offers exactly two choices. `OTHER` stays in the database as a
- * legacy/never-set state only — admins can fix such members from the
- * members-management page.
- */
+import { RadioGroup as RadioGroupPrimitive } from "radix-ui";
+
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/utils";
+
 export const GENDER_OPTIONS = [
   { value: "MALE", label: "পুরুষ" },
-  { value: "FEMALE", label: "নারী" },
+  { value: "FEMALE", label: "মহিলা" },
 ] as const;
 
 type GenderFieldProps = {
-  /** React `key`-ish prefix so ids stay unique when two forms render together. */
   idPrefix: string;
   value: string;
   onChange: (value: string) => void;
   error?: boolean;
 };
 
-/**
- * Required, no silent default: the user has to actively pick one of
- * পুরুষ / নারী before the sign-up button becomes usable.
- * `text-base` on the labels keeps iOS from zooming into the inputs.
- */
+/** Two large segmented radio cards (Radix radio group — keyboard + screen-reader friendly). */
 export function GenderField({ idPrefix, value, onChange, error }: GenderFieldProps) {
   return (
-    <fieldset className="space-y-2">
-      <legend className="text-sm font-semibold text-stone-700">
-        লিঙ্গ <span className="text-red-600">*</span>
-      </legend>
-      <div className="grid grid-cols-2 gap-2 rounded-2xl border border-stone-200 bg-stone-100 p-1">
-        {GENDER_OPTIONS.map((option) => {
-          const checked = value === option.value;
-          return (
-            <label
-              key={option.value}
-              htmlFor={`${idPrefix}-gender-${option.value}`}
-              className={`cursor-pointer rounded-xl px-2 py-2.5 text-center text-base font-bold transition-colors ${
-                checked
-                  ? "bg-emerald-950 text-white shadow-sm"
-                  : error && !value
-                    ? "bg-white text-red-600 ring-2 ring-red-300"
-                    : "bg-white text-stone-600 hover:bg-emerald-50 hover:text-emerald-900"
-              }`}
-            >
-              <input
-                id={`${idPrefix}-gender-${option.value}`}
-                type="radio"
-                name="gender"
-                value={option.value}
-                checked={checked}
-                onChange={(event) => onChange(event.target.value)}
-                className="sr-only"
-              />
-              {option.label}
-            </label>
-          );
-        })}
-      </div>
-      <p className="text-xs leading-5 text-stone-500">
-        নারী ও পুরুষদের আমল আলাদাভাবে দেখানো হয় — সঠিক অপশন বেছে নিন।
-      </p>
-    </fieldset>
+    <div className="grid gap-2">
+      <Label id={`${idPrefix}-gender-label`}>আপনি</Label>
+      <RadioGroupPrimitive.Root
+        aria-labelledby={`${idPrefix}-gender-label`}
+        value={value}
+        onValueChange={onChange}
+        name="gender"
+        required
+        className="grid grid-cols-2 gap-2"
+      >
+        {GENDER_OPTIONS.map((option) => (
+          <RadioGroupPrimitive.Item
+            key={option.value}
+            value={option.value}
+            id={`${idPrefix}-gender-${option.value}`}
+            className={cn(
+              "group flex h-12 items-center justify-center gap-2.5 rounded-xl border border-input bg-card text-[15px] font-semibold text-muted-foreground shadow-xs outline-none transition",
+              "hover:border-border-strong hover:text-foreground focus-visible:ring-[3px] focus-visible:ring-ring/25",
+              "data-[state=checked]:border-primary data-[state=checked]:bg-primary-soft data-[state=checked]:text-primary-soft-foreground",
+              error && !value && "border-destructive",
+            )}
+          >
+            <span className="grid size-[18px] place-items-center rounded-full border-2 border-current opacity-60 group-data-[state=checked]:opacity-100">
+              <RadioGroupPrimitive.Indicator className="size-2 rounded-full bg-current" />
+            </span>
+            {option.label}
+          </RadioGroupPrimitive.Item>
+        ))}
+      </RadioGroupPrimitive.Root>
+    </div>
   );
 }

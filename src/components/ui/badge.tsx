@@ -1,27 +1,35 @@
+import { Slot } from "@radix-ui/react-slot";
+import { cva, type VariantProps } from "class-variance-authority";
 import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
-export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: "default" | "secondary" | "outline" | "soft" | "warning" | "danger";
+const badgeVariants = cva(
+  "inline-flex w-fit shrink-0 items-center justify-center gap-1 overflow-hidden whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs font-semibold leading-5 [&>svg]:pointer-events-none [&>svg]:size-3",
+  {
+    variants: {
+      variant: {
+        default: "border-transparent bg-primary text-primary-foreground",
+        secondary: "border-transparent bg-secondary text-secondary-foreground",
+        destructive: "border-transparent bg-destructive text-white",
+        outline: "border-border-strong text-foreground",
+        soft: "border-transparent bg-primary-soft text-primary-soft-foreground",
+        warning: "border-transparent bg-warning-soft text-warning",
+        danger: "border-transparent bg-danger-soft text-danger",
+        gold: "border-transparent bg-gold-soft text-gold-foreground",
+        info: "border-transparent bg-info-soft text-info",
+        female: "border-transparent bg-female-soft text-female",
+      },
+    },
+    defaultVariants: { variant: "default" },
+  },
+);
+
+export type BadgeVariant = NonNullable<VariantProps<typeof badgeVariants>["variant"]>;
+
+function Badge({ className, variant, asChild = false, ...props }: React.ComponentProps<"span"> & VariantProps<typeof badgeVariants> & { asChild?: boolean }) {
+  const Comp = asChild ? Slot : "span";
+  return <Comp data-slot="badge" className={cn(badgeVariants({ variant }), className)} {...props} />;
 }
 
-/** Compact status pill. Colour is semantic; the shape stays a full round pill
- *  so badges read the same wherever they appear (cards, tables, headers). */
-export function Badge({ className, variant = "default", ...props }: BadgeProps) {
-  return (
-    <div
-      className={cn(
-        "inline-flex w-fit items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-semibold leading-4 transition-colors",
-        variant === "default" && "border-transparent bg-emerald-900 text-white",
-        variant === "secondary" && "border-transparent bg-stone-100 text-stone-700",
-        variant === "outline" && "border-hairline-strong bg-white text-stone-700",
-        variant === "soft" && "border-emerald-100 bg-emerald-50 text-emerald-800",
-        variant === "warning" && "border-amber-100 bg-amber-50 text-amber-800",
-        variant === "danger" && "border-red-100 bg-red-50 text-red-700",
-        className,
-      )}
-      {...props}
-    />
-  );
-}
+export { Badge, badgeVariants };

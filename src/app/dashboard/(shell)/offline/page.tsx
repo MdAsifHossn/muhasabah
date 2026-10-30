@@ -38,7 +38,7 @@ import {
   requestPagePrecache,
   toBn,
 } from "@/lib/offline-quran";
-import { SURAH_LIST } from "@/lib/quran";
+import { BISMILLAH, hasBismillahHeader, SURAH_LIST } from "@/lib/quran";
 import { cn } from "@/lib/utils";
 
 const FIRST_TEN = Array.from({ length: 10 }, (_, index) => index + 1);
@@ -301,8 +301,8 @@ export default function OfflineQuranPage() {
         <CardContent>
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h2 className="text-lg font-bold text-emerald-950">সূরা সেভ করুন</h2>
-              <p className="mt-1 text-sm leading-6 text-stone-500">
+              <h2 className="text-lg font-bold text-foreground">সূরা সেভ করুন</h2>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 একসাথে সর্বোচ্চ ৪টি করে ডাউনলোড হবে, একটি ব্যর্থ হলেও বাকিগুলো চলতে থাকবে। আগে সেভ
                 করা সূরা বাদ যাবে, তাই যেকোনো সময় থামিয়ে আবার শুরু করলে বাকি অংশ থেকেই নেবে।
               </p>
@@ -312,7 +312,7 @@ export default function OfflineQuranPage() {
               variant="outline"
               onClick={clearAll}
               disabled={removing || readyCount === 0}
-              className="shrink-0 text-red-700"
+              className="shrink-0 text-danger"
             >
               {removing ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
               সব মুছুন
@@ -346,48 +346,48 @@ export default function OfflineQuranPage() {
           </div>
 
           {notice ? (
-            <p className="mt-4 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-semibold text-emerald-800">
+            <p className="mt-4 rounded-xl bg-primary-soft px-3 py-2 text-xs font-semibold text-primary">
               {notice}
             </p>
           ) : null}
 
           {batch ? (
             <div className="mt-5">
-              <div className="flex items-center justify-between gap-3 text-xs font-semibold text-stone-600">
+              <div className="flex items-center justify-between gap-3 text-xs font-semibold text-muted-foreground">
                 <span>
                   {batch.running ? "সেভ হচ্ছে…" : "সম্পন্ন"}
                   {batch.total > 0 ? ` • ${toBn(batch.completed)}/${toBn(batch.total)} সূরা` : ""}
                 </span>
                 <span>{toBn(progress)}%</span>
               </div>
-              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-stone-100">
+              <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-surface-sunken">
                 <div
                   className={cn(
                     "h-full rounded-full transition-[width] duration-300",
-                    batch.running ? "bg-emerald-600" : batch.failed > 0 ? "bg-amber-500" : "bg-emerald-700",
+                    batch.running ? "bg-emerald-600" : batch.failed > 0 ? "bg-warning-soft0" : "bg-emerald-700",
                   )}
                   style={{ width: `${progress}%` }}
                 />
               </div>
               <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs">
-                <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700">
+                <span className="inline-flex items-center gap-1.5 font-semibold text-primary">
                   <CheckCircle2 className="size-3.5" /> সফল: {toBn(batch.saved)}
                 </span>
                 <span
                   className={cn(
                     "inline-flex items-center gap-1.5 font-semibold",
-                    batch.failed > 0 ? "text-red-600" : "text-stone-400",
+                    batch.failed > 0 ? "text-red-600" : "text-subtle-foreground",
                   )}
                 >
                   <AlertCircle className="size-3.5" /> ব্যর্থ: {toBn(batch.failed)}
                 </span>
                 {!batch.running && batch.failed > 0 ? (
-                  <span className="text-stone-500">নেট ঠিক থাকলে “ব্যর্থগুলো আবার” চাপুন।</span>
+                  <span className="text-muted-foreground">নেট ঠিক থাকলে “ব্যর্থগুলো আবার” চাপুন।</span>
                 ) : null}
               </div>
             </div>
           ) : (
-            <p className="mt-4 text-xs leading-5 text-stone-400">
+            <p className="mt-4 text-xs leading-5 text-subtle-foreground">
               সেভ করা সূরার পাশে <b>সেভ করা</b> ব্যাজ দেখা যাবে।
             </p>
           )}
@@ -396,23 +396,23 @@ export default function OfflineQuranPage() {
 
       {/* ── Offline reader ─────────────────────────────────────────── */}
       {read.surah > 0 ? (
-        <Card className="border-emerald-200">
+        <Card className="border-hairline">
           <CardContent>
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
-                <p className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-emerald-700">
+                <p className="flex flex-wrap items-center gap-2 text-xs font-bold uppercase tracking-[0.14em] text-primary">
                   অফলাইন রিডার
                   <span
                     className={cn(
                       "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold normal-case tracking-normal",
-                      online ? "bg-emerald-50 text-emerald-700" : "bg-amber-50 text-amber-700",
+                      online ? "bg-primary-soft text-primary" : "bg-warning-soft text-warning",
                     )}
                   >
                     {online ? <Wifi className="size-3" /> : <WifiOff className="size-3" />}
                     {online ? "অনলাইন" : "অফলাইন"}
                   </span>
                   {read.cacheState ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-stone-100 px-2 py-0.5 text-[11px] font-bold normal-case tracking-normal text-stone-600">
+                    <span className="inline-flex items-center gap-1 rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-bold normal-case tracking-normal text-muted-foreground">
                       {read.cacheState === "hit"
                         ? "ক্যাশ থেকে"
                         : read.cacheState === "miss"
@@ -421,10 +421,10 @@ export default function OfflineQuranPage() {
                     </span>
                   ) : null}
                 </p>
-                <h2 className="mt-1 truncate text-xl font-bold text-emerald-950">
+                <h2 className="mt-1 truncate text-xl font-bold text-foreground">
                   {SURAH_LIST[read.surah - 1]?.banglaName ?? `সূরা ${toBn(read.surah)}`}
                 </h2>
-                <p className="mt-0.5 text-xs text-stone-500">
+                <p className="mt-0.5 text-xs text-muted-foreground">
                   {SURAH_LIST[read.surah - 1]?.englishName} •{" "}
                   {toBn(SURAH_LIST[read.surah - 1]?.numberOfAyahs ?? 0)} আয়াত
                 </p>
@@ -433,23 +433,23 @@ export default function OfflineQuranPage() {
                 type="button"
                 onClick={() => setRead(EMPTY_READ)}
                 aria-label="রিডার বন্ধ করুন"
-                className="grid size-9 shrink-0 place-items-center rounded-xl border border-stone-200 bg-white text-stone-500 active:bg-stone-100"
+                className="grid size-9 shrink-0 place-items-center rounded-xl border border-hairline bg-surface text-muted-foreground active:bg-surface-sunken"
               >
                 <ArrowLeft className="size-4" />
               </button>
             </div>
 
             {read.loading ? (
-              <div className="grid min-h-40 place-items-center text-emerald-800">
+              <div className="grid min-h-40 place-items-center text-primary">
                 <div className="text-center">
                   <Loader2 className="mx-auto size-7 animate-spin" />
                   <p className="mt-3 text-sm font-bold">আয়াত লোড হচ্ছে…</p>
                 </div>
               </div>
             ) : read.error ? (
-              <div className="mt-4 rounded-2xl border border-amber-200 bg-amber-50 p-5 text-center">
-                <AlertCircle className="mx-auto size-6 text-amber-700" />
-                <p className="mt-2 text-sm font-semibold leading-6 text-amber-900">{read.error}</p>
+              <div className="mt-4 rounded-2xl border border-hairline bg-warning-soft p-5 text-center">
+                <AlertCircle className="mx-auto size-6 text-warning" />
+                <p className="mt-2 text-sm font-semibold leading-6 text-warning">{read.error}</p>
                 <div className="mt-4 flex flex-wrap justify-center gap-2">
                   {read.canSave && online ? (
                     <Button type="button" size="sm" onClick={() => void saveOne(read.surah)}>
@@ -463,26 +463,26 @@ export default function OfflineQuranPage() {
               </div>
             ) : (
               <div className="mt-4 space-y-3">
-                {read.surah !== 1 && read.surah !== 9 ? (
+                {hasBismillahHeader(read.surah) ? (
                   <p
                     dir="rtl"
-                    className="rounded-2xl border border-emerald-100 bg-emerald-50/60 px-4 py-3 text-center font-serif text-xl text-emerald-950"
+                    className="rounded-2xl border border-hairline bg-primary-soft px-4 py-3 text-center quran-text text-xl text-foreground"
                   >
-                    بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
+                    {BISMILLAH}
                   </p>
                 ) : null}
                 {read.ayahs.map((ayah) => (
-                  <div key={ayah.number} className="rounded-2xl border border-stone-200 bg-white p-4">
+                  <div key={ayah.number} className="rounded-2xl border border-hairline bg-surface p-4">
                     <div className="flex items-start gap-3">
-                      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-emerald-50 text-[11px] font-black text-emerald-800">
+                      <span className="grid size-7 shrink-0 place-items-center rounded-full bg-primary-soft text-[11px] font-black text-primary">
                         {toBn(ayah.numberInSurah)}
                       </span>
                       <div className="min-w-0 flex-1">
-                        <p dir="rtl" className="font-serif text-2xl leading-[2.4] text-emerald-950">
+                        <p dir="rtl" className="quran-text text-2xl leading-[2.4] text-foreground">
                           {ayah.arabic}
                         </p>
                         {ayah.bangla ? (
-                          <p className="mt-2 text-sm leading-7 text-stone-600">{ayah.bangla}</p>
+                          <p className="mt-2 text-sm leading-7 text-muted-foreground">{ayah.bangla}</p>
                         ) : null}
                       </div>
                     </div>
@@ -499,26 +499,26 @@ export default function OfflineQuranPage() {
         <CardContent>
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <h2 className="text-lg font-bold text-emerald-950">সূরার তালিকা</h2>
-              <p className="mt-1 text-sm leading-6 text-stone-500">
+              <h2 className="text-lg font-bold text-foreground">সূরার তালিকা</h2>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">
                 পড়তে চাওয়া সূরায় চাপ দিন — সেভ করা থাকলে নেট ছাড়াই খুলবে।
               </p>
             </div>
             <div className="relative">
-              <Search className="pointer-events-none absolute left-3 top-3 size-4 text-stone-400" />
+              <Search className="pointer-events-none absolute left-3 top-3 size-4 text-subtle-foreground" />
               <input
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="সূরা খুঁজুন..."
                 aria-label="সূরা খুঁজুন"
-                className="h-10 w-full rounded-xl border border-stone-300 bg-white pl-9 pr-3 text-sm outline-none focus:border-emerald-700 focus:ring-4 focus:ring-emerald-700/10 sm:w-56"
+                className="h-10 w-full rounded-xl border border-stone-300 bg-surface pl-9 pr-3 text-sm outline-none focus:border-emerald-700 focus:ring-4 focus:ring-emerald-700/10 sm:w-56"
               />
             </div>
           </div>
 
           <div className="mt-4 space-y-1.5">
             {filtered.length === 0 ? (
-              <p className="py-8 text-center text-sm font-semibold text-stone-500">
+              <p className="py-8 text-center text-sm font-semibold text-muted-foreground">
                 কোনো সূরা পাওয়া যায়নি
               </p>
             ) : (
@@ -532,17 +532,17 @@ export default function OfflineQuranPage() {
                     onClick={() => void loadSurah(surah.number)}
                     className={cn(
                       "flex min-h-14 w-full items-center gap-3 rounded-2xl p-3 text-left transition-colors",
-                      active ? "bg-emerald-950 text-white" : "active:bg-emerald-50",
+                      active ? "bg-emerald-950 text-white" : "active:bg-primary-soft",
                     )}
                   >
                     <span
                       className={cn(
                         "grid size-9 shrink-0 place-items-center rounded-xl text-xs font-black",
                         active
-                          ? "bg-amber-400 text-emerald-950"
+                          ? "bg-amber-400 text-foreground"
                           : isSaved
-                            ? "bg-emerald-100 text-emerald-900"
-                            : "bg-stone-100 text-stone-500",
+                            ? "bg-emerald-100 text-foreground"
+                            : "bg-surface-sunken text-muted-foreground",
                       )}
                     >
                       {toBn(surah.number)}
@@ -552,7 +552,7 @@ export default function OfflineQuranPage() {
                       <small
                         className={cn(
                           "block truncate text-xs",
-                          active ? "text-emerald-200" : "text-stone-400",
+                          active ? "text-emerald-200" : "text-subtle-foreground",
                         )}
                       >
                         {surah.englishName} • {toBn(surah.numberOfAyahs)} আয়াত
@@ -562,7 +562,7 @@ export default function OfflineQuranPage() {
                       <span
                         className={cn(
                           "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold",
-                          active ? "bg-emerald-800 text-white" : "bg-emerald-50 text-emerald-700",
+                          active ? "bg-emerald-800 text-white" : "bg-primary-soft text-primary",
                         )}
                       >
                         <BookOpen className="size-3" /> সেভ করা
