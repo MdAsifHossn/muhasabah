@@ -133,7 +133,7 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: Mode }) {
             {pending ? <Loader2 className="animate-spin" /> : null}
             প্রবেশ করুন
           </Button>
-          <p className="text-center text-sm text-muted-foreground">পাসওয়ার্ড ভুলে গেলে উস্তাদজি বা অ্যাডমিনের সাথে যোগাযোগ করুন।</p>
+          <p className="text-center text-sm text-muted-foreground">পাসওয়ার্ড ভুলে গেলে উস্তাদজির সাথে যোগাযোগ করুন।</p>
         </form>
       </TabsContent>
 

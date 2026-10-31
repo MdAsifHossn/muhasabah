@@ -38,7 +38,7 @@ const features = [
 const roles = [
   { icon: ClipboardCheck, title: "সদস্য", text: "নিজের আমলনামা, কুরআন, হাদীস, বই ও অগ্রগতি।" },
   { icon: UsersRound, title: "উস্তাদজি", text: "সদস্যদের আমলনামা দেখা, মন্তব্য, রিভিউ, নোটিশ ও আমল তালিকা।" },
-  { icon: ShieldCheck, title: "অ্যাডমিন", text: "ব্যবহারকারী, রোল, পাসওয়ার্ড, সাইকেল ও পুরো সিস্টেম।" },
+  { icon: ShieldCheck, title: "উস্তাদজি (সিস্টেম অ্যাডমিন)", text: "ব্যবহারকারী, রোল, পাসওয়ার্ড, সাইকেল ও পুরো সিস্টেম নিয়ন্ত্রণ করেন।" },
 ];
 
 export default async function HomePage({ searchParams }: { searchParams: Promise<{ auth?: string; next?: string }> }) {

@@ -29,9 +29,9 @@ export default async function MembersPage() {
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow="অ্যাডমিন"
+        eyebrow="উস্তাদ প্যানেল"
         title="ব্যবহারকারী ও রোল"
-        description="সদস্য, উস্তাদজি ও অ্যাডমিন অ্যাকাউন্ট তৈরি, রোল ও লিঙ্গ নির্ধারণ, পাসওয়ার্ড রিসেট এবং সক্রিয়/নিষ্ক্রিয় করুন।"
+        description="সদস্য ও উস্তাদজি অ্যাকাউন্ট তৈরি, রোল ও লিঙ্গ নির্ধারণ, পাসওয়ার্ড রিসেট এবং সক্রিয়/নিষ্ক্রিয় করুন।"
       />
       <UserManager users={managedUsers} currentUserId={session.user.id} />
     </div>

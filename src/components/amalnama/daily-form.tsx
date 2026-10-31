@@ -132,6 +132,9 @@ export function DailyForm({
   locked,
   meta,
   excuseSlot,
+  memberId,
+  staffEditor = false,
+  dateKey,
 }: {
   day: "today" | "yesterday";
   items: DailyFormItem[];
@@ -141,6 +144,9 @@ export function DailyForm({
   meta: DailyFormMeta;
   /** Women only: the discreet শরয়ী ওজর switch, rendered by the page. */
   excuseSlot?: ReactNode;
+  memberId?: string;
+  staffEditor?: boolean;
+  dateKey?: string;
 }) {
   const router = useRouter();
   const [values, setValues] = useState<Record<string, Value>>(() => Object.fromEntries(items.map((item) => [item.id, item.initial])));
@@ -199,6 +205,8 @@ export function DailyForm({
     const formData = new FormData();
     formData.set("intent", intent);
     formData.set("day", day);
+    if (memberId) formData.set("memberId", memberId);
+    if (dateKey) formData.set("date", dateKey);
     formData.set("personalNote", note);
     for (const item of items) {
       const value = values[item.id];
@@ -411,10 +419,10 @@ export function DailyForm({
               <span className="text-[11px] font-bold tabular-nums text-foreground">{toBn(percent)}%</span>
             </Ring>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold">{toBn(doneCount)}/{toBn(items.length)} আমল</p>
+          <p className="truncate text-sm font-semibold">{toBn(doneCount)}/{toBn(items.length)} আমল</p>
               <p className={cn("truncate text-xs", dirty ? "text-warning" : "text-muted-foreground")}>{dirty ? statusLine : `${toBn(score)} পয়েন্ট • ${statusLine}`}</p>
             </div>
-            {status !== "SUBMITTED" ? (
+            {status !== "SUBMITTED" || staffEditor ? (
               <Button type="button" variant="outline" size="icon" aria-label="খসড়া রাখুন" title="খসড়া রাখুন" disabled={isPending} onClick={() => save("draft")}>
                 {pendingIntent === "draft" ? <Loader2 className="animate-spin" /> : <Save />}
               </Button>

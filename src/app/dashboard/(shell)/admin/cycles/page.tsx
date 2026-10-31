@@ -35,7 +35,7 @@ export default async function AdminCyclesPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader eyebrow="অ্যাডমিন" title="সাইকেল ব্যবস্থাপনা" description="৭/৩০/৪০ দিনের মুহাসাবাহ সাইকেল তৈরি করুন। একসাথে একটিই সাইকেল সক্রিয় থাকে — নতুনটি সক্রিয় করলে আগেরটি সম্পন্ন হয়ে যায়।" />
+      <PageHeader eyebrow="উস্তাদ প্যানেল" title="সাইকেল ব্যবস্থাপনা" description="৭/৩০/৪০ দিনের মুহাসাবাহ সাইকেল তৈরি করুন। একসাথে একটিই সাইকেল সক্রিয় থাকে — নতুনটি সক্রিয় করলে আগেরটি সম্পন্ন হয়ে যায়।" />
       <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
         <section className="order-2 space-y-3 lg:order-1">
           {cycles.length === 0 ? (

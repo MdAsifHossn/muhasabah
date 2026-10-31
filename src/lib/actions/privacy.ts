@@ -16,7 +16,7 @@ export async function setHideAmalnama(hidden: boolean) {
   await prisma.user.update({ where: { id: session.user.id }, data: { hideAmalnama: hidden } });
 
   // Every surface that renders somebody else's Amalnama-derived data.
-  revalidatePath("/dashboard/amalnama/list");
+  revalidatePath("/dashboard/amalnama/grid");
   revalidatePath("/dashboard/leaderboard");
   revalidatePath("/dashboard/admin/reviews");
   revalidatePath("/dashboard/admin/members");

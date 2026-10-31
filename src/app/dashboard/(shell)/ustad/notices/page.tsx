@@ -1,18 +1,17 @@
-import { Role } from "@prisma/client";
 import { Megaphone } from "lucide-react";
 
 import { EmptyState } from "@/components/design/empty-state";
 import { PageHeader } from "@/components/design/page-header";
 import { NoticeCard, NoticeComposer, type NoticeView } from "@/components/ustad/notice-manager";
 import { Card, CardContent } from "@/components/ui/card";
-import { requireUstadhOrAdmin } from "@/lib/permissions";
+import { isAdminRole, requireUstadhOrAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export const metadata = { title: "নোটিশ প্রকাশ" };
 
 export default async function UstadNoticesPage() {
   const session = await requireUstadhOrAdmin();
-  const isAdmin = session.user.role === Role.ADMIN;
+  const isAdmin = isAdminRole(session.user.role);
   const notices = await prisma.announcement.findMany({
     orderBy: [{ pinned: "desc" }, { createdAt: "desc" }],
     take: 50,

@@ -76,7 +76,7 @@ export function ReviewComposer({ members, cycles, mine, initialMemberId, initial
         <input key={`v-${memberId}:${cycleId}`} type="checkbox" name="isVisibleToMember" defaultChecked={existing?.isVisibleToMember ?? true} className="mt-0.5 size-4" />
         <span>
           <span className="block text-sm font-semibold text-foreground">সদস্যকে দেখানো হবে</span>
-          <span className="block text-xs leading-5 text-muted-foreground">বন্ধ রাখলে শুধু উস্তাদ/অ্যাডমিনের ব্যক্তিগত নোট হিসেবে থাকবে।</span>
+          <span className="block text-xs leading-5 text-muted-foreground">বন্ধ রাখলে এটি শুধু উস্তাদজির ব্যক্তিগত নোট হিসেবে থাকবে।</span>
         </span>
       </label>
       <Button type="submit" className="w-full" disabled={isPending || !memberId || !cycleId}>

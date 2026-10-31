@@ -38,7 +38,7 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { ResponsiveSheet } from "@/components/ui/responsive-sheet";
 import { cn } from "@/lib/utils";
 
-type NavItem = { label: string; href: string; icon: LucideIcon };
+type NavItem = { label: string; href: string; icon: LucideIcon; roles?: Role[] };
 type NavGroup = { title?: string; items: NavItem[]; roles?: Role[] };
 
 export const NAV_GROUPS: NavGroup[] = [
@@ -66,33 +66,27 @@ export const NAV_GROUPS: NavGroup[] = [
   {
     title: "উস্তাদজি",
     items: [
-      { label: "উস্তাদজিকে বার্তা", href: "/dashboard/messages", icon: MessagesSquare },
-      { label: "নোটিশ", href: "/dashboard/notices", icon: Megaphone },
-      { label: "উস্তাদজির মতামত", href: "/dashboard/reviews", icon: MessageCircleHeart },
-      { label: "সবার অবস্থান", href: "/dashboard/leaderboard", icon: Trophy },
-      { label: "৪০ দিনের মেয়াদ", href: "/dashboard/cycles", icon: RefreshCcw },
+      { label: "উস্তাদজিকে বার্তা", href: "/dashboard/messages", icon: MessagesSquare, roles: ["MEMBER"] },
+      { label: "নোটিশ", href: "/dashboard/notices", icon: Megaphone, roles: ["MEMBER"] },
+      { label: "উস্তাদজির মতামত", href: "/dashboard/reviews", icon: MessageCircleHeart, roles: ["MEMBER"] },
+      { label: "সবার অবস্থান", href: "/dashboard/leaderboard", icon: Trophy, roles: ["MEMBER"] },
+      { label: "৪০ দিনের মেয়াদ", href: "/dashboard/cycles", icon: RefreshCcw, roles: ["MEMBER"] },
     ],
   },
   {
     title: "উস্তাদ প্যানেল",
-    roles: ["USTADH", "ADMIN"],
+    roles: ["USTADH"],
     items: [
+      { label: "সারসংক্ষেপ", href: "/dashboard/admin", icon: ShieldCheck },
       { label: "সদস্যদের আজকের অবস্থা", href: "/dashboard/ustad", icon: UsersRound },
       { label: "সদস্যদের বার্তা", href: "/dashboard/ustad/messages", icon: Inbox },
-      { label: "সদস্যদের আমলনামা", href: "/dashboard/amalnama/list", icon: NotebookPen },
+      { label: "সদস্যদের আমলনামা", href: "/dashboard/amalnama/grid", icon: NotebookPen },
       { label: "মতামত লিখুন", href: "/dashboard/ustad/reviews", icon: MessageCircleHeart },
       { label: "নোটিশ দিন", href: "/dashboard/ustad/notices", icon: Megaphone },
       { label: "আমলের তালিকা", href: "/dashboard/amal-items", icon: ListChecks },
-    ],
-  },
-  {
-    title: "অ্যাডমিন",
-    roles: ["ADMIN"],
-    items: [
-      { label: "সারসংক্ষেপ", href: "/dashboard/admin", icon: ShieldCheck },
-      { label: "ব্যবহারকারী", href: "/dashboard/admin/members", icon: Users },
+      { label: "ব্যবহারকারী ব্যবস্থাপনা", href: "/dashboard/admin/members", icon: Users },
       { label: "মেয়াদ (সাইকেল)", href: "/dashboard/admin/cycles", icon: RefreshCcw },
-      { label: "সেটিংস", href: "/dashboard/admin/settings", icon: Settings },
+      { label: "সিস্টেম সেটিংস", href: "/dashboard/admin/settings", icon: Settings },
     ],
   },
 ];
@@ -114,7 +108,8 @@ function isActive(pathname: string, href: string) {
 }
 
 function visibleGroups(role: Role) {
-  return NAV_GROUPS.filter((group) => !group.roles || group.roles.includes(role));
+  return NAV_GROUPS.map((group) => ({ ...group, items: group.items.filter((item) => !item.roles || item.roles.includes(role)) }))
+    .filter((group) => (!group.roles || group.roles.includes(role)) && group.items.length > 0);
 }
 
 function NavList({ role, onNavigate }: { role: Role; onNavigate?: () => void }) {
@@ -127,7 +122,7 @@ function NavList({ role, onNavigate }: { role: Role; onNavigate?: () => void }) 
             <p className="mb-1.5 px-3 text-[11px] font-bold tracking-wider text-subtle-foreground">{group.title}</p>
           ) : null}
           <div className="space-y-0.5">
-            {group.items.map((item) => {
+            {group.items.filter((item) => !item.roles || item.roles.includes(role)).map((item) => {
               const active = isActive(pathname, item.href);
               return (
                 <Link

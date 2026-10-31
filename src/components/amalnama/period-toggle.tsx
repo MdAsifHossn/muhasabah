@@ -7,7 +7,7 @@ import { toast } from "sonner";
 
 import { Switch } from "@/components/ui/switch";
 import { actionErrorMessage } from "@/lib/action-error";
-import { setPeriodDay } from "@/lib/actions/amalnama";
+import { setPeriodDay, setPeriodDayForMember } from "@/lib/actions/amalnama";
 import { cn } from "@/lib/utils";
 
 /**
@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
  * When on, the server leaves the prayer / tilawat amals out of that day's
  * count (never "missed"). Supervisors only ever see a neutral marker.
  */
-export function PeriodToggle({ isPeriod, day, disabled }: { isPeriod: boolean; exemptCount?: number; day: "today" | "yesterday"; disabled?: boolean }) {
+export function PeriodToggle({ isPeriod, day, disabled, memberId }: { isPeriod: boolean; exemptCount?: number; day: "today" | "yesterday"; disabled?: boolean; memberId?: string }) {
   const router = useRouter();
   const [isPending, startTransition] = useTransition();
   const dayLabel = day === "yesterday" ? "গতকালের" : "আজকের";
@@ -23,7 +23,7 @@ export function PeriodToggle({ isPeriod, day, disabled }: { isPeriod: boolean; e
   function toggle() {
     startTransition(async () => {
       try {
-        await setPeriodDay(day);
+        await (memberId ? setPeriodDayForMember(day, memberId) : setPeriodDay(day));
         toast.success(`${dayLabel} হিসাব হালনাগাদ হয়েছে।`);
         router.refresh();
       } catch (error) {

@@ -5,7 +5,7 @@ import { hashPassword } from "better-auth/crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
-import { requireAdmin } from "@/lib/permissions";
+import { isStaffRole, requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export type UserActionResult = { success: boolean; message: string };
@@ -32,9 +32,9 @@ function refreshUsers() {
   revalidatePath("/dashboard", "layout");
 }
 
-/** At least one active admin must always remain, or nobody could manage the system. */
+/** At least one active Ustadh must always remain, or nobody could manage the system. */
 async function wouldLeaveNoAdmin(userId: string) {
-  const others = await prisma.user.count({ where: { role: Role.ADMIN, isActive: true, id: { not: userId } } });
+  const others = await prisma.user.count({ where: { role: Role.USTADH, isActive: true, id: { not: userId } } });
   return others === 0;
 }
 
@@ -75,16 +75,16 @@ export async function updateManagedUser(formData: FormData): Promise<UserActionR
   const parsed = baseUserSchema.extend({ userId: objectId }).safeParse({ ...readUserForm(formData), userId: formData.get("userId") });
   if (!parsed.success) return { success: false, message: parsed.error.issues[0]?.message ?? "তথ্য সঠিক নয়।" };
   const { userId, ...data } = parsed.data;
-  if (userId === session.user.id && (data.role !== Role.ADMIN || !data.isActive))
-    return { success: false, message: "নিজের অ্যাডমিন রোল বা সক্রিয় অবস্থা পরিবর্তন করা যাবে না।" };
+  if (userId === session.user.id && (!isStaffRole(data.role) || !data.isActive))
+    return { success: false, message: "নিজের উস্তাদজি রোল বা সক্রিয় অবস্থা পরিবর্তন করা যাবে না।" };
 
   try {
     const user = await prisma.user.findUnique({ where: { id: userId }, select: { id: true, role: true, isActive: true } });
     if (!user) return { success: false, message: "ব্যবহারকারী পাওয়া যায়নি।" };
     const emailOwner = await prisma.user.findUnique({ where: { email: data.email }, select: { id: true } });
     if (emailOwner && emailOwner.id !== userId) return { success: false, message: "এই ইমেইল অন্য একটি অ্যাকাউন্টে ব্যবহৃত হচ্ছে।" };
-    const losesAdmin = user.role === Role.ADMIN && user.isActive && (data.role !== Role.ADMIN || !data.isActive);
-    if (losesAdmin && (await wouldLeaveNoAdmin(userId))) return { success: false, message: "অন্তত একজন সক্রিয় অ্যাডমিন থাকতে হবে।" };
+    const losesStaff = isStaffRole(user.role) && user.isActive && (!isStaffRole(data.role) || !data.isActive);
+    if (losesStaff && (await wouldLeaveNoAdmin(userId))) return { success: false, message: "অন্তত একজন সক্রিয় উস্তাদজি থাকতে হবে।" };
 
     await prisma.$transaction(async (tx) => {
       await tx.user.update({ where: { id: userId }, data });
@@ -128,10 +128,10 @@ export async function deleteManagedUser(userId: string): Promise<UserActionResul
   try {
     const user = await prisma.user.findUnique({ where: { id: parsed.data }, select: { id: true, name: true, role: true, isActive: true } });
     if (!user) return { success: false, message: "ব্যবহারকারী পাওয়া যায়নি।" };
-    if (user.role === Role.ADMIN && user.isActive && (await wouldLeaveNoAdmin(user.id))) return { success: false, message: "শেষ সক্রিয় অ্যাডমিনকে মুছে ফেলা যাবে না।" };
+    if (isStaffRole(user.role) && user.isActive && (await wouldLeaveNoAdmin(user.id))) return { success: false, message: "শেষ সক্রিয় উস্তাদজিকে মুছে ফেলা যাবে না।" };
 
     await prisma.$transaction(async (tx) => {
-      // Cycles and amal items they created stay — ownership moves to the acting admin.
+      // Cycles and amal items they created stay — ownership moves to the acting Ustadhji.
       await tx.cycle.updateMany({ where: { createdById: user.id }, data: { createdById: session.user.id } });
       await tx.amalItem.updateMany({ where: { createdById: user.id }, data: { createdById: session.user.id } });
       await tx.bookReadingLog.deleteMany({ where: { userId: user.id } });

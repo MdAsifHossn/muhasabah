@@ -53,7 +53,7 @@ export default async function ProfilePage() {
       </section>
 
       {gender === Gender.OTHER ? (
-        <CardSection title="আপনি ভাই নাকি বোন?" description="এটি ঠিক না করা পর্যন্ত আপনি শুধু সাধারণ আমলগুলো দেখবেন। একবার নির্ধারণের পর শুধু অ্যাডমিন পরিবর্তন করতে পারবেন।">
+      <CardSection title="আপনি ভাই নাকি বোন?" description="এটি ঠিক না করা পর্যন্ত আপনি শুধু সাধারণ আমলগুলো দেখবেন। একবার নির্ধারণের পর শুধু উস্তাদজি পরিবর্তন করতে পারবেন।">
           <ToastForm action={setOwnGender} successMessage="সংরক্ষিত হয়েছে — এখন আপনার জন্য নির্ধারিত আমল দেখানো হবে।" className="grid grid-cols-2 gap-2">
             <Button type="submit" name="gender" value={Gender.MALE} variant="outline" size="lg">
               পুরুষ
@@ -82,7 +82,7 @@ export default async function ProfilePage() {
       <CardSection title={<span className="flex items-center gap-2"><ShieldCheck className="size-[18px] text-primary" /> আমলনামা প্রাইভেসি</span>}>
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-sm leading-6 text-muted-foreground">
-            চালু করলে উস্তাদজি ও অ্যাডমিন আপনার আমলনামা দেখতে বা রিভিউ করতে পারবেন না। নিজের আমলনামা আপনি সবসময় দেখতে ও জমা দিতে পারবেন।
+            চালু করলে উস্তাদজি আপনার আমলনামা দেখতে বা রিভিউ করতে পারবেন না। নিজের আমলনামা আপনি সবসময় দেখতে ও জমা দিতে পারবেন।
           </p>
           <AmalPrivacyToggle initialHidden={viewer?.hideAmalnama ?? false} />
         </div>

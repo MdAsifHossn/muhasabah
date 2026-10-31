@@ -5,6 +5,7 @@ import { EyeOff, LayoutGrid, MessageSquareText } from "lucide-react";
 import Link from "next/link";
 
 import { CommentDeleteButton, CommentForm } from "@/components/amalnama/comment-form";
+import { DailyEntryActions } from "@/components/amalnama/daily-entry-actions";
 import { toBn, type ReportSummary } from "@/components/amalnama/report-data";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -54,7 +55,7 @@ export function HiddenAmalnamaCard({ name, role }: { name: string; role: Role })
         </Badge>
       </CardContent>
       <p className="border-t border-hairline px-4 py-3 text-xs leading-5 text-muted-foreground sm:px-6">
-        সদস্যটি প্রোফাইল থেকে আমলনামা গোপন রেখেছেন — উস্তাদজি ও অ্যাডমিন কোনো তথ্য দেখতে পারবেন না।
+        সদস্যটি প্রোফাইল থেকে আমলনামা গোপন রেখেছেন — উস্তাদজি কোনো তথ্য দেখতে পারবেন না।
       </p>
     </Card>
   );
@@ -139,7 +140,10 @@ export function MemberReport({
                     <p className="text-xs font-semibold text-foreground">
                       {formatBanglaDate(day.date)} <span className="font-normal text-muted-foreground">• {weekdayBn[day.weekday]}</span>
                     </p>
-                    <Badge variant="secondary">এন্ট্রি নেই</Badge>
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant="secondary">এন্ট্রি নেই</Badge>
+                      {viewerIsAdmin ? <Link href={`/dashboard/amalnama?member=${member.id}&date=${day.key}`} className="rounded-lg px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary-soft">খুলুন</Link> : null}
+                    </div>
                   </li>
                 );
               }
@@ -155,6 +159,7 @@ export function MemberReport({
                       {day.isPeriodDay ? <Badge variant="female">মাসিক</Badge> : null}
                       {day.entry.status === "DRAFT" ? <Badge variant="secondary">খসড়া</Badge> : null}
                       <Badge variant={percentTone(day.percent)}>{toBn(day.percent ?? 0)}%</Badge>
+                      {viewerIsAdmin && day.entry ? <DailyEntryActions entryId={day.entry.id} memberId={member.id} dateKey={day.key} /> : null}
                     </div>
                   </div>
                   <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-surface-sunken">

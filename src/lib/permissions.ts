@@ -5,13 +5,13 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 
 /**
- * Three roles:
- * - MEMBER (সাধারণ ব্যবহারকারী): own Amalnama, Quran, Hadith, books, profile.
- * - USTADH (উস্তাদজি): everything a member has + supervises members — reads
- *   their Amalnama (unless hidden), comments, writes cycle reviews, manages
- *   amal items they created, posts notices.
- * - ADMIN: everything an Ustadh has + users, roles, passwords, cycles and the
- *   system default amal list.
+ * Two active roles:
+ * - MEMBER: নিজের আমলনামা, কুরআন, হাদীস, বই ও প্রোফাইল।
+ * - USTADH: সদস্যের সব সুবিধার সঙ্গে পুরো সিস্টেমের একমাত্র administrator
+ *   — সদস্য, রোল, পাসওয়ার্ড, সাইকেল, আমল, নোটিশ ও রিভিউ নিয়ন্ত্রণ করেন।
+ *
+ * ADMIN is kept only as a legacy database value so existing deployments can
+ * be migrated safely. It is never granted access or offered in the UI.
  */
 export async function requireUser() {
   const session = await auth.api.getSession({ headers: await headers() });
@@ -26,17 +26,19 @@ export async function requireRole(allowedRoles: readonly Role[]) {
 }
 
 export function requireAdmin() {
-  return requireRole([Role.ADMIN]);
+  return requireRole([Role.USTADH]);
 }
 
 export function requireUstadhOrAdmin() {
-  return requireRole([Role.USTADH, Role.ADMIN]);
+  return requireRole([Role.USTADH]);
 }
 
 export function isStaffRole(role: unknown): boolean {
-  return role === Role.USTADH || role === Role.ADMIN;
+  return role === Role.USTADH;
 }
 
 export function isAdminRole(role: unknown): boolean {
-  return role === Role.ADMIN;
+  // Kept as a compatibility helper for existing callers. Ustadhji is the
+  // only administrator now.
+  return role === Role.USTADH;
 }

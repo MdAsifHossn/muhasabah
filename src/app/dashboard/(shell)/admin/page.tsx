@@ -12,7 +12,7 @@ import { formatBanglaDate, getBangladeshToday, startOfBangladeshDay } from "@/li
 import { requireAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
-export const metadata = { title: "অ্যাডমিন ওভারভিউ" };
+export const metadata = { title: "সারসংক্ষেপ" };
 
 const n = (value: number) => value.toLocaleString("bn-BD");
 
@@ -45,7 +45,7 @@ export default async function AdminOverviewPage() {
 
   return (
     <div className="space-y-5 sm:space-y-6">
-      <PageHeader eyebrow="অ্যাডমিন" title="অ্যাডমিন ওভারভিউ" description={`${formatBanglaDate(today)} — ব্যবহারকারী, সাইকেল ও আজকের আমলনামার সারসংক্ষেপ।`} />
+      <PageHeader eyebrow="উস্তাদ প্যানেল" title="সারসংক্ষেপ" description={`${formatBanglaDate(today)} — ব্যবহারকারী, সাইকেল ও আজকের আমলনামার সারসংক্ষেপ।`} />
 
       {cycle && progress ? (
         <section className="hero-surface rounded-card p-5 shadow-raised sm:p-6">
@@ -78,7 +78,7 @@ export default async function AdminOverviewPage() {
 
       <div className="grid grid-cols-2 gap-3 sm:gap-4 xl:grid-cols-4">
         <StatTile label="সক্রিয় সদস্য" value={n(count(Role.MEMBER))} note={`ভাই ${n(count(Role.MEMBER, Gender.MALE))} • বোন ${n(count(Role.MEMBER, Gender.FEMALE))}`} icon={UsersRound} />
-        <StatTile label="উস্তাদজি / অ্যাডমিন" value={`${n(count(Role.USTADH))} / ${n(count(Role.ADMIN))}`} note={`নিষ্ক্রিয় অ্যাকাউন্ট ${n(inactive)}`} icon={ShieldCheck} tone="gold" />
+        <StatTile label="উস্তাদজি (সিস্টেম অ্যাডমিন)" value={n(count(Role.USTADH))} note={`নিষ্ক্রিয় অ্যাকাউন্ট ${n(inactive)}`} icon={ShieldCheck} tone="gold" />
         <StatTile label="আজ জমা" value={n(submitted.length)} note={`খসড়া ${n(todayEntries.length - submitted.length)} • গড় ${n(todayAverage)}%`} icon={ClipboardCheck} progress={todayAverage} />
         <StatTile label="চালু আমল / নোটিশ" value={`${n(activeItems)} / ${n(notices)}`} note="আমল আইটেম ও নোটিশ" icon={ListChecks} tone="info" />
       </div>
@@ -124,7 +124,7 @@ export default async function AdminOverviewPage() {
                 <span className="block truncate text-sm font-semibold text-foreground">{user.name}</span>
                 <span className="block text-[11px] text-muted-foreground">{formatBanglaDate(user.createdAt)}</span>
               </span>
-              <Badge variant={user.role === Role.ADMIN ? "gold" : user.role === Role.USTADH ? "info" : "secondary"}>{roleLabels[user.role]}</Badge>
+              <Badge variant={user.role === Role.USTADH ? "gold" : "secondary"}>{roleLabels[user.role]}</Badge>
             </li>
           ))}
         </ul>

@@ -1,17 +1,19 @@
 import { MessageCircleHeart } from "lucide-react";
+import { redirect } from "next/navigation";
 
 import { EmptyState } from "@/components/design/empty-state";
 import { PageHeader } from "@/components/design/page-header";
 import { Card, CardContent } from "@/components/ui/card";
 import { roleLabels } from "@/lib/constants";
 import { formatBanglaDate } from "@/lib/dates";
-import { requireUser } from "@/lib/permissions";
+import { isStaffRole, requireUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export const metadata = { title: "উস্তাদের রিভিউ" };
 
 export default async function ReviewsPage() {
   const session = await requireUser();
+  if (isStaffRole(session.user.role)) redirect("/dashboard/ustad/reviews");
   const reviews = await prisma.ustadhReview.findMany({
     where: { memberId: session.user.id, isVisibleToMember: true },
     orderBy: { updatedAt: "desc" },

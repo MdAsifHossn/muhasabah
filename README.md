@@ -13,10 +13,10 @@ This repository currently contains the requested foundation milestone:
 - Prisma configured for MongoDB Atlas
 - Better Auth email/password authentication
 - Closed registration and server-verified protected dashboard
-- Role-ready access helpers for `MEMBER`, `USTADH`, and `ADMIN`
+- Two-role access model: `MEMBER` and `USTADH` (the sole system administrator)
 - Core domain schema, indexes, and embedded daily Amal responses
 - Bangladesh timezone and reusable cycle utilities
-- Idempotent development seed with 30 initial Amal items, 7 members, 1 Ustadh, 1 admin, and an active cycle
+- Idempotent development seed with 30 initial Amal items, members, one Ustadhji administrator, and an active cycle
 - Responsive Bengali landing page, login page, and protected dashboard shell
 
 Daily Amalnama mutations, history, leaderboard, and admin management are deliberately left for the next milestone.
@@ -89,7 +89,7 @@ Protection is layered:
 
 1. `src/proxy.ts` rejects dashboard requests without a session cookie.
 2. The dashboard server layout calls `requireUser()` and verifies the session against the database.
-3. `requireRole()`, `requireAdmin()`, and `requireUstadhOrAdmin()` provide reusable server-side role checks.
+3. `requireRole()`, `requireAdmin()`, and `requireUstadhOrAdmin()` provide reusable server-side role checks; all privileged checks resolve to `USTADH`.
 
 The proxy is only an early gate; it is never treated as the authorization source of truth. Future mutations must obtain the current user from the server session and must never trust a browser-provided `userId` or score.
 
@@ -152,8 +152,7 @@ Do not commit `.env` or real credentials.
 
 The default development-only password is `ChangeMe123!` unless `SEED_ADMIN_PASSWORD` is set.
 
-- Admin: `admin@muhasabah.local` (or `SEED_ADMIN_EMAIL`)
-- Ustadh: `ustadh@muhasabah.local`
+- Ustadhji administrator: `admin@muhasabah.local` (or `SEED_ADMIN_EMAIL`)
 - Members: `member1@muhasabah.local` through `member7@muhasabah.local`
 
 These are fake local credentials. Change them or remove the seeded users before any production deployment.

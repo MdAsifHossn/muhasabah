@@ -6,7 +6,7 @@ import { PageHeader } from "@/components/design/page-header";
 import { ReviewCard, ReviewComposer, type ReviewView } from "@/components/ustad/review-composer";
 import { Card, CardContent } from "@/components/ui/card";
 import { cycleStatusLabels } from "@/lib/constants";
-import { requireUstadhOrAdmin } from "@/lib/permissions";
+import { isAdminRole, requireUstadhOrAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export const metadata = { title: "সাইকেল রিভিউ" };
@@ -16,7 +16,7 @@ const isId = (value: unknown): value is string => typeof value === "string" && /
 export default async function UstadReviewsPage({ searchParams }: { searchParams: Promise<{ member?: string; cycle?: string }> }) {
   const session = await requireUstadhOrAdmin();
   const params = await searchParams;
-  const isAdmin = session.user.role === Role.ADMIN;
+  const isAdmin = isAdminRole(session.user.role);
 
   const [members, cycles, reviews] = await Promise.all([
     prisma.user.findMany({ where: { isActive: true, role: Role.MEMBER, hideAmalnama: false }, orderBy: { name: "asc" }, select: { id: true, name: true, gender: true } }),

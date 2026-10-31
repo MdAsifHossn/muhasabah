@@ -95,7 +95,7 @@ export default async function DashboardPage() {
       </section>
 
       {!cycle || !report ? (
-        <EmptyState icon={CalendarOff} title="কোনো সক্রিয় সাইকেল নেই" description="অ্যাডমিন নতুন সাইকেল চালু করলে এখানে আপনার আমলনামার হিসাব দেখা যাবে।" />
+        <EmptyState icon={CalendarOff} title="কোনো সক্রিয় সাইকেল নেই" description="উস্তাদজি নতুন সাইকেল চালু করলে এখানে আপনার আমলনামার হিসাব দেখা যাবে।" />
       ) : (
         <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
           <StatTile label="টানা ধারাবাহিকতা" value={`${toBn(report.streak)} দিন`} icon={Flame} tone="gold" />

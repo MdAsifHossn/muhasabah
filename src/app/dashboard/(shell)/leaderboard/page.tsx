@@ -1,4 +1,5 @@
 import { Crown, Trophy } from "lucide-react";
+import { redirect } from "next/navigation";
 
 import { toBn } from "@/components/amalnama/report-data";
 import { EmptyState } from "@/components/design/empty-state";
@@ -6,7 +7,7 @@ import { PageHeader } from "@/components/design/page-header";
 import { Card } from "@/components/ui/card";
 import { getElapsedCycleDays } from "@/lib/analytics";
 import { getActiveCycle } from "@/lib/cycles";
-import { requireUser } from "@/lib/permissions";
+import { isStaffRole, requireUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { calculateLeaderboard } from "@/lib/scoring";
 import { cn } from "@/lib/utils";
@@ -17,6 +18,7 @@ const medal = ["bg-amber-400 text-amber-950", "bg-slate-300 text-slate-900", "bg
 
 export default async function LeaderboardPage() {
   const session = await requireUser();
+  if (isStaffRole(session.user.role)) redirect("/dashboard/ustad");
   const cycle = await getActiveCycle();
   if (!cycle) return <EmptyState icon={Trophy} title="লিডারবোর্ড প্রস্তুত নয়" description="সক্রিয় সাইকেল শুরু হলে র‍্যাংকিং দেখা যাবে।" />;
 

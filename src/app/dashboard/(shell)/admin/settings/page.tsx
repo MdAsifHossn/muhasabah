@@ -14,16 +14,16 @@ export default async function AdminSettingsPage() {
 
   const settings = [
     { icon: MapPin, title: "সময় অঞ্চল", value: "বাংলাদেশ (Asia/Dhaka)", note: "দিনের শুরু-শেষ, সপ্তাহের দিন (জুমা) ও সাইকেলের দিন এই সময় অনুযায়ী গণনা হয়।" },
-    { icon: UsersRound, title: "নিবন্ধন", value: "সবার জন্য খোলা", note: "নতুন নিবন্ধন সাধারণ সদস্য (MEMBER) হিসেবে শুরু হয়। উস্তাদজি/অ্যাডমিন রোল শুধু অ্যাডমিন দিতে পারেন।" },
+    { icon: UsersRound, title: "নিবন্ধন", value: "সবার জন্য খোলা", note: "নতুন নিবন্ধন সাধারণ সদস্য (MEMBER) হিসেবে শুরু হয়। একমাত্র উস্তাদজি রোল থেকে পূর্ণ নিয়ন্ত্রণ করা যায়।" },
     { icon: CalendarClock, title: "আমলনামা সম্পাদনা", value: "আজ ও গতকাল", note: "সদস্য আজকের ও গতকালের আমলনামা পূরণ/সংশোধন করতে পারেন। জমা দেওয়ার পরও সংশোধন করা যায়।" },
-    { icon: LockKeyhole, title: "গোপনীয়তা", value: "সদস্য নিয়ন্ত্রিত", note: "সদস্য আমলনামা গোপন করলে উস্তাদ/অ্যাডমিন কোনো তথ্য দেখতে, মন্তব্য বা রিভিউ করতে পারবেন না।" },
-    { icon: KeyRound, title: "পাসওয়ার্ড", value: "প্রোফাইল ও অ্যাডমিন রিসেট", note: "সদস্য নিজে প্রোফাইল থেকে বদলাতে পারেন; অ্যাডমিন রিসেট করলে সব ডিভাইস থেকে লগআউট হয়।" },
+    { icon: LockKeyhole, title: "গোপনীয়তা", value: "সদস্য নিয়ন্ত্রিত", note: "সদস্য আমলনামা গোপন করলে উস্তাদজি কোনো তথ্য দেখতে, মন্তব্য বা রিভিউ করতে পারবেন না।" },
+    { icon: KeyRound, title: "পাসওয়ার্ড", value: "প্রোফাইল ও উস্তাদজি রিসেট", note: "সদস্য নিজে প্রোফাইল থেকে বদলাতে পারেন; উস্তাদজি রিসেট করলে সব ডিভাইস থেকে লগআউট হয়।" },
     { icon: Database, title: "ডাটাবেস", value: "MongoDB Atlas", note: "পাসওয়ার্ড, secret ও ডাটাবেস URL কখনো UI-তে দেখানো হয় না।" },
   ];
 
   return (
     <div className="space-y-5">
-      <PageHeader eyebrow="অ্যাডমিন" title="সেটিংস" description="সিস্টেমের বর্তমান নীতি ও রক্ষণাবেক্ষণ।" />
+      <PageHeader eyebrow="উস্তাদ প্যানেল" title="সিস্টেম সেটিংস" description="সিস্টেমের বর্তমান নীতি ও রক্ষণাবেক্ষণ।" />
 
       <Card>
         <CardContent className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">

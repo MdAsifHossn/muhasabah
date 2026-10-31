@@ -74,13 +74,13 @@ export function MemberBoard({ members }: { members: BoardMember[] }) {
       {filtered.length === 0 ? (
         <p className="surface rounded-card p-8 text-center text-sm text-muted-foreground">এই তালিকায় কোনো সদস্য নেই।</p>
       ) : (
-        <ul className="grid gap-3 md:grid-cols-2">
+        <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
           {filtered.map((member) => (
-            <li key={member.id} className="surface rounded-card p-4">
-              <div className="flex items-start gap-3">
+            <li key={member.id} className="surface rounded-2xl p-2.5 sm:p-3">
+              <div className="flex items-start gap-2">
                 <span
                   className={cn(
-                    "grid size-11 shrink-0 place-items-center rounded-full text-base font-bold",
+                    "grid size-8 shrink-0 place-items-center rounded-full text-sm font-bold",
                     member.gender === Gender.FEMALE ? "bg-female-soft text-female" : "bg-primary-soft text-primary",
                   )}
                 >
@@ -88,8 +88,8 @@ export function MemberBoard({ members }: { members: BoardMember[] }) {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <p className="truncate font-bold text-foreground">{member.name}</p>
-                    {member.needsAttention ? <AlertTriangle className="size-4 shrink-0 text-warning" aria-label="মনোযোগ দরকার" /> : null}
+                    <Link href={`/dashboard/amalnama/grid?member=${member.id}&days=7`} className="truncate text-sm font-bold text-foreground hover:text-primary">{member.name}</Link>
+                    {member.needsAttention ? <AlertTriangle className="size-3.5 shrink-0 text-warning" aria-label="মনোযোগ দরকার" /> : null}
                   </div>
                   {member.hidden ? (
                     <p className="mt-1 flex items-center gap-1.5 text-xs text-muted-foreground">
@@ -104,13 +104,13 @@ export function MemberBoard({ members }: { members: BoardMember[] }) {
                       ) : (
                         <Badge variant="secondary">আজ এখনও জমা নেই</Badge>
                       )}
-                      <span className="text-[11px] text-subtle-foreground">শেষ জমা: {member.lastSubmitted ?? "কখনো নয়"}</span>
+                      <span className="text-[10px] text-subtle-foreground">শেষ জমা: {member.lastSubmitted ?? "কখনো নয়"}</span>
                     </div>
                   )}
                 </div>
                 {!member.hidden && member.weekPercent !== null ? (
                   <div className="shrink-0 text-right">
-                    <p className={cn("text-xl font-bold tabular-nums", percentTone(member.weekPercent))}>{member.weekPercent.toLocaleString("bn-BD")}%</p>
+                    <p className={cn("text-lg font-bold tabular-nums", percentTone(member.weekPercent))}>{member.weekPercent.toLocaleString("bn-BD")}%</p>
                     <p className="text-[10px] text-subtle-foreground">৭ দিনের গড়</p>
                   </div>
                 ) : null}
@@ -118,7 +118,7 @@ export function MemberBoard({ members }: { members: BoardMember[] }) {
 
               {!member.hidden ? (
                 <>
-                  <div className="mt-3 flex h-8 items-end gap-1" aria-label="গত ৭ দিন">
+                  <div className="mt-2 flex h-5 items-end gap-1" aria-label="গত ৭ দিন">
                     {member.spark.map((value, index) => (
                       <span
                         key={index}
@@ -128,22 +128,22 @@ export function MemberBoard({ members }: { members: BoardMember[] }) {
                       />
                     ))}
                   </div>
-                  <div className="mt-3 flex gap-2 border-t border-hairline pt-3">
+                  <div className="mt-2 flex gap-1.5 border-t border-hairline pt-2">
                     <Link
                       href={`/dashboard/amalnama/grid?member=${member.id}&days=7`}
-                      className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg bg-primary-soft text-[13px] font-semibold text-primary-soft-foreground"
+                      className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg bg-primary-soft text-[11px] font-semibold text-primary-soft-foreground"
                     >
                       <LayoutGrid className="size-3.5" /> রিপোর্ট
                     </Link>
                     <Link
-                      href={`/dashboard/amalnama/list?member=${member.id}`}
-                      className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-lg border border-hairline-strong text-[13px] font-semibold text-foreground"
+                      href={`/dashboard/amalnama/grid?member=${member.id}&days=7`}
+                      className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border border-hairline-strong text-[11px] font-semibold text-foreground"
                     >
-                      <MessageSquarePlus className="size-3.5" /> মন্তব্য
+                      <MessageSquarePlus className="size-3.5" /> আমলনামা
                     </Link>
                     <Link
                       href={`/dashboard/ustad/reviews?member=${member.id}`}
-                      className="inline-flex h-9 items-center justify-center rounded-lg border border-hairline-strong px-3 text-[13px] font-semibold text-foreground"
+                      className="inline-flex h-8 items-center justify-center rounded-lg border border-hairline-strong px-2 text-[11px] font-semibold text-foreground"
                     >
                       রিভিউ
                     </Link>

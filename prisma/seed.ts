@@ -15,7 +15,7 @@ const prisma = new PrismaClient();
  * Passwords come from .env (SEED_TEST_PASSWORD_*), never from source.
  */
 const testUsers = [
-  { name: "পরীক্ষা অ্যাডমিন", email: "admin.test@muhasabah.app", role: Role.ADMIN, gender: Gender.MALE, passwordEnv: "SEED_TEST_PASSWORD_ADMIN" },
+  { name: "পরীক্ষা উস্তাদজি (সিস্টেম অ্যাডমিন)", email: "admin.test@muhasabah.app", role: Role.USTADH, gender: Gender.MALE, passwordEnv: "SEED_TEST_PASSWORD_ADMIN" },
   { name: "পরীক্ষা উস্তাদজি", email: "ustad.test@muhasabah.app", role: Role.USTADH, gender: Gender.MALE, passwordEnv: "SEED_TEST_PASSWORD_USTADH" },
   { name: "পরীক্ষা ভাই", email: "bhai.test@muhasabah.app", role: Role.MEMBER, gender: Gender.MALE, passwordEnv: "SEED_TEST_PASSWORD_MEMBER" },
   { name: "পরীক্ষা বোন", email: "bon.test@muhasabah.app", role: Role.MEMBER, gender: Gender.FEMALE, passwordEnv: "SEED_TEST_PASSWORD_MEMBER" },
@@ -37,12 +37,16 @@ async function seedUser(user: (typeof testUsers)[number]) {
 }
 
 async function main() {
+  // Collapse the old two-tier staff model. Existing ADMIN accounts retain
+  // their identity and data, but become the single Ustadhji administrator.
+  const migrated = await prisma.user.updateMany({ where: { role: Role.ADMIN }, data: { role: Role.USTADH } });
+  if (migrated.count) console.log(`Migrated ${migrated.count} legacy admin account(s) to Ustadhji.`);
   const catalog = await syncAmalCatalog(prisma);
   console.log(`Amal catalog: ${catalog.updated} updated, ${catalog.created} created, ${catalog.removed} duplicates removed (${catalog.total} total).`);
 
   const users = [];
   for (const user of testUsers) users.push(await seedUser(user));
-  const admin = users.find(Boolean) ?? (await prisma.user.findFirst({ where: { role: Role.ADMIN } }));
+  const admin = users.find(Boolean) ?? (await prisma.user.findFirst({ where: { role: Role.USTADH } }));
 
   const active = await prisma.cycle.findFirst({ where: { status: CycleStatus.ACTIVE } });
   if (!active && admin) {

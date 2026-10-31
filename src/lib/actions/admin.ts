@@ -1,13 +1,13 @@
 "use server";
 
-import { AmalAudience, AmalCategory, AmalInputType, CycleStatus, Role, Weekday } from "@prisma/client";
+import { AmalAudience, AmalCategory, AmalInputType, CycleStatus, Weekday } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { syncAmalCatalog } from "../../../prisma/amal-catalog";
 import { actionError } from "@/lib/action-error";
 import { endOfBangladeshDay, startOfBangladeshDay } from "@/lib/dates";
-import { requireAdmin, requireUstadhOrAdmin } from "@/lib/permissions";
+import { isAdminRole, requireAdmin, requireUstadhOrAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 const objectId = z.string().regex(/^[a-f\d]{24}$/i);
@@ -21,14 +21,12 @@ type StaffSession = Awaited<ReturnType<typeof requireUstadhOrAdmin>>;
 
 /**
  * Ownership rule, always re-checked from the database:
- * - ADMIN may modify any amal item.
- * - USTADH may modify only items they created (`createdById === their id`).
- * - `createdById === null` is the system default list → ADMIN only.
+ * - USTADH / ADMIN may modify all items (custom and system default list).
  */
 async function requireAmalItem(session: StaffSession, itemId: string) {
   const item = await prisma.amalItem.findUnique({ where: { id: itemId } });
   if (!item) throw actionError(404, "আমল আইটেম পাওয়া যায়নি।");
-  const isAdmin = session.user.role === Role.ADMIN;
+  const isAdmin = isAdminRole(session.user.role);
   const isOwner = item.createdById !== null && item.createdById === session.user.id;
   if (!isAdmin && !isOwner) throw actionError(403, "এই আমল আইটেম পরিবর্তন করার অনুমতি আপনার নেই — শুধু নিজের যোগ করা আমল সম্পাদনা করা যায়।");
   return item;
@@ -212,7 +210,7 @@ export async function deleteReview(reviewId: string) {
   if (!objectId.safeParse(reviewId).success) throw actionError(400, "রিভিউ ID সঠিক নয়।");
   const review = await prisma.ustadhReview.findUnique({ where: { id: reviewId }, select: { reviewerId: true } });
   if (!review) throw actionError(404, "রিভিউ পাওয়া যায়নি।");
-  if (review.reviewerId !== session.user.id && session.user.role !== Role.ADMIN) throw actionError(403, "শুধু রিভিউ লেখক বা অ্যাডমিন মুছতে পারবেন।");
+  if (review.reviewerId !== session.user.id && !isAdminRole(session.user.role)) throw actionError(403, "শুধু রিভিউ লেখক বা উস্তাদজি মুছতে পারবেন।");
   await prisma.ustadhReview.delete({ where: { id: reviewId } });
   refreshDashboard();
 }

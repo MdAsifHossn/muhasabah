@@ -10,6 +10,7 @@ datasource db {
 enum Role {
   MEMBER
   USTADH
+  /// Legacy value; seed migrates it to USTADH and no code grants it access.
   ADMIN
 }
 
@@ -100,7 +101,7 @@ model User {
   isActive      Boolean  @default(true)
   /// Required at registration; drives which AmalItems the member receives.
   gender        Gender   @default(OTHER)
-  /// Privacy switch (profile settings): when true, even ADMIN/USTADH cannot
+  /// Privacy switch (profile settings): when true, even USTADH cannot
   /// see this member's Amalnama. Turning it off restores full review access.
   hideAmalnama  Boolean  @default(false)
   joinedAt      DateTime @default(now())
@@ -203,7 +204,7 @@ model AmalItem {
   isActive       Boolean       @default(true)
   isRequired     Boolean       @default(false)
   /// On a member's period (মাসিক) day this amal does not apply — it is shown
-  /// as "—" in reports and never counts as missed. Ustad/Admin controls it.
+  /// as "—" in reports and never counts as missed. Ustadhji controls it.
   exemptOnPeriod Boolean       @default(false)
   /// `ALL` = everyone (default for the seeded list), `MALE`/`FEMALE` = only
   /// members of that gender receive this amal in their daily Amalnama.
@@ -219,7 +220,7 @@ model AmalItem {
   @@index([createdById])
 }
 
-/// Ustadh/Admin feedback left on a member's Amalnama.
+/// Ustadhji feedback left on a member's Amalnama.
 model AmalComment {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   memberId  String   @db.ObjectId
@@ -344,7 +345,7 @@ model QuranProgress {
   updatedAt DateTime @updatedAt
 }
 
-/// Notice board: an Ustadh/Admin posts guidance or news for members.
+/// Notice board: Ustadhji posts guidance or news for members.
 /// `audience` lets a notice reach only brothers (MALE) or sisters (FEMALE).
 model Announcement {
   id        String       @id @default(auto()) @map("_id") @db.ObjectId
@@ -362,7 +363,7 @@ model Announcement {
 }
 
 /// Private conversation between a member and the Ustadh team. One thread per
-/// member (`memberId`); the member and any USTADH/ADMIN may post in it.
+/// member (`memberId`); the member and USTADH may post in it.
 /// Senders can edit or delete (soft) their own messages.
 model Message {
   id           String    @id @default(auto()) @map("_id") @db.ObjectId

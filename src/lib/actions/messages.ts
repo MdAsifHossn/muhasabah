@@ -1,6 +1,5 @@
 "use server";
 
-import { Role } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -63,14 +62,14 @@ async function requireOwnMessage(id: string, allowAdmin: boolean) {
   if (!objectId.safeParse(id).success) throw actionError(400, "বার্তা ID সঠিক নয়।");
   const message = await prisma.message.findUnique({ where: { id }, select: { id: true, senderId: true, memberId: true, deletedAt: true } });
   if (!message || !canAccessThread(message.memberId, { id: session.user.id, role: session.user.role })) throw actionError(404, "বার্তাটি পাওয়া যায়নি।");
-  const isAdmin = session.user.role === Role.ADMIN;
+  const isAdmin = isStaffRole(session.user.role);
   if (message.senderId !== session.user.id && !(allowAdmin && isAdmin)) throw actionError(403, "শুধু নিজের বার্তা পরিবর্তন করা যায়।");
   if (message.deletedAt) throw actionError(400, "বার্তাটি আগেই মুছে ফেলা হয়েছে।");
   return message;
 }
 
 export async function editMessage(input: { id: string; body: string }) {
-  const message = await requireOwnMessage(input.id, false);
+  const message = await requireOwnMessage(input.id, true);
   const body = parseBody(input.body);
   await prisma.message.update({ where: { id: message.id }, data: { body, editedAt: new Date() } });
   refresh();

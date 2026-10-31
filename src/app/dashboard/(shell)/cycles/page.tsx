@@ -1,4 +1,5 @@
 import { CalendarRange } from "lucide-react";
+import { redirect } from "next/navigation";
 
 import { toBn } from "@/components/amalnama/report-data";
 import { EmptyState } from "@/components/design/empty-state";
@@ -8,13 +9,14 @@ import { Card, CardContent } from "@/components/ui/card";
 import { getElapsedCycleDays } from "@/lib/analytics";
 import { cycleStatusLabels } from "@/lib/constants";
 import { formatBanglaDate, getCycleDayNumber } from "@/lib/dates";
-import { requireUser } from "@/lib/permissions";
+import { isStaffRole, requireUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
 export const metadata = { title: "সাইকেলের হিসাব" };
 
 export default async function CyclesPage() {
   const session = await requireUser();
+  if (isStaffRole(session.user.role)) redirect("/dashboard/admin/cycles");
   const cycles = await prisma.cycle.findMany({
     where: { status: { not: "DRAFT" } },
     orderBy: { startDate: "desc" },
@@ -25,7 +27,7 @@ export default async function CyclesPage() {
     <div className="space-y-5">
       <PageHeader eyebrow="মুহাসাবাহ" title="সাইকেলের হিসাব" description="প্রতিটি মুহাসাবাহ সাইকেলে আপনার অংশগ্রহণ ও গড় সম্পন্নতা।" />
       {cycles.length === 0 ? (
-        <EmptyState icon={CalendarRange} title="কোনো সাইকেল নেই" description="অ্যাডমিন সাইকেল চালু করলে এখানে দেখা যাবে।" />
+        <EmptyState icon={CalendarRange} title="কোনো সাইকেল নেই" description="উস্তাদজি সাইকেল চালু করলে এখানে দেখা যাবে।" />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2">
           {cycles.map((cycle) => {

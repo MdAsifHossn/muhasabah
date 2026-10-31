@@ -28,7 +28,7 @@ export async function setOwnGender(formData: FormData) {
   const parsed = z.enum([Gender.MALE, Gender.FEMALE]).safeParse(formData.get("gender"));
   if (!parsed.success) throw actionError(400, "পুরুষ বা নারী নির্বাচন করুন।");
   const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { gender: true } });
-  if (user?.gender !== Gender.OTHER) throw actionError(403, "লিঙ্গ একবার নির্ধারণের পর শুধু অ্যাডমিন পরিবর্তন করতে পারবেন।");
+  if (user?.gender !== Gender.OTHER) throw actionError(403, "লিঙ্গ একবার নির্ধারণের পর শুধু উস্তাদজি পরিবর্তন করতে পারবেন।");
   await prisma.user.update({ where: { id: session.user.id }, data: { gender: parsed.data } });
   revalidatePath("/dashboard", "layout");
 }

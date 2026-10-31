@@ -51,7 +51,7 @@ export default async function UstadDashboardPage() {
     return (
       <div className="space-y-5">
         {header}
-        <EmptyState icon={CalendarCheck2} title="কোনো সক্রিয় সাইকেল নেই" description="অ্যাডমিন একটি সাইকেল সক্রিয় করলে সদস্যদের আমলনামার হিসাব এখানে দেখা যাবে।" />
+        <EmptyState icon={CalendarCheck2} title="কোনো সক্রিয় সাইকেল নেই" description="উস্তাদজি একটি সাইকেল সক্রিয় করলে সদস্যদের আমলনামার হিসাব এখানে দেখা যাবে।" />
       </div>
     );
   }
@@ -158,7 +158,7 @@ export default async function UstadDashboardPage() {
 
       <nav aria-label="দ্রুত কাজ" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
         {[
-          { href: "/dashboard/amalnama/list", label: "সদস্যদের আমলনামা", icon: ClipboardList },
+          { href: "/dashboard/amalnama/grid?days=7", label: "সদস্যদের আমলনামা", icon: ClipboardList },
           { href: "/dashboard/ustad/reviews", label: "রিভিউ লিখুন", icon: MessageCircleHeart },
           { href: "/dashboard/ustad/notices", label: "নোটিশ দিন", icon: Megaphone },
           { href: "/dashboard/amal-items", label: "আমল আইটেম", icon: ListChecks },
@@ -175,7 +175,7 @@ export default async function UstadDashboardPage() {
       <div className="grid gap-5 xl:grid-cols-[1fr_340px]">
         <section className="min-w-0 space-y-3">
           <h2 className="px-1 text-lg font-bold text-foreground">সদস্যদের অবস্থা</h2>
-          {members.length ? <MemberBoard members={board} /> : <EmptyState icon={UsersRound} title="এখনও কোনো সদস্য নেই" description="সদস্যরা নিবন্ধন করলে বা অ্যাডমিন অ্যাকাউন্ট তৈরি করলে এখানে দেখা যাবে।" />}
+          {members.length ? <MemberBoard members={board} /> : <EmptyState icon={UsersRound} title="এখনও কোনো সদস্য নেই" description="সদস্যরা নিবন্ধন করলে এখানে দেখা যাবে।" />}
         </section>
 
         <aside className="space-y-5">
@@ -220,7 +220,7 @@ export default async function UstadDashboardPage() {
                           {formatBanglaDate(entry.date)} • {timeAgo(entry.updatedAt)}
                         </span>
                       </span>
-                      {entry.isPeriodDay ? <Badge variant="female">ছাড়ের দিন</Badge> : null}
+                      {entry.isPeriodDay ? <Badge variant="female">ওজরের দিন</Badge> : null}
                       <span className="text-sm font-bold tabular-nums text-primary">{Math.round(entry.completionPercentage).toLocaleString("bn-BD")}%</span>
                     </Link>
                   </li>

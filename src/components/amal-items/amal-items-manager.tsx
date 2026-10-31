@@ -176,16 +176,16 @@ export function AmalItemsManager({
               {categoryLabels[category]}
               <span className="rounded-full bg-surface-sunken px-2 text-xs font-semibold text-muted-foreground">{list.length.toLocaleString("bn-BD")}</span>
             </h2>
-            <ul className="space-y-2">
+            <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {list.map((item) => {
                 const editable = canEdit(item);
                 return (
-                  <li key={item.id} className={cn("surface rounded-card p-3.5 sm:p-4", !item.isActive && "opacity-60")}>
+                  <li key={item.id} className={cn("surface rounded-2xl p-3", !item.isActive && "opacity-60")}>
                     <div className="flex items-start gap-3">
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold leading-6 text-foreground">{item.titleBn}</p>
                         {item.description ? <p className="mt-0.5 text-xs leading-5 text-muted-foreground">{item.description}</p> : null}
-                        <div className="mt-2 flex flex-wrap gap-1.5">
+                    <div className="mt-1.5 flex flex-wrap gap-1">
                           <Badge variant={audienceVariant[item.genderScope]}>{audienceText[item.genderScope]}</Badge>
                           <Badge variant="outline">{targetText(item)}</Badge>
                           <Badge variant="gold">+{item.points.toLocaleString("bn-BD")} পয়েন্ট</Badge>
@@ -196,16 +196,16 @@ export function AmalItemsManager({
                           ) : null}
                           {item.exemptOnPeriod ? (
                             <Badge variant="female">
-                              <Droplet className="size-3" /> মাসিকে ছাড়
+                              <Droplet className="size-3" /> ওজরের দিনে অব্যাহতি
                             </Badge>
                           ) : null}
                           {!item.isActive ? <Badge variant="danger">বন্ধ</Badge> : null}
                         </div>
-                        <p className="mt-2 text-[11px] text-subtle-foreground">
+                        <p className="mt-1.5 text-[10px] text-subtle-foreground">
                           {item.createdById ? `যোগ করেছেন: ${item.creatorName ?? "অজানা"}` : "মূল তালিকা"}
                           {!editable ? (
                             <span className="ml-1 inline-flex items-center gap-0.5">
-                              • <Lock className="size-3" /> শুধু অ্যাডমিন/নির্মাতা সম্পাদনা করতে পারবেন
+                              • <Lock className="size-3" /> শুধু উস্তাদজি/নির্মাতা সম্পাদনা করতে পারবেন
                             </span>
                           ) : null}
                         </p>
@@ -226,8 +226,8 @@ export function AmalItemsManager({
                       ) : null}
                     </div>
                     {editable ? (
-                      <div className="mt-3 flex gap-2 border-t border-hairline pt-3">
-                        <Button size="sm" variant="soft" className="flex-1" onClick={() => setEditing(item)}>
+                      <div className="mt-2 flex justify-end gap-1.5 border-t border-hairline pt-2">
+                        <Button size="sm" variant="soft" className="h-8 px-3 text-xs" onClick={() => setEditing(item)}>
                           <Pencil className="size-3.5" /> সম্পাদনা
                         </Button>
                         <Button size="icon-sm" variant="outline" disabled={isPending} onClick={() => run(() => moveAmalItem(item.id, "up"), "ক্রম পরিবর্তন হয়েছে।")} aria-label="উপরে সরান">
@@ -324,7 +324,7 @@ function ItemForm({ item, defaultAudience, onSubmit, pending }: { item: AmalItem
       <div className="space-y-2">
         {[
           { name: "isActive", label: "চালু রাখুন", helper: "বন্ধ থাকলে সদস্যদের আমলনামায় দেখাবে না।", checked: item?.isActive ?? true },
-          { name: "exemptOnPeriod", label: "মাসিকের দিনে প্রযোজ্য নয়", helper: "নামাজ, রোজা, তিলাওয়াতের মতো আমল — বোনদের মাসিকের দিনে বাদ যাবে, মিস ধরা হবে না।", checked: item?.exemptOnPeriod ?? category === AmalCategory.SALAH },
+          { name: "exemptOnPeriod", label: "ওজরের দিনে প্রযোজ্য নয়", helper: "নামাজ, রোজা, তিলাওয়াতের মতো আমল — বোনদের শরয়ী ওজরের দিনে বাদ যাবে, মিস ধরা হবে না।", checked: item?.exemptOnPeriod ?? category === AmalCategory.SALAH },
           { name: "isRequired", label: "গুরুত্বপূর্ণ (আবশ্যক) আমল", helper: "আমলনামায় বিশেষভাবে চিহ্নিত হবে।", checked: item?.isRequired ?? false },
         ].map((check) => (
           <label key={check.name} className="flex cursor-pointer items-start gap-3 rounded-xl border border-hairline bg-surface-sunken p-3">

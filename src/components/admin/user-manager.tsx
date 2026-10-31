@@ -1,7 +1,7 @@
 "use client";
 
 import { Gender, Role } from "@prisma/client";
-import { EyeOff, KeyRound, Pencil, Search, ShieldCheck, Trash2, UserPlus, UserRound, UsersRound } from "lucide-react";
+import { EyeOff, KeyRound, Pencil, Search, Trash2, UserPlus, UserRound, UsersRound } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { FormEvent, useMemo, useState, useTransition } from "react";
 import { toast } from "sonner";
@@ -33,8 +33,6 @@ type Editor = { mode: "create" } | { mode: "edit"; user: ManagedUser } | { mode:
 type RoleFilter = "ALL" | Role;
 type GenderFilter = "ALL" | Gender;
 
-const roleVariant = { ADMIN: "gold", USTADH: "info", MEMBER: "secondary" } as const;
-
 function initials(name: string) {
   return name.trim().slice(0, 1) || "?";
 }
@@ -59,7 +57,6 @@ export function UserManager({ users, currentUserId }: { users: ManagedUser[]; cu
 
   const counts = {
     all: users.length,
-    ADMIN: users.filter((user) => user.role === Role.ADMIN).length,
     USTADH: users.filter((user) => user.role === Role.USTADH).length,
     MEMBER: users.filter((user) => user.role === Role.MEMBER).length,
     inactive: users.filter((user) => !user.isActive).length,
@@ -130,7 +127,6 @@ export function UserManager({ users, currentUserId }: { users: ManagedUser[]; cu
             { value: "ALL", label: "সব রোল", count: counts.all },
             { value: Role.MEMBER, label: roleLabels.MEMBER, count: counts.MEMBER },
             { value: Role.USTADH, label: roleLabels.USTADH, count: counts.USTADH },
-            { value: Role.ADMIN, label: roleLabels.ADMIN, count: counts.ADMIN },
           ]}
         />
         <Segmented<GenderFilter>
@@ -167,8 +163,8 @@ export function UserManager({ users, currentUserId }: { users: ManagedUser[]; cu
                   </p>
                   <p className="truncate text-xs text-muted-foreground">{user.email}</p>
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    <Badge variant={roleVariant[user.role]}>
-                      {user.role === Role.ADMIN ? <ShieldCheck className="size-3" /> : <UserRound className="size-3" />}
+                    <Badge variant={user.role === Role.USTADH ? "gold" : "secondary"}>
+                      <UserRound className="size-3" />
                       {roleLabels[user.role]}
                     </Badge>
                     <Badge variant={user.gender === Gender.FEMALE ? "female" : user.gender === Gender.MALE ? "soft" : "warning"}>{genderLabels[user.gender]}</Badge>
@@ -212,7 +208,7 @@ export function UserManager({ users, currentUserId }: { users: ManagedUser[]; cu
         open={editor?.mode === "create" || editor?.mode === "edit"}
         onClose={close}
         title={editing ? "ব্যবহারকারী সম্পাদনা" : "নতুন ব্যবহারকারী"}
-        description={editing ? editing.email : "সদস্য, উস্তাদজি বা অ্যাডমিন অ্যাকাউন্ট তৈরি করুন।"}
+        description={editing ? editing.email : "সদস্য বা উস্তাদজি অ্যাকাউন্ট তৈরি করুন।"}
       >
         <form key={editing?.id ?? "new"} onSubmit={(event) => submit(event, editing ? updateManagedUser : createManagedUser)} className="space-y-4">
           {editing ? <input type="hidden" name="userId" value={editing.id} /> : null}
@@ -230,13 +226,10 @@ export function UserManager({ users, currentUserId }: { users: ManagedUser[]; cu
           <div className="grid grid-cols-2 gap-3">
             <Field label="রোল" htmlFor="u-role">
               <Select id="u-role" name="role" defaultValue={editing?.role ?? Role.MEMBER} disabled={isSelf}>
-                {Object.values(Role).map((role) => (
-                  <option key={role} value={role}>
-                    {roleLabels[role]}
-                  </option>
-                ))}
+                <option value={Role.MEMBER}>{roleLabels.MEMBER}</option>
+                <option value={Role.USTADH}>{roleLabels.USTADH}</option>
               </Select>
-              {isSelf ? <input type="hidden" name="role" value={Role.ADMIN} /> : null}
+              {isSelf ? <input type="hidden" name="role" value={editing?.role ?? Role.USTADH} /> : null}
             </Field>
             <Field label="লিঙ্গ" htmlFor="u-gender">
               <Select id="u-gender" name="gender" required defaultValue={editing && editing.gender !== Gender.OTHER ? editing.gender : ""}>
@@ -258,7 +251,7 @@ export function UserManager({ users, currentUserId }: { users: ManagedUser[]; cu
           </label>
           <p className="rounded-xl bg-surface-sunken px-3 py-2 text-xs leading-5 text-muted-foreground">
             <UsersRound className="mr-1 inline size-3.5" />
-            সদস্য: নিজের আমলনামা • উস্তাদজি: সদস্যদের আমলনামা দেখা, মন্তব্য, রিভিউ, নোটিশ ও নিজের আমল আইটেম • অ্যাডমিন: সবকিছু।
+            সদস্য: নিজের আমলনামা • উস্তাদজি: সদস্যদের আমলনামা দেখা, মন্তব্য, রিভিউ, নোটিশ, আমল আইটেম ও সম্পূর্ণ ব্যবস্থাপনা।
           </p>
           <Button type="submit" className="w-full" disabled={isPending}>
             {isPending ? "সংরক্ষণ হচ্ছে…" : editing ? "পরিবর্তন সংরক্ষণ" : "ব্যবহারকারী তৈরি করুন"}

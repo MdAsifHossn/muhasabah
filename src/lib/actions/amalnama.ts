@@ -18,6 +18,8 @@ const entrySchema = z.object({
   intent: z.enum(["draft", "submit"]),
   personalNote: z.string().max(2000).optional(),
   day: z.enum(["today", "yesterday"]).default("today"),
+  memberId: z.string().regex(/^[a-f\d]{24}$/i).optional(),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
 
 function revalidateAmalnama() {
@@ -39,22 +41,38 @@ async function resolveEntryDay(day: "today" | "yesterday") {
   return { cycle, date, weekday: getBangladeshWeekday(date) };
 }
 
+async function resolveStaffEntryDay(value: string) {
+  const cycle = await getActiveCycle();
+  if (!cycle) throw actionError(400, "বর্তমানে কোনো সক্রিয় সাইকেল নেই।");
+  const date = startOfBangladeshDay(new Date(`${value}T00:00:00+06:00`));
+  if (!isDateInsideCycle(date, cycle.startDate, cycle.endDate)) throw actionError(400, "এই তারিখ সক্রিয় সাইকেলের অন্তর্ভুক্ত নয়।");
+  return { cycle, date, weekday: getBangladeshWeekday(date) };
+}
+
 export async function saveDailyAmalnama(formData: FormData) {
   const session = await requireUser();
   const parsed = entrySchema.safeParse({
     intent: formData.get("intent"),
     personalNote: String(formData.get("personalNote") ?? ""),
     day: formData.get("day") || undefined,
+    memberId: formData.get("memberId") || undefined,
+    date: formData.get("date") || undefined,
   });
   if (!parsed.success) throw actionError(400, "জমা দেওয়া তথ্য সঠিক নয়।");
 
-  const { cycle, date, weekday } = await resolveEntryDay(parsed.data.day);
+  const targetUserId = parsed.data.memberId ?? session.user.id;
+  if (targetUserId !== session.user.id && !isStaffRole(session.user.role)) throw actionError(403, "শুধু উস্তাদজি অন্য সদস্যের আমলনামা সম্পাদনা করতে পারবেন।");
+  if (parsed.data.date && !isStaffRole(session.user.role)) throw actionError(403, "শুধু উস্তাদজি পুরনো দিনের আমলনামা সম্পাদনা করতে পারবেন।");
+
+  const resolved = parsed.data.date ? await resolveStaffEntryDay(parsed.data.date) : await resolveEntryDay(parsed.data.day);
+  const { cycle, date, weekday } = resolved;
   const [viewer, allItems, existing] = await Promise.all([
-    prisma.user.findUnique({ where: { id: session.user.id }, select: { gender: true } }),
+    prisma.user.findUnique({ where: { id: targetUserId }, select: { gender: true } }),
     prisma.amalItem.findMany({ where: { isActive: true }, orderBy: { order: "asc" } }),
-    prisma.dailyAmalEntry.findUnique({ where: { userId_cycleId_date: { userId: session.user.id, cycleId: cycle.id, date } } }),
+    prisma.dailyAmalEntry.findUnique({ where: { userId_cycleId_date: { userId: targetUserId, cycleId: cycle.id, date } } }),
   ]);
-  if (existing?.status === DailyEntryStatus.LOCKED) throw actionError(403, "এই দিনের আমলনামা লক করা হয়েছে — আর পরিবর্তন করা যাবে না।");
+  if (!viewer) throw actionError(404, "সদস্যটি পাওয়া যায়নি।");
+  if (existing?.status === DailyEntryStatus.LOCKED && !isStaffRole(session.user.role)) throw actionError(403, "এই দিনের আমলনামা লক করা হয়েছে — আর পরিবর্তন করা যাবে না।");
 
   const isPeriodDay = existing?.isPeriodDay ?? false;
   const items = applicableItems(allItems, { gender: viewer?.gender ?? Gender.OTHER, weekday, isPeriodDay });
@@ -88,9 +106,9 @@ export async function saveDailyAmalnama(formData: FormData) {
   const submittedAt = status === DailyEntryStatus.SUBMITTED ? (existing?.submittedAt ?? new Date()) : null;
 
   await prisma.dailyAmalEntry.upsert({
-    where: { userId_cycleId_date: { userId: session.user.id, cycleId: cycle.id, date } },
+    where: { userId_cycleId_date: { userId: targetUserId, cycleId: cycle.id, date } },
     update: { responses: keptResponses, totalScore, maxPossibleScore, completionPercentage, personalNote: parsed.data.personalNote || null, status, submittedAt },
-    create: { userId: session.user.id, cycleId: cycle.id, date, isPeriodDay: false, responses, totalScore, maxPossibleScore, completionPercentage, personalNote: parsed.data.personalNote || null, status, submittedAt },
+    create: { userId: targetUserId, cycleId: cycle.id, date, isPeriodDay: false, responses, totalScore, maxPossibleScore, completionPercentage, personalNote: parsed.data.personalNote || null, status, submittedAt },
   });
 
   revalidateAmalnama();
@@ -102,13 +120,19 @@ export async function saveDailyAmalnama(formData: FormData) {
  * day's stored entry so the day is never counted as missed for them.
  */
 export async function setPeriodDay(day: "today" | "yesterday" = "today") {
+  return setPeriodDayForMember(day);
+}
+
+export async function setPeriodDayForMember(day: "today" | "yesterday" = "today", memberId?: string) {
   const session = await requireUser();
-  const viewer = await prisma.user.findUnique({ where: { id: session.user.id }, select: { gender: true } });
+  const targetUserId = memberId ?? session.user.id;
+  if (targetUserId !== session.user.id && !isStaffRole(session.user.role)) throw actionError(403, "শুধু উস্তাদজি অন্য সদস্যের এই হিসাব পরিবর্তন করতে পারবেন।");
+  const viewer = await prisma.user.findUnique({ where: { id: targetUserId }, select: { gender: true } });
   if (viewer?.gender !== Gender.FEMALE) throw actionError(403, "এই সেটিং শুধুমাত্র নারী সদস্যদের জন্য প্রযোজ্য।");
 
   const { cycle, date, weekday } = await resolveEntryDay(day === "yesterday" ? "yesterday" : "today");
-  const existing = await prisma.dailyAmalEntry.findUnique({ where: { userId_cycleId_date: { userId: session.user.id, cycleId: cycle.id, date } } });
-  if (existing?.status === DailyEntryStatus.LOCKED) throw actionError(403, "এই দিনের আমলনামা লক করা হয়েছে।");
+  const existing = await prisma.dailyAmalEntry.findUnique({ where: { userId_cycleId_date: { userId: targetUserId, cycleId: cycle.id, date } } });
+  if (existing?.status === DailyEntryStatus.LOCKED && targetUserId === session.user.id) throw actionError(403, "এই দিনের আমলনামা লক করা হয়েছে।");
   const next = !existing?.isPeriodDay;
 
   const allItems = await prisma.amalItem.findMany({ where: { isActive: true }, orderBy: { order: "asc" } });
@@ -122,10 +146,21 @@ export async function setPeriodDay(day: "today" | "yesterday" = "today") {
   const data = { isPeriodDay: next, responses, totalScore, maxPossibleScore, completionPercentage: calculateCompletionPercentage(totalScore, maxPossibleScore) };
 
   if (existing) await prisma.dailyAmalEntry.update({ where: { id: existing.id }, data });
-  else await prisma.dailyAmalEntry.create({ data: { userId: session.user.id, cycleId: cycle.id, date, status: DailyEntryStatus.DRAFT, ...data } });
+  else await prisma.dailyAmalEntry.create({ data: { userId: targetUserId, cycleId: cycle.id, date, status: DailyEntryStatus.DRAFT, ...data } });
 
   revalidateAmalnama();
   return { isPeriodDay: next, dateKey: bangladeshDateKey(date) };
+}
+
+/** Ustadhji can remove any member's daily entry, including a locked one. */
+export async function deleteDailyAmalnama(entryId: string) {
+  const session = await requireUser();
+  if (!isStaffRole(session.user.role)) throw actionError(403, "শুধু উস্তাদজি আমলনামা মুছতে পারবেন।");
+  if (!/^[a-f\d]{24}$/i.test(entryId)) throw actionError(400, "এন্ট্রি ID সঠিক নয়।");
+  const entry = await prisma.dailyAmalEntry.findUnique({ where: { id: entryId }, select: { id: true } });
+  if (!entry) throw actionError(404, "এই দিনের আমলনামা পাওয়া যায়নি।");
+  await prisma.dailyAmalEntry.delete({ where: { id: entry.id } });
+  revalidateAmalnama();
 }
 
 const commentSchema = z.object({ memberId: z.string().regex(/^[a-f\d]{24}$/i), comment: z.string().trim().min(2).max(1000) });
@@ -139,7 +174,7 @@ export async function addAmalComment(formData: FormData) {
 
   const member = await prisma.user.findUnique({ where: { id: parsed.data.memberId }, select: { id: true, hideAmalnama: true } });
   if (!member) throw actionError(404, "সদস্যটি পাওয়া যায়নি।");
-  if (member.hideAmalnama) throw actionError(403, "সদস্যটি তার আমলনামা লুকিয়ে রেখেছেন — মন্তব্য রাখা যাচ্ছে না।");
+  if (member.hideAmalnama && !isStaffRole(session.user.role)) throw actionError(403, "সদস্যটি তার আমলনামা লুকিয়ে রেখেছেন — মন্তব্য রাখা যাচ্ছে না।");
 
   const client = getAmalCommentClient();
   await client.amalComment.create({ data: { memberId: member.id, authorId: session.user.id, comment: parsed.data.comment } });
@@ -153,7 +188,7 @@ export async function deleteAmalComment(commentId: string) {
   const client = getAmalCommentClient();
   const comment = await client.amalComment.findUnique({ where: { id: commentId }, select: { authorId: true } });
   if (!comment) throw actionError(404, "মন্তব্যটি পাওয়া যায়নি।");
-  if (comment.authorId !== session.user.id && session.user.role !== "ADMIN") throw actionError(403, "এই মন্তব্য মুছে ফেলার অনুমতি নেই।");
+  if (comment.authorId !== session.user.id && !isStaffRole(session.user.role)) throw actionError(403, "এই মন্তব্য মুছে ফেলার অনুমতি নেই।");
   await client.amalComment.delete({ where: { id: commentId } });
   revalidatePath("/dashboard", "layout");
 }

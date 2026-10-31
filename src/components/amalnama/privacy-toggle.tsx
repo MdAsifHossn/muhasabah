@@ -52,7 +52,7 @@ export function AmalPrivacyToggle({ initialHidden }: { initialHidden: boolean })
         </span>
       </button>
       <p className="text-xs leading-5 text-muted-foreground">
-        {hidden ? "চালু: উস্তাদজি ও অ্যাডমিন আপনার আমলনামা দেখতে বা মন্তব্য করতে পারবেন না।" : "বন্ধ: উস্তাদজি আপনার আমলনামা দেখে পরামর্শ দিতে পারবেন।"}
+        {hidden ? "চালু: উস্তাদজি আপনার আমলনামা দেখতে বা মন্তব্য করতে পারবেন না।" : "বন্ধ: উস্তাদজি আপনার আমলনামা দেখে পরামর্শ দিতে পারবেন।"}
       </p>
     </div>
   );

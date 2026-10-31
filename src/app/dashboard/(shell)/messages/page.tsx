@@ -20,7 +20,7 @@ export default async function MemberMessagesPage() {
       memberId={null}
       initialMessages={messages}
       title="উস্তাদজির সাথে কথা"
-      subtitle="আপনার বার্তা শুধু উস্তাদজি ও অ্যাডমিন দেখতে পারেন"
+      subtitle="আপনার বার্তা শুধু উস্তাদজি দেখতে পারেন"
       isStaffView={false}
     />
   );

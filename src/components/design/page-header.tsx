@@ -14,12 +14,13 @@ export interface PageHeaderProps {
   actions?: ReactNode;
   /** Optional chips / counters under the description. */
   meta?: ReactNode;
+  className?: string;
 }
 
 /** One header for every dashboard screen: kicker → title → context → chips → actions. */
-export function PageHeader({ eyebrow, title, description, action, actions, meta }: PageHeaderProps) {
+export function PageHeader({ eyebrow, title, description, action, actions, meta, className }: PageHeaderProps) {
   return (
-    <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+    <header className={className ?? "flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4"}>
       <div className="min-w-0">
         {eyebrow ? (
           <p className="flex items-center gap-2 text-xs font-bold tracking-wide text-primary">

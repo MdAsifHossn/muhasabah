@@ -12,8 +12,10 @@ import {
   weekdayShortLabels,
   type GridCell,
   type GridColumn,
+  type GridComment,
   type GridRow,
 } from "@/components/amalnama/grid-view";
+import { getAmalCommentClient } from "@/components/amalnama/comment-db";
 import { HiddenAmalnamaCard } from "@/components/amalnama/member-report";
 import { toBn, type ReportItem } from "@/components/amalnama/report-data";
 import { EmptyState } from "@/components/design/empty-state";
@@ -48,7 +50,7 @@ export default async function AmalnamaGridPage({ searchParams }: { searchParams:
 
   const isSelf = member.id === session.user.id;
   const blockedOther = !isSupervisor && !!requestedId && requestedId !== session.user.id;
-  const hidden = !isSelf && member.hideAmalnama;
+  const hidden = !isSelf && member.hideAmalnama && !isSupervisor;
 
   return (
     <div className="space-y-5">
@@ -59,7 +61,7 @@ export default async function AmalnamaGridPage({ searchParams }: { searchParams:
         meta={
           <>
             <Badge variant={member.gender === "FEMALE" ? "female" : "soft"}>{genderLabels[member.gender]}</Badge>
-            {member.role !== Role.MEMBER ? <Badge variant="gold">{member.role === Role.ADMIN ? "অ্যাডমিন" : "উস্তাদজি"}</Badge> : null}
+            {member.role === Role.USTADH ? <Badge variant="gold">উস্তাদজি (অ্যাডমিন)</Badge> : null}
           </>
         }
       />
@@ -73,7 +75,7 @@ export default async function AmalnamaGridPage({ searchParams }: { searchParams:
 
       <GridRangeChips active={range} memberId={isSupervisor && !isSelf ? member.id : undefined} />
 
-      {hidden ? <HiddenAmalnamaCard name={member.name} role={member.role} /> : <GridData member={member} range={range} rangeLabel={rangeLabel} isSelf={isSelf} />}
+      {hidden ? <HiddenAmalnamaCard name={member.name} role={member.role} /> : <GridData member={member} range={range} rangeLabel={rangeLabel} isSelf={isSelf} viewerId={session.user.id} canManage={isSupervisor} />}
     </div>
   );
 }
@@ -83,11 +85,15 @@ async function GridData({
   range,
   rangeLabel,
   isSelf,
+  viewerId,
+  canManage,
 }: {
   member: { id: string; name: string; gender: string; joinedAt: Date };
   range: ReturnType<typeof parseGridDays>;
   rangeLabel: string;
   isSelf: boolean;
+  viewerId: string;
+  canManage: boolean;
 }) {
   const today = startOfBangladeshDay(getBangladeshToday());
   const span = range === "all" ? MAX_ALL_DAYS : Number(range);
@@ -117,8 +123,21 @@ async function GridData({
       isFriday: day.weekday === "FRIDAY",
       hasEntry: Boolean(day.entry),
       percent: day.percent,
+      entryId: day.entry?.id ?? null,
     };
   });
+
+  let comments: GridComment[] = [];
+  try {
+    comments = await getAmalCommentClient().amalComment.findMany({
+      where: { memberId: member.id },
+      orderBy: { createdAt: "desc" },
+      take: 30,
+      select: { id: true, memberId: true, authorId: true, comment: true, createdAt: true, author: { select: { name: true, role: true } } },
+    });
+  } catch {
+    comments = [];
+  }
 
   const rows: GridRow[] = rowItems.map((item) => {
     let missedCount = 0;
@@ -167,8 +186,12 @@ async function GridData({
         periodDays: report.periodDays,
         topMissed,
       }}
-      commentsHref={isSelf ? "/dashboard/amalnama/list" : `/dashboard/amalnama/list?member=${member.id}`}
       isSelf={isSelf}
+      memberId={member.id}
+      comments={comments}
+      canComment={canManage && !isSelf}
+      viewerId={viewerId}
+      canManage={canManage}
     />
   );
 }

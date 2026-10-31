@@ -1,7 +1,11 @@
-import type { AmalCategory, AmalInputType, Weekday } from "@prisma/client";
+import type { AmalCategory, AmalInputType, Role, Weekday } from "@prisma/client";
+import { formatDistanceToNow } from "date-fns";
+import { bn } from "date-fns/locale";
 import { CalendarDays, MessageSquareText, NotebookPen } from "lucide-react";
 import Link from "next/link";
 
+import { CommentDeleteButton, CommentForm } from "@/components/amalnama/comment-form";
+import { DailyEntryActions } from "@/components/amalnama/daily-entry-actions";
 import { toBn } from "@/components/amalnama/report-data";
 import { cn } from "@/lib/utils";
 
@@ -69,7 +73,10 @@ export type GridColumn = {
   isFriday: boolean;
   hasEntry: boolean;
   percent: number | null;
+  entryId: string | null;
 };
+
+export type GridComment = { id: string; comment: string; createdAt: Date; authorId: string; author: { name: string; role: Role } };
 
 export type GridRow = { item: GridViewItem; cells: GridCell[]; missedCount: number; doneCount: number };
 
@@ -160,7 +167,7 @@ export function GridLegend() {
       {item("✓", "সম্পন্ন", "bg-success-soft text-success")}
       {item("৩", "আংশিক", "bg-warning-soft text-warning")}
       {item("✗", "মিস", "bg-danger-soft text-danger")}
-      {item("—", "মাসিকে প্রযোজ্য নয়", "bg-female-soft text-female")}
+      {item("—", "ওজরের দিনে প্রযোজ্য নয়", "bg-female-soft text-female")}
       {item("·", "এন্ট্রি নেই", "bg-surface-sunken text-subtle-foreground")}
       {item("", "এই দিনে প্রযোজ্য নয়", "border border-hairline bg-surface")}
     </ul>
@@ -175,8 +182,12 @@ export function GridView({
   columns,
   rows,
   summary,
-  commentsHref,
   isSelf,
+  memberId,
+  comments,
+  canComment,
+  viewerId,
+  canManage,
 }: {
   memberName: string;
   rangeLabel: string;
@@ -185,8 +196,12 @@ export function GridView({
   columns: GridColumn[];
   rows: GridRow[];
   summary: GridSummary;
-  commentsHref: string | null;
   isSelf: boolean;
+  memberId: string;
+  comments: GridComment[];
+  canComment: boolean;
+  viewerId: string;
+  canManage: boolean;
 }) {
   const monthBands: Array<{ key: string; label: string; span: number }> = [];
   for (const column of columns) {
@@ -266,6 +281,7 @@ export function GridView({
                 >
                   <span className={cn("block text-xs font-bold leading-4", column.isToday ? "text-gold-foreground" : "text-foreground")}>{column.dayNumber}</span>
                   <span className={cn("block text-[9px] font-semibold leading-3", column.isFriday ? "text-primary" : "text-subtle-foreground")}>{column.weekday}</span>
+                  {canManage ? <DailyEntryActions entryId={column.entryId} memberId={memberId} dateKey={column.key} /> : null}
                 </th>
               ))}
               <th scope="col" className="border-b-2 border-l border-hairline bg-surface px-2 py-2 text-center text-[10px] font-bold text-muted-foreground">
@@ -330,17 +346,34 @@ export function GridView({
 
       {truncatedNote ? <p className="rounded-xl border border-dashed border-hairline-strong px-3 py-2 text-center text-xs text-muted-foreground">{truncatedNote}</p> : null}
 
+      {comments.length > 0 || canComment ? (
+        <section className="surface space-y-3 rounded-card border border-hairline p-4 sm:p-5">
+          <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
+            <MessageSquareText className="size-4 text-primary" /> উস্তাদজির মন্তব্য ({toBn(comments.length)})
+          </h2>
+          {comments.length === 0 ? <p className="text-xs text-muted-foreground">এখনো কোনো মন্তব্য নেই।</p> : null}
+          <div className="space-y-2">
+            {comments.map((item) => (
+              <div key={item.id} className="rounded-xl bg-gold-soft px-3 py-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <p className="whitespace-pre-wrap text-sm leading-6 text-foreground">{item.comment}</p>
+                  {item.authorId === viewerId || canManage ? <CommentDeleteButton commentId={item.id} /> : null}
+                </div>
+                <p className="mt-1 text-[11px] text-muted-foreground">{item.author.name} ({item.author.role === "USTADH" ? "উস্তাদজি" : "সদস্য"}) • {formatDistanceToNow(item.createdAt, { addSuffix: true, locale: bn })}</p>
+              </div>
+            ))}
+          </div>
+          {canComment ? <CommentForm memberId={memberId} memberName={memberName} /> : null}
+        </section>
+      ) : null}
+
       <div className="flex flex-wrap gap-2">
         {isSelf ? (
           <Link href="/dashboard/amalnama" className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-on-primary">
             <NotebookPen className="size-4" /> আজকের আমলনামা
           </Link>
         ) : null}
-        {commentsHref ? (
-          <Link href={commentsHref} className="inline-flex h-11 items-center gap-2 rounded-xl border border-hairline-strong bg-surface px-4 text-sm font-semibold text-foreground">
-            <MessageSquareText className="size-4" /> মন্তব্য ও দিনভিত্তিক তালিকা
-          </Link>
-        ) : null}
+        {canManage && !isSelf ? <Link href={`/dashboard/amalnama?member=${memberId}`} className="inline-flex h-11 items-center gap-2 rounded-xl border border-hairline-strong bg-surface px-4 text-sm font-semibold text-foreground"><NotebookPen className="size-4" /> আজকের আমল সম্পাদনা</Link> : null}
       </div>
     </div>
   );
