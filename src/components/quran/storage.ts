@@ -2,7 +2,11 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 
-import type { QuranScript, ReaderTheme, ViewMode } from "@/components/quran/types";
+import type {
+  QuranScript,
+  ReaderTheme,
+  ViewMode,
+} from "@/components/quran/types";
 import { RECITERS } from "@/components/quran/types";
 
 /**
@@ -29,11 +33,17 @@ export type ReaderPrefs = {
   repeat: number;
 };
 
-export type LastRead = { mode: "surah" | "juz"; id: number; surah: number; ayah: number; at: number };
+export type LastRead = {
+  mode: "surah" | "juz";
+  id: number;
+  surah: number;
+  ayah: number;
+  at: number;
+};
 export type Bookmark = { surah: number; ayah: number; at: number };
 
 export const DEFAULT_PREFS: ReaderPrefs = {
-  // Mushaf (continuous, like a printed Quran page) is the default reading view.
+  // Mushaf (continuous Arabic) is the default view.
   view: "mushaf",
   arabicStep: 2,
   banglaStep: 1,
@@ -46,7 +56,12 @@ export const DEFAULT_PREFS: ReaderPrefs = {
   repeat: 1,
 };
 
-const KEYS = { prefs: "quran.prefs.v4", last: "quran.lastRead.v2", bookmarks: "quran.bookmarks.v2", favourites: "quran.favourites.v1" } as const;
+const KEYS = {
+  prefs: "quran.prefs.v4",
+  last: "quran.lastRead.v2",
+  bookmarks: "quran.bookmarks.v2",
+  favourites: "quran.favourites.v1",
+} as const;
 const EVENT = "quran-storage";
 
 function read<T>(key: string, fallback: T): T {
@@ -98,13 +113,20 @@ function subscribe(callback: () => void) {
   };
 }
 
-export function usePrefs(): [ReaderPrefs, (patch: Partial<ReaderPrefs>) => void] {
+export function usePrefs(): [
+  ReaderPrefs,
+  (patch: Partial<ReaderPrefs>) => void,
+] {
   const prefs = useSyncExternalStore(
     subscribe,
     () => snapshot(KEYS.prefs, () => read(KEYS.prefs, DEFAULT_PREFS)),
     () => DEFAULT_PREFS,
   );
-  const update = useCallback((patch: Partial<ReaderPrefs>) => write(KEYS.prefs, { ...read(KEYS.prefs, DEFAULT_PREFS), ...patch }), []);
+  const update = useCallback(
+    (patch: Partial<ReaderPrefs>) =>
+      write(KEYS.prefs, { ...read(KEYS.prefs, DEFAULT_PREFS), ...patch }),
+    [],
+  );
   return [prefs, update];
 }
 
@@ -122,7 +144,10 @@ export function saveLastRead(value: Omit<LastRead, "at">) {
 
 const EMPTY: Bookmark[] = [];
 
-export function useBookmarks(): [Bookmark[], (surah: number, ayah: number) => boolean] {
+export function useBookmarks(): [
+  Bookmark[],
+  (surah: number, ayah: number) => boolean,
+] {
   const list = useSyncExternalStore(
     subscribe,
     () => snapshot(KEYS.bookmarks, () => readArray<Bookmark>(KEYS.bookmarks)),
@@ -131,8 +156,12 @@ export function useBookmarks(): [Bookmark[], (surah: number, ayah: number) => bo
   /** Toggles a bookmark; returns true when it is now bookmarked. */
   const toggle = useCallback((surah: number, ayah: number) => {
     const current = readArray<Bookmark>(KEYS.bookmarks);
-    const exists = current.some((item) => item.surah === surah && item.ayah === ayah);
-    const next = exists ? current.filter((item) => !(item.surah === surah && item.ayah === ayah)) : [{ surah, ayah, at: Date.now() }, ...current].slice(0, 200);
+    const exists = current.some(
+      (item) => item.surah === surah && item.ayah === ayah,
+    );
+    const next = exists
+      ? current.filter((item) => !(item.surah === surah && item.ayah === ayah))
+      : [{ surah, ayah, at: Date.now() }, ...current].slice(0, 200);
     write(KEYS.bookmarks, next);
     return !exists;
   }, []);
@@ -151,7 +180,10 @@ export function useFavouriteSurahs(): [number[], (surah: number) => boolean] {
   const toggle = useCallback((surah: number) => {
     const current = readArray<number>(KEYS.favourites);
     const exists = current.includes(surah);
-    write(KEYS.favourites, exists ? current.filter((item) => item !== surah) : [surah, ...current]);
+    write(
+      KEYS.favourites,
+      exists ? current.filter((item) => item !== surah) : [surah, ...current],
+    );
     return !exists;
   }, []);
   return [list, toggle];

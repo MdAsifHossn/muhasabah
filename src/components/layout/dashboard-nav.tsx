@@ -99,7 +99,7 @@ export const NAV_GROUPS: NavGroup[] = [
 
 const BOTTOM_ITEMS: NavItem[] = [
   { label: "হোম", href: "/dashboard", icon: Home },
-  { label: "আজকের আমল", href: "/dashboard/amalnama", icon: ClipboardCheck },
+  { label: "আমলনামা", href: "/dashboard/amalnama", icon: ClipboardCheck },
   { label: "কুরআন", href: "/quran", icon: BookOpenCheck },
   { label: "হাদীস", href: "/dashboard/hadith", icon: BookMarked },
 ];
@@ -184,14 +184,14 @@ export function MobileBottomNav({ role, name, roleLabel }: { role: Role; name: s
                   href={item.href}
                   aria-current={active ? "page" : undefined}
                   className={cn(
-                    "flex min-h-[60px] flex-col items-center justify-center gap-1 text-[11px] font-semibold transition-colors",
+                    "flex min-h-[60px] flex-col items-center justify-center gap-1 py-1 text-[11px] font-semibold transition-colors",
                     active ? "text-primary" : "text-subtle-foreground",
                   )}
                 >
                   <span className={cn("grid h-7 w-12 place-items-center rounded-full transition-colors", active && "bg-primary-soft")}>
                     <item.icon className={cn("size-5", active && "stroke-[2.3]")} />
                   </span>
-                  {item.label}
+                  <span className="max-w-full truncate px-1 text-center whitespace-nowrap leading-none">{item.label}</span>
                 </Link>
               </li>
             );
@@ -202,14 +202,14 @@ export function MobileBottomNav({ role, name, roleLabel }: { role: Role; name: s
               onClick={() => setOpen(true)}
               aria-expanded={open}
               className={cn(
-                "flex min-h-[60px] w-full flex-col items-center justify-center gap-1 text-[11px] font-semibold",
+                "flex min-h-[60px] w-full flex-col items-center justify-center gap-1 py-1 text-[11px] font-semibold transition-colors",
                 moreActive ? "text-primary" : "text-subtle-foreground",
               )}
             >
               <span className={cn("grid h-7 w-12 place-items-center rounded-full", moreActive && "bg-primary-soft")}>
                 <Menu className="size-5" />
               </span>
-              আরও
+              <span className="max-w-full truncate px-1 text-center whitespace-nowrap leading-none">আরও</span>
             </button>
           </li>
         </ul>
