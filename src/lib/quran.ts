@@ -1188,6 +1188,20 @@ export function hasBismillahHeader(surahNumber: number): boolean {
  * Safe to call on already-clean text (no-op), so client renderers can apply
  * it to cached/offline payloads too.
  */
+/**
+ * The Indo-Pak (nastaleeq) text ends every ayah with U+06DF, which the IndoPak
+ * font draws as an empty ayah circle. The reader shows its own numbered
+ * marker, so drop that trailing circle and attach any waqf sign (ۙ ۚ ۖ …)
+ * directly to the last word — as in a printed Indo-Pak mushaf.
+ */
+export function cleanIndoPakAyahEnd(text: string): string {
+  // The source may also append a private-use glyph (e.g. U+F500) after the circle.
+  return text
+    .replace(/[\s\uE000-\uF8FF]+$/u, "")
+    .replace(/\s*\u06DF([\u0610-\u061A\u064B-\u065F\u06D6-\u06ED]*)$/u, "$1")
+    .trim();
+}
+
 export function stripBismillah(text: string, surahNumber: number, numberInSurah: number): string {
   const clean = text.replace(/^﻿/, "");
   if (numberInSurah !== 1 || !hasBismillahHeader(surahNumber)) return clean;

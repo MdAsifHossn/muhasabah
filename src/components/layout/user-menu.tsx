@@ -1,6 +1,6 @@
 "use client";
 
-import { BookMarked, BookOpenCheck, CalendarDays, ChevronDown, ClipboardCheck, KeyRound, LayoutDashboard, LogOut, MessagesSquare, Moon, Sun, UserRound, UsersRound } from "lucide-react";
+import { BookMarked, BookOpenCheck, CalendarDays, ChevronDown, ClipboardCheck, KeyRound, LayoutDashboard, Library, LogOut, MessagesSquare, Moon, Sun, UserRound, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -81,6 +81,11 @@ export function UserMenu({
               <DropdownMenuItem asChild className="h-10 rounded-lg">
                 <Link href="/dashboard/hadith">
                   <BookMarked /> হাদীস
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="h-10 rounded-lg">
+                <Link href="/library">
+                  <Library /> কিতাবখানা
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="h-10 rounded-lg">

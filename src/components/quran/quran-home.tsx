@@ -1,16 +1,20 @@
 "use client";
 
-import { ArrowLeft, Bookmark, BookOpen, ChevronRight, Search, Sparkles, WifiOff, X } from "lucide-react";
+import { ArrowLeft, Bookmark, BookOpen, ChevronRight, Heart, Search, Settings2, Sparkles, WifiOff, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-import { useBookmarks, useLastRead } from "@/components/quran/storage";
-import { ThemeToggle } from "@/components/theme/theme-toggle";
+import { SettingsSheet } from "@/components/quran/settings-sheet";
+import { useBookmarks, useFavouriteSurahs, useLastRead, usePrefs } from "@/components/quran/storage";
+import { readerThemeStyle } from "@/components/quran/themes";
 import { bnNum, JUZ_STARTS, shortBanglaName, SURAH_LIST, type Surah } from "@/lib/quran";
 import { TOTAL_AYAHS, type QuranProgressRecord } from "@/lib/quran-progress";
 import { cn } from "@/lib/utils";
 
-type Tab = "surah" | "juz" | "bookmarks";
+type Tab = "surah" | "juz" | "saved";
+
+/** Surahs people open most — quick chips under the hero. */
+const POPULAR = [18, 36, 55, 56, 67];
 
 const BN_TO_EN: Record<string, string> = { "০": "0", "১": "1", "২": "2", "৩": "3", "৪": "4", "৫": "5", "৬": "6", "৭": "7", "৮": "8", "৯": "9" };
 
@@ -47,6 +51,10 @@ export function QuranHome({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [progress, setProgress] = useState<QuranProgressRecord | null>(null);
   const lastRead = useLastRead();
   const [bookmarks] = useBookmarks();
+  const [favourites, toggleFavourite] = useFavouriteSurahs();
+  const favouriteSet = useMemo(() => new Set(favourites), [favourites]);
+  const [prefs, setPrefs] = usePrefs();
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   useEffect(() => {
     if (!isLoggedIn) return;
@@ -83,9 +91,12 @@ export function QuranHome({ isLoggedIn }: { isLoggedIn: boolean }) {
     : "/quran?surah=1";
 
   return (
-    <div className="min-h-dvh bg-background pb-[calc(2rem+env(safe-area-inset-bottom))]">
+    <div style={readerThemeStyle(prefs.theme)} data-script={prefs.script} className="min-h-dvh bg-background pb-[calc(2rem+env(safe-area-inset-bottom))] text-foreground">
       {/* ── Top bar ── */}
-      <header className="sticky top-0 z-30 border-b border-hairline bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+      <header
+        className="sticky top-0 z-30 border-b border-hairline pt-[env(safe-area-inset-top)] backdrop-blur-xl"
+        style={{ background: "var(--reader-bar, color-mix(in srgb, var(--background) 88%, transparent))" }}
+      >
         <div className="mx-auto flex h-14 max-w-3xl items-center gap-2 px-3 sm:px-4">
           <Link
             href={isLoggedIn ? "/dashboard" : "/"}
@@ -104,9 +115,17 @@ export function QuranHome({ isLoggedIn }: { isLoggedIn: boolean }) {
               <WifiOff className="size-[18px]" />
             </Link>
           ) : null}
-          <ThemeToggle />
+          <button
+            type="button"
+            onClick={() => setSettingsOpen(true)}
+            aria-label="পড়ার সেটিংস"
+            className="grid size-10 place-items-center rounded-xl border border-hairline bg-surface text-muted-foreground transition hover:text-foreground"
+          >
+            <Settings2 className="size-[18px]" />
+          </button>
         </div>
       </header>
+      <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} prefs={prefs} onChange={setPrefs} />
 
       <main className="mx-auto max-w-3xl px-4 pt-4 sm:pt-6">
         {/* ── Continue reading ── */}
@@ -150,13 +169,33 @@ export function QuranHome({ isLoggedIn }: { isLoggedIn: boolean }) {
           </Link>
         </section>
 
+        {/* ── Popular surahs ── */}
+        <div className="no-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1">
+          {POPULAR.map((number) => {
+            const surah = SURAH_LIST[number - 1];
+            return (
+              <Link
+                key={number}
+                href={`/quran?surah=${number}`}
+                className="flex shrink-0 items-center gap-2.5 rounded-2xl border border-hairline bg-surface px-3.5 py-2.5 shadow-card transition hover:border-hairline-strong active:scale-[0.98]"
+              >
+                <span>
+                  <span className="block text-sm font-semibold text-foreground">{shortBanglaName(surah)}</span>
+                  <span className="block text-[11px] text-muted-foreground">{bnNum(surah.numberOfAyahs)} আয়াত</span>
+                </span>
+                <BookOpen className="size-4 text-primary" />
+              </Link>
+            );
+          })}
+        </div>
+
         {/* ── Tabs ── */}
         <div role="tablist" aria-label="তালিকা" className="mt-5 grid grid-cols-3 gap-1 rounded-xl border border-hairline bg-surface-sunken p-1">
           {(
             [
               ["surah", "সূরা"],
               ["juz", "পারা"],
-              ["bookmarks", `বুকমার্ক${bookmarks.length ? ` (${bnNum(bookmarks.length)})` : ""}`],
+              ["saved", `প্রিয়${favourites.length + bookmarks.length ? ` (${bnNum(favourites.length + bookmarks.length)})` : ""}`],
             ] as const
           ).map(([value, label]) => (
             <button
@@ -201,10 +240,10 @@ export function QuranHome({ isLoggedIn }: { isLoggedIn: boolean }) {
 
             <ul className="mt-3 divide-y divide-hairline overflow-hidden rounded-card border border-hairline bg-surface shadow-card">
               {surahs.map((surah) => (
-                <li key={surah.number}>
+                <li key={surah.number} className="flex items-center">
                   <Link
                     href={`/quran?surah=${surah.number}`}
-                    className="flex items-center gap-3 px-3 py-3 transition hover:bg-surface-sunken active:bg-surface-sunken sm:px-4"
+                    className="flex min-w-0 flex-1 items-center gap-3 py-3 pl-3 transition hover:bg-surface-sunken active:bg-surface-sunken sm:pl-4"
                   >
                     <NumberBadge value={surah.number} />
                     <span className="min-w-0 flex-1">
@@ -217,6 +256,15 @@ export function QuranHome({ isLoggedIn }: { isLoggedIn: boolean }) {
                       {surah.name.replace(/^سُورَةُ\s*/, "")}
                     </span>
                   </Link>
+                  <button
+                    type="button"
+                    onClick={() => toggleFavourite(surah.number)}
+                    aria-pressed={favouriteSet.has(surah.number)}
+                    aria-label={favouriteSet.has(surah.number) ? "প্রিয় থেকে সরান" : "প্রিয়তে রাখুন"}
+                    className={cn("grid size-11 shrink-0 place-items-center transition", favouriteSet.has(surah.number) ? "text-rose-500" : "text-subtle-foreground hover:text-rose-500")}
+                  >
+                    <Heart className={cn("size-[18px]", favouriteSet.has(surah.number) && "fill-current")} />
+                  </button>
                 </li>
               ))}
               {surahs.length === 0 ? (
@@ -250,9 +298,34 @@ export function QuranHome({ isLoggedIn }: { isLoggedIn: boolean }) {
           </ul>
         ) : null}
 
-        {tab === "bookmarks" ? (
+        {tab === "saved" && favourites.length ? (
+          <>
+            <h3 className="mt-4 text-xs font-bold tracking-wide text-muted-foreground">প্রিয় সূরা</h3>
+            <ul className="mt-2 grid grid-cols-2 gap-2.5 sm:grid-cols-3">
+              {favourites.map((number) => {
+                const surah = SURAH_LIST[number - 1];
+                if (!surah) return null;
+                return (
+                  <li key={number}>
+                    <Link href={`/quran?surah=${number}`} className="flex h-full items-center gap-3 rounded-card border border-hairline bg-surface p-3 shadow-card transition hover:border-hairline-strong active:scale-[0.98]">
+                      <NumberBadge value={number} />
+                      <span className="min-w-0">
+                        <span className="block truncate font-semibold text-foreground">{shortBanglaName(surah)}</span>
+                        <span className="block truncate text-xs text-muted-foreground">{bnNum(surah.numberOfAyahs)} আয়াত</span>
+                      </span>
+                    </Link>
+                  </li>
+                );
+              })}
+            </ul>
+          </>
+        ) : null}
+
+        {tab === "saved" ? (
           bookmarks.length ? (
-            <ul className="mt-3 divide-y divide-hairline overflow-hidden rounded-card border border-hairline bg-surface shadow-card">
+            <>
+            <h3 className="mt-4 text-xs font-bold tracking-wide text-muted-foreground">বুকমার্ক করা আয়াত</h3>
+            <ul className="mt-2 divide-y divide-hairline overflow-hidden rounded-card border border-hairline bg-surface shadow-card">
               {bookmarks.map((item) => {
                 const surah = SURAH_LIST[item.surah - 1];
                 return (
@@ -273,11 +346,12 @@ export function QuranHome({ isLoggedIn }: { isLoggedIn: boolean }) {
                 );
               })}
             </ul>
-          ) : (
+            </>
+          ) : favourites.length ? null : (
             <div className="mt-3 rounded-card border border-dashed border-hairline-strong bg-surface px-5 py-12 text-center">
               <Bookmark className="mx-auto size-8 text-subtle-foreground" />
-              <p className="mt-3 font-semibold text-foreground">এখনো কোনো বুকমার্ক নেই</p>
-              <p className="mt-1 text-sm text-muted-foreground">পড়ার সময় আয়াতের পাশের বুকমার্ক বোতাম চাপুন — এখানে জমা থাকবে।</p>
+              <p className="mt-3 font-semibold text-foreground">এখনো কিছু রাখা হয়নি</p>
+              <p className="mt-1 text-sm text-muted-foreground">সূরার পাশের ♡ চাপুন, বা পড়ার সময় আয়াত বুকমার্ক করুন — এখানে জমা থাকবে।</p>
             </div>
           )
         ) : null}

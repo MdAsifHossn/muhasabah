@@ -4,7 +4,9 @@ export type Mode = "surah" | "juz";
  *  server progress API whitelist. */
 export type ViewMode = "both" | "arabic" | "bangla" | "mushaf";
 export type FontSize = "small" | "medium" | "large";
-export type ReaderTheme = "app" | "sepia";
+export type { ReaderThemeId as ReaderTheme } from "@/components/quran/themes";
+/** Arabic script: Indo-Pak (default, South-Asian mushaf) or Uthmani (Madinah mushaf). */
+export type QuranScript = "indopak" | "uthmani";
 
 export type ReaderAyah = {
   /** Global ayah number 1..6236. */
@@ -19,7 +21,7 @@ export type ReaderAyah = {
   audio: string;
 };
 
-export type QuranPayload = { reciter?: string; ayahs: ReaderAyah[] };
+export type QuranPayload = { reciter?: string; script?: QuranScript; ayahs: ReaderAyah[] };
 
 export type Reciter = { id: string; name: string };
 
@@ -32,6 +34,16 @@ export const RECITERS: Reciter[] = [
   { id: "ar.mahermuaiqly", name: "মাহির আল-মুআইকলি" },
   { id: "ar.minshawi", name: "মুহাম্মাদ সিদ্দীক আল-মিনশাভী" },
 ];
+
+/** Arabic font size range (px) for the slider. */
+export const ARABIC_PX = { min: 22, max: 54, step: 2 } as const;
+/** Bangla translation size range (px). */
+export const BANGLA_PX = { min: 14, max: 26, step: 1 } as const;
+
+/** Coarse size stored with the server-side progress record. */
+export function pxToFontSize(px: number): FontSize {
+  return px <= 26 ? "small" : px >= 36 ? "large" : "medium";
+}
 
 /** Arabic font sizes (px) for the 5-step slider. */
 export const ARABIC_STEPS = [24, 28, 32, 37, 43] as const;

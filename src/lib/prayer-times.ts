@@ -23,7 +23,7 @@ export type PrayerTiming = {
   };
 };
 
-function parseMinutes(raw: string | undefined, defaultMinutes: number): number {
+export function parseMinutes(raw: string | undefined, defaultMinutes: number): number {
   if (!raw) return defaultMinutes;
   const match = raw.match(/^(\d{1,2}):(\d{2})/);
   if (!match) return defaultMinutes;
@@ -38,7 +38,7 @@ function formatMinutesTo12h(mins: number): string {
   return `${h12}:${String(m).padStart(2, "0")} ${ampm}`;
 }
 
-const fallbackMinutes = {
+export const fallbackMinutes: PrayerTiming["minutes"] = {
   fajr: 4 * 60 + 33,
   sunrise: 5 * 60 + 48,
   ishraq: 5 * 60 + 48 + 15,
@@ -67,28 +67,34 @@ const fallback: PrayerTiming = {
 
 type AlAdhanResponse = { code: number; data?: { timings?: Record<string, string> } };
 
+/** Same Dhaka request the server uses — also safe to call from the browser (CORS *). */
+export const ALADHAN_DHAKA_URL = "https://api.aladhan.com/v1/timingsByCity?city=Dhaka&country=Bangladesh&method=1&school=1";
+
+/** AlAdhan "HH:MM" timings → minutes since midnight (Ishraq = sunrise + 15). */
+export function timingsToMinutes(t: Record<string, string>): PrayerTiming["minutes"] {
+  const sunrise = parseMinutes(t.Sunrise, fallbackMinutes.sunrise);
+  return {
+    fajr: parseMinutes(t.Fajr, fallbackMinutes.fajr),
+    sunrise,
+    ishraq: sunrise + 15,
+    dhuhr: parseMinutes(t.Dhuhr, fallbackMinutes.dhuhr),
+    asr: parseMinutes(t.Asr, fallbackMinutes.asr),
+    maghrib: parseMinutes(t.Maghrib, fallbackMinutes.maghrib),
+    isha: parseMinutes(t.Isha, fallbackMinutes.isha),
+    sahariEnd: parseMinutes(t.Imsak, fallbackMinutes.sahariEnd),
+    iftar: parseMinutes(t.Maghrib, fallbackMinutes.iftar),
+  };
+}
+
 export async function getTodayFastingInfo(): Promise<PrayerTiming> {
   try {
-    const response = await fetch("https://api.aladhan.com/v1/timingsByCity?city=Dhaka&country=Bangladesh&method=1&school=1", { next: { revalidate: 3600 }, signal: AbortSignal.timeout(8000) });
+    const response = await fetch(ALADHAN_DHAKA_URL, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(8000) });
     if (!response.ok) return fallback;
     const json = await response.json() as AlAdhanResponse;
     const t = json.data?.timings;
     if (!t) return fallback;
 
-    const sunriseMin = parseMinutes(t.Sunrise, fallbackMinutes.sunrise);
-    const ishraqMin = sunriseMin + 15; // Ishraq begins ~15 mins after sunrise
-
-    const mins = {
-      fajr: parseMinutes(t.Fajr, fallbackMinutes.fajr),
-      sunrise: sunriseMin,
-      ishraq: ishraqMin,
-      dhuhr: parseMinutes(t.Dhuhr, fallbackMinutes.dhuhr),
-      asr: parseMinutes(t.Asr, fallbackMinutes.asr),
-      maghrib: parseMinutes(t.Maghrib, fallbackMinutes.maghrib),
-      isha: parseMinutes(t.Isha, fallbackMinutes.isha),
-      sahariEnd: parseMinutes(t.Imsak, fallbackMinutes.sahariEnd),
-      iftar: parseMinutes(t.Maghrib, fallbackMinutes.iftar),
-    };
+    const mins = timingsToMinutes(t);
 
     return {
       district: "ঢাকা",

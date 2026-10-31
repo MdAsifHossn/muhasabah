@@ -14,6 +14,14 @@
 
 @custom-variant dark (&:where(.dark, .dark *));
 
+/* Indo-Pak Nastaleeq — the South-Asian mushaf script (same font quran.com
+   uses; served by the Quran Foundation CDN with open CORS). */
+@font-face {
+  font-family: "IndoPak Nastaleeq";
+  src: url("https://verses.quran.foundation/fonts/quran/hafs/nastaleeq/indopak/indopak-nastaleeq-waqf-lazim-v4.2.1.woff2") format("woff2");
+  font-display: swap;
+}
+
 :root {
   --radius: 0.875rem;
 
@@ -382,10 +390,28 @@
     word-spacing: 0.06em;
   }
 
+  /* Indo-Pak script: taller ascenders/marks need more line height. */
+  [data-script="indopak"] .quran-text,
+  .quran-text[data-script="indopak"] {
+    font-family: "IndoPak Nastaleeq", var(--font-quran);
+    line-height: 2.45;
+    word-spacing: 0.02em;
+  }
+
   .arabic-text {
     font-family: var(--font-serif);
     direction: rtl;
     line-height: 2;
+  }
+
+  /* Traditional ayah sign ۝ + number, drawn by the Quran font itself. */
+  .ayah-end {
+    /* Scheherazade New draws ۝ + digits as the ornamental rosette with the
+       number inside; the IndoPak font only draws an empty circle. */
+    font-family: var(--font-scheherazade), "Scheherazade New", serif;
+    white-space: nowrap;
+    color: color-mix(in srgb, currentColor 88%, var(--gold));
+    font-feature-settings: normal;
   }
 
   .ayah-marker {
@@ -401,7 +427,8 @@
     line-height: 1;
     vertical-align: middle;
     color: var(--gold-foreground);
-    border: 1.5px solid color-mix(in srgb, var(--gold) 70%, transparent);
+    /* Double ring, like the printed mushaf's ayah rosette. */
+    border: 3px double color-mix(in srgb, var(--gold) 80%, transparent);
     border-radius: 999px;
     background: var(--gold-soft);
   }

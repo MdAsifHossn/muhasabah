@@ -1,8 +1,9 @@
 "use client";
 
-import { MapPin, Moon, Sun, Sunrise, Sunset } from "lucide-react";
+import { MapPin, Moon, ShieldAlert, Sun, Sunrise, Sunset } from "lucide-react";
 import { useEffect, useState } from "react";
 
+import { clockBn, getForbiddenWindows } from "@/lib/forbidden-times";
 import type { PrayerTiming } from "@/lib/prayer-times";
 import { cn } from "@/lib/utils";
 
@@ -67,6 +68,8 @@ export function TodayPrayerCard({ timings, hijriDate, banglaDate, englishDate, c
   }, []);
 
   const active = now === null ? null : getActiveWaqt(timings.minutes, now);
+  const forbidden = getForbiddenWindows(timings.minutes);
+  const activeForbidden = now === null ? null : forbidden.find((window) => now >= window.start && now < window.end) ?? null;
   const next = now === null ? null : getNextWaqt(timings.minutes, now);
   const prayers: Array<{ key: WaqtKey; time: string; icon: typeof Sun }> = [
     { key: "fajr", time: timings.fajr, icon: Sunrise },
@@ -132,6 +135,32 @@ export function TodayPrayerCard({ timings, hijriDate, banglaDate, englishDate, c
             <p className="text-sm font-bold tabular-nums text-foreground">{toBnTime(row.value)}</p>
           </div>
         ))}
+      </div>
+      {/* ── নিষিদ্ধ সময় (আনুমানিক) ── */}
+      <div className="mt-3 rounded-xl border border-hairline px-3 py-2.5">
+        <p className="flex items-center gap-1.5 text-[11px] font-semibold text-muted-foreground">
+          <ShieldAlert className="size-3.5 text-danger" /> নামাজের নিষিদ্ধ সময় <span className="font-normal">(আনুমানিক)</span>
+        </p>
+        <div className="mt-2 grid grid-cols-3 gap-1.5 text-center">
+          {forbidden.map((window) => {
+            const isNow = activeForbidden?.key === window.key;
+            return (
+              <div key={window.key} className={cn("rounded-lg px-1 py-1.5", isNow ? "bg-danger text-white" : "bg-danger-soft text-foreground")}>
+                <p className={cn("truncate text-[10px] font-semibold", isNow ? "text-white/85" : "text-danger")}>{window.label.replace(/ (যাওয়াল)$/, "")}</p>
+                <p className="text-[11px] font-bold tabular-nums">
+                  {clockBn(window.start)}–{clockBn(window.end)}
+                </p>
+              </div>
+            );
+          })}
+        </div>
+        {activeForbidden && now !== null ? (
+          <p className="mt-2 text-xs font-bold text-danger" role="status">
+            এখন নিষিদ্ধ সময় — {durationBn(activeForbidden.end - now)} বাকি
+          </p>
+        ) : (
+          <p className="mt-1.5 text-[10px] text-subtle-foreground">সতর্কতার জন্য দুই পাশে কয়েক মিনিট বেশি সময় রাখুন।</p>
+        )}
       </div>
       {timings.source === "fallback" ? <p className="mt-2 text-[10px] text-subtle-foreground">লাইভ সময় পাওয়া যায়নি — আনুমানিক সময় দেখানো হচ্ছে।</p> : null}
     </section>

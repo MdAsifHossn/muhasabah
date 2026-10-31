@@ -42,6 +42,7 @@ export const HADITH_BOOKS: HadithBook[] = [
   { id: "nawawi", nameBn: "আরবাঈন আন-নববী", nameAr: "الأربعون النووية", nameEn: "Forty Hadith of an-Nawawi", compilerBn: "ইমাম নববী (রহ.)", description: "দ্বীনের মূলনীতি সংবলিত বিখ্যাত চল্লিশ হাদীস — মুখস্থ করার উপযোগী।", group: "other", provider: "fawaz", source: "nawawi", language: "bn" },
   { id: "riyad", nameBn: "রিয়াদুস সালিহীন", nameAr: "رياض الصالحين", nameEn: "Riyad as-Salihin", compilerBn: "ইমাম নববী (রহ.)", description: "আখলাক, আদব ও দৈনন্দিন আমলের নির্বাচিত হাদীস।", group: "english", provider: "ahmed", source: "riyad_assalihin", language: "en" },
   { id: "adab", nameBn: "আল-আদাবুল মুফরাদ", nameAr: "الأدب المفرد", nameEn: "Al-Adab al-Mufrad", compilerBn: "ইমাম বুখারী (রহ.)", description: "ইসলামী শিষ্টাচার ও চরিত্রগঠনের হাদীস।", group: "english", provider: "ahmed", source: "aladab_almufrad", language: "en" },
+  { id: "mishkat", nameBn: "মিশকাতুল মাসাবীহ", nameAr: "مشكاة المصابيح", nameEn: "Mishkat al-Masabih", compilerBn: "খতীব আত-তিবরীযী (রহ.)", description: "মাদরাসায় পঠিত প্রসিদ্ধ হাদীস-সংকলন; বিষয়ভিত্তিক বিন্যাস।", group: "english", provider: "ahmed", source: "mishkat_almasabih", language: "en" },
   { id: "bulugh", nameBn: "বুলুগুল মারাম", nameAr: "بلوغ المرام", nameEn: "Bulugh al-Maram", compilerBn: "ইবনে হাজার আসকালানী (রহ.)", description: "আহকামের দলিলভিত্তিক হাদীস সংকলন।", group: "english", provider: "ahmed", source: "bulugh_almaram", language: "en" },
 ];
 

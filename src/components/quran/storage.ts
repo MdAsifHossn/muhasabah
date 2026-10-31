@@ -2,7 +2,7 @@
 
 import { useCallback, useSyncExternalStore } from "react";
 
-import type { ReaderTheme, ViewMode } from "@/components/quran/types";
+import type { QuranScript, ReaderTheme, ViewMode } from "@/components/quran/types";
 import { RECITERS } from "@/components/quran/types";
 
 /**
@@ -14,18 +14,39 @@ import { RECITERS } from "@/components/quran/types";
 
 export type ReaderPrefs = {
   view: ViewMode;
+  /** @deprecated kept for old stored prefs — use arabicPx. */
   arabicStep: number;
+  /** @deprecated kept for old stored prefs — use banglaPx. */
   banglaStep: number;
+  arabicPx: number;
+  banglaPx: number;
+  script: QuranScript;
   theme: ReaderTheme;
   reciter: string;
+  /** Playback speed for recitation. */
+  speed: number;
+  /** Repeat each ayah this many times before moving on (1 = no repeat). */
+  repeat: number;
 };
 
 export type LastRead = { mode: "surah" | "juz"; id: number; surah: number; ayah: number; at: number };
 export type Bookmark = { surah: number; ayah: number; at: number };
 
-export const DEFAULT_PREFS: ReaderPrefs = { view: "both", arabicStep: 2, banglaStep: 1, theme: "app", reciter: RECITERS[0].id };
+export const DEFAULT_PREFS: ReaderPrefs = {
+  // Mushaf (continuous, like a printed Quran page) is the default reading view.
+  view: "mushaf",
+  arabicStep: 2,
+  banglaStep: 1,
+  arabicPx: 30,
+  banglaPx: 17,
+  script: "indopak",
+  theme: "emerald",
+  reciter: RECITERS[0].id,
+  speed: 1,
+  repeat: 1,
+};
 
-const KEYS = { prefs: "quran.prefs.v2", last: "quran.lastRead.v2", bookmarks: "quran.bookmarks.v2" } as const;
+const KEYS = { prefs: "quran.prefs.v4", last: "quran.lastRead.v2", bookmarks: "quran.bookmarks.v2", favourites: "quran.favourites.v1" } as const;
 const EVENT = "quran-storage";
 
 function read<T>(key: string, fallback: T): T {
@@ -113,6 +134,24 @@ export function useBookmarks(): [Bookmark[], (surah: number, ayah: number) => bo
     const exists = current.some((item) => item.surah === surah && item.ayah === ayah);
     const next = exists ? current.filter((item) => !(item.surah === surah && item.ayah === ayah)) : [{ surah, ayah, at: Date.now() }, ...current].slice(0, 200);
     write(KEYS.bookmarks, next);
+    return !exists;
+  }, []);
+  return [list, toggle];
+}
+
+const EMPTY_FAVS: number[] = [];
+
+/** Favourite surahs (numbers), newest first. */
+export function useFavouriteSurahs(): [number[], (surah: number) => boolean] {
+  const list = useSyncExternalStore(
+    subscribe,
+    () => snapshot(KEYS.favourites, () => readArray<number>(KEYS.favourites)),
+    () => EMPTY_FAVS,
+  );
+  const toggle = useCallback((surah: number) => {
+    const current = readArray<number>(KEYS.favourites);
+    const exists = current.includes(surah);
+    write(KEYS.favourites, exists ? current.filter((item) => item !== surah) : [surah, ...current]);
     return !exists;
   }, []);
   return [list, toggle];

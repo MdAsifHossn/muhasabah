@@ -178,6 +178,8 @@ function quranCacheKey(url) {
   key.searchParams.forEach((value, name) => {
     if (name === "v") return;
     if (name === "reciter" && (!reciter || reciter === DEFAULT_RECITER)) return;
+    // Indo-Pak is the default script — same entry as a request without ?script=.
+    if (name === "script" && value === "indopak") return;
     rest.push([name, value]);
   });
   rest.sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));

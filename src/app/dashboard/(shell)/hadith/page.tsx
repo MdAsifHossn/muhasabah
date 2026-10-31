@@ -26,7 +26,7 @@ export default function HadithLibraryPage() {
             قَالَ رَسُولُ اللَّهِ ﷺ
           </p>
         </div>
-        <div className="mt-5 rounded-2xl bg-black/15 p-3 ring-1 ring-white/10 [&_input]:bg-white/95 [&_input]:text-[#0f1f1a] [&_select]:bg-white/95 [&_select]:text-[#0f1f1a]">
+        <div className="mt-5 rounded-2xl bg-black/15 p-3 ring-1 ring-white/10 [&_input]:border-white/25 [&_input]:bg-white/10 [&_input]:text-white [&_input]:placeholder:text-white/60 [&_select]:border-white/25 [&_select]:bg-white/10 [&_select]:text-white [&_svg]:text-white/70">
           <p className="mb-2 text-xs font-semibold text-on-hero-muted">হাদীস নম্বর দিয়ে সরাসরি খুঁজুন</p>
           <JumpToHadith />
         </div>

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
+import { PrayerReminder } from "@/components/prayer/prayer-reminder";
 import { PwaInstall } from "@/components/pwa/pwa-install";
 import { PwaProvider } from "@/components/pwa/pwa-provider";
 import { ThemeProvider } from "@/components/theme/theme-provider";
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
           <TooltipProvider delayDuration={300}>
             <PwaProvider>{children}</PwaProvider>
             <PwaInstall />
+            <PrayerReminder />
             <Toaster position="top-center" richColors />
           </TooltipProvider>
         </ThemeProvider>

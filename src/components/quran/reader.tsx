@@ -14,6 +14,7 @@ import {
   Pause,
   Play,
   RefreshCw,
+  Repeat,
   Settings2,
   Share2,
   SkipBack,
@@ -22,41 +23,25 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { SettingsSheet } from "@/components/quran/settings-sheet";
 import { Sheet } from "@/components/quran/sheet";
 import { saveLastRead, useBookmarks, usePrefs } from "@/components/quran/storage";
 import { SurahHeader } from "@/components/quran/surah-header";
-import { ARABIC_STEPS, BANGLA_STEPS, RECITERS, stepToFontSize, type Mode, type QuranPayload, type ReaderAyah } from "@/components/quran/types";
+import { readerThemeStyle } from "@/components/quran/themes";
+import { pxToFontSize, RECITERS, type Mode, type QuranPayload, type QuranScript, type ReaderAyah } from "@/components/quran/types";
 import { bnNum, shortBanglaName, stripBismillah, SURAH_LIST } from "@/lib/quran";
 import { TOTAL_AYAHS } from "@/lib/quran-progress";
 import { cn } from "@/lib/utils";
 
 const MAX_ID: Record<Mode, number> = { surah: 114, juz: 30 };
+const SPEED_CYCLE = [0.75, 1, 1.25, 1.5];
+const REPEAT_CYCLE = [1, 2, 3, 5];
 const SAVE_DEBOUNCE_MS = 1600;
 const ARABIC_DIGITS = "٠١٢٣٤٥٦٧٨٩";
 const toArabicDigits = (value: number) => String(value).replace(/\d/g, (digit) => ARABIC_DIGITS[Number(digit)]);
-
-/** Sepia reading paper — overrides the colour tokens for the reader subtree only. */
-const SEPIA: CSSProperties = {
-  ["--background" as string]: "#f3e9d2",
-  ["--surface" as string]: "#fbf4e3",
-  ["--surface-raised" as string]: "#fdf8ec",
-  ["--surface-sunken" as string]: "#efe3c6",
-  ["--foreground" as string]: "#3a2e1c",
-  ["--muted-foreground" as string]: "#76664a",
-  ["--subtle-foreground" as string]: "#a0906f",
-  ["--hairline" as string]: "#e5d6b3",
-  ["--hairline-strong" as string]: "#d6c398",
-  ["--primary" as string]: "#8a5a14",
-  ["--primary-hover" as string]: "#6f480f",
-  ["--primary-soft" as string]: "#efe0bb",
-  ["--primary-soft-foreground" as string]: "#6f480f",
-  ["--on-primary" as string]: "#ffffff",
-  colorScheme: "light",
-};
 
 type Props = { mode: Mode; id: number; initialSurah?: number; initialAyah?: number; isLoggedIn: boolean };
 
@@ -69,7 +54,9 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
   const [ayahs, setAyahs] = useState<ReaderAyah[]>([]);
   const [failedKey, setFailedKey] = useState<string | null>(null);
   const [reload, setReload] = useState(0);
-  const requestKey = `${mode}/${id}/${reciter}/${reload}`;
+  const script: QuranScript = prefs.script === "uthmani" ? "uthmani" : "indopak";
+  const requestKey = `${mode}/${id}/${reciter}/${script}/${reload}`;
+  const [servedScript, setServedScript] = useState<QuranScript>(script);
 
   const [current, setCurrent] = useState<number | null>(null); // index into ayahs
   const [isPlaying, setIsPlaying] = useState(false);
@@ -89,13 +76,16 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
   /* ── Load the surah / juz ─────────────────────────────────────────── */
   useEffect(() => {
     const controller = new AbortController();
-    fetch(`/api/quran/${mode}/${id}?reciter=${encodeURIComponent(reciter)}`, { signal: controller.signal })
+    fetch(`/api/quran/${mode}/${id}?reciter=${encodeURIComponent(reciter)}&script=${script}`, { signal: controller.signal })
       .then((response) => {
         if (!response.ok) throw new Error(String(response.status));
         return response.json() as Promise<QuranPayload>;
       })
       .then((data) => {
         if (!Array.isArray(data.ayahs) || data.ayahs.length === 0) throw new Error("empty");
+        // The server reports the script it actually served (Uthmani when the
+        // Indo-Pak source is down); offline copies saved before have no tag = Uthmani.
+        setServedScript(data.script === "indopak" ? "indopak" : "uthmani");
         setAyahs(
           data.ayahs.map((ayah) => ({
             ...ayah,
@@ -110,7 +100,7 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
         if ((error as Error)?.name !== "AbortError") setFailedKey(requestKey);
       });
     return () => controller.abort();
-  }, [mode, id, reciter, requestKey]);
+  }, [mode, id, reciter, script, requestKey]);
 
   const failed = failedKey === requestKey && ayahs.length === 0;
   const loading = ayahs.length === 0 && !failed;
@@ -151,7 +141,7 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
         ayahInSurah: top.numberInSurah,
         globalAyah: top.number,
         viewMode: prefsRef.current.view,
-        fontSize: stepToFontSize(prefsRef.current.arabicStep),
+        fontSize: pxToFontSize(prefsRef.current.arabicPx),
         reciter: prefsRef.current.reciter,
         newRead,
       };
@@ -238,11 +228,14 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
   }, [flush]);
 
   /* ── Audio ─────────────────────────────────────────────────────────── */
+  const repeatCount = useRef(0);
   const playIndex = useCallback((index: number, scroll = true) => {
     const audio = audioRef.current;
     const ayah = ayahsRef.current[index];
     if (!audio || !ayah) return;
+    repeatCount.current = 0;
     audio.src = ayah.audio;
+    audio.playbackRate = prefsRef.current.speed || 1;
     setCurrent(index);
     setAudioLoading(true);
     pendingRead.current.add(ayah.number);
@@ -294,12 +287,25 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
   }
 
   function handleEnded() {
+    const audio = audioRef.current;
+    // Repeat the same ayah N times before moving on (memorisation).
+    if (audio && current !== null && repeatCount.current + 1 < (prefs.repeat || 1)) {
+      repeatCount.current += 1;
+      audio.currentTime = 0;
+      audio.playbackRate = prefs.speed || 1;
+      void audio.play();
+      return;
+    }
     if (continuousRef.current && current !== null && current + 1 < ayahs.length) playIndex(current + 1);
     else {
       setIsPlaying(false);
       setCurrent(null);
     }
   }
+
+  useEffect(() => {
+    if (audioRef.current) audioRef.current.playbackRate = prefs.speed || 1;
+  }, [prefs.speed]);
 
   /* ── Ayah actions ──────────────────────────────────────────────────── */
   function citation(ayah: ReaderAyah) {
@@ -377,8 +383,8 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
     : groups.length
       ? `${shortBanglaName(SURAH_LIST[groups[0].surah - 1])} – ${shortBanglaName(SURAH_LIST[groups[groups.length - 1].surah - 1])}`
       : "লোড হচ্ছে…";
-  const arabicSize = ARABIC_STEPS[Math.min(ARABIC_STEPS.length - 1, Math.max(0, prefs.arabicStep))];
-  const banglaSize = BANGLA_STEPS[Math.min(BANGLA_STEPS.length - 1, Math.max(0, prefs.banglaStep))];
+  const arabicSize = prefs.arabicPx || 30;
+  const banglaSize = prefs.banglaPx || 17;
   const playingAyah = current !== null ? ayahs[current] : null;
   const view = prefs.view;
 
@@ -388,7 +394,7 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
   const nextLabel = mode === "surah" ? (id < 114 ? shortBanglaName(SURAH_LIST[id]) : "") : `পারা ${bnNum(id + 1)}`;
 
   return (
-    <div style={prefs.theme === "sepia" ? SEPIA : undefined} className="min-h-dvh bg-background text-foreground">
+    <div style={readerThemeStyle(prefs.theme)} data-script={servedScript} className="min-h-dvh bg-background text-foreground">
       <audio
         ref={audioRef}
         preload="none"
@@ -406,7 +412,10 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
       />
 
       {/* ── Header ── */}
-      <header className="sticky top-0 z-40 border-b border-hairline bg-background/90 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
+      <header
+        className="sticky top-0 z-40 border-b border-hairline pt-[env(safe-area-inset-top)] backdrop-blur-xl"
+        style={{ background: "var(--reader-bar, color-mix(in srgb, var(--background) 90%, transparent))" }}
+      >
         <div className="mx-auto flex h-14 max-w-3xl items-center gap-1 px-2 sm:px-4">
           <Link href="/quran" aria-label="সূরার তালিকা" className="grid size-11 shrink-0 place-items-center rounded-xl text-muted-foreground transition hover:bg-surface-sunken hover:text-foreground">
             <ArrowLeft className="size-5" />
@@ -459,11 +468,12 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
             const surah = SURAH_LIST[group.surah - 1];
             return (
               <div key={`${group.surah}-${group.continuedFrom ?? 1}`} className="space-y-3">
-                <SurahHeader surah={surah} continuedFrom={group.continuedFrom} />
+                <SurahHeader surah={surah} continuedFrom={group.continuedFrom} script={servedScript} />
 
                 {view === "mushaf" ? (
-                  <div className="rounded-card border border-hairline bg-surface px-4 py-5 shadow-card sm:px-7 sm:py-7">
-                    <p dir="rtl" lang="ar" className="quran-text text-justify" style={{ fontSize: arabicSize, lineHeight: 2.3 }}>
+                  <div className="px-1 py-2 sm:px-4">
+                    {/* Right-aligned, not justified: justification stretched the gaps between words. */}
+                    <p dir="rtl" lang="ar" className="quran-text text-right" style={{ fontSize: arabicSize }}>
                       {group.ayahs.map(({ ayah, index }) => (
                         <span
                           key={ayah.number}
@@ -481,9 +491,7 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
                           )}
                         >
                           {ayah.arabic}
-                          <span className="ayah-marker" aria-label={`আয়াত ${ayah.numberInSurah}`}>
-                            {toArabicDigits(ayah.numberInSurah)}
-                          </span>{" "}
+                          <AyahEnd number={ayah.numberInSurah} />{" "}
                         </span>
                       ))}
                     </p>
@@ -579,6 +587,23 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
             <button type="button" aria-label="পরের আয়াত" disabled={current === null || current >= ayahs.length - 1} onClick={() => current !== null && playIndex(current + 1)} className="grid size-10 place-items-center rounded-full text-muted-foreground hover:bg-surface-sunken disabled:opacity-40">
               <SkipForward className="size-5" />
             </button>
+            <button
+              type="button"
+              aria-label={`গতি ${prefs.speed}x — বদলাতে চাপুন`}
+              onClick={() => setPrefs({ speed: SPEED_CYCLE[(SPEED_CYCLE.indexOf(prefs.speed) + 1) % SPEED_CYCLE.length] ?? 1 })}
+              className="hidden h-10 min-w-11 place-items-center rounded-full px-2 text-xs font-bold text-muted-foreground hover:bg-surface-sunken sm:grid"
+            >
+              {bnNum(prefs.speed)}x
+            </button>
+            <button
+              type="button"
+              aria-label={`প্রতি আয়াত ${prefs.repeat} বার — বদলাতে চাপুন`}
+              onClick={() => setPrefs({ repeat: REPEAT_CYCLE[(REPEAT_CYCLE.indexOf(prefs.repeat) + 1) % REPEAT_CYCLE.length] ?? 1 })}
+              className={cn("relative grid size-10 place-items-center rounded-full hover:bg-surface-sunken", prefs.repeat > 1 ? "text-primary" : "text-muted-foreground")}
+            >
+              <Repeat className="size-[18px]" />
+              {prefs.repeat > 1 ? <span className="absolute -right-0.5 -top-0.5 grid size-4 place-items-center rounded-full bg-primary text-[9px] font-bold text-primary-foreground">{bnNum(prefs.repeat)}</span> : null}
+            </button>
             <button type="button" aria-label="বন্ধ করুন" onClick={stopAudio} className="grid size-10 place-items-center rounded-full text-muted-foreground hover:bg-surface-sunken">
               <X className="size-5" />
             </button>
@@ -613,6 +638,19 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
         ) : null}
       </Sheet>
     </div>
+  );
+}
+
+/**
+ * Traditional end-of-ayah sign: U+06DD followed by Arabic-Indic digits. The
+ * Quran fonts draw this as the ornamental circle with the number inside, as in
+ * a printed mushaf. A no-break space keeps it on the same line as the last word.
+ */
+function AyahEnd({ number }: { number: number }) {
+  return (
+    <span className="ayah-end" aria-label={`আয়াত ${number}`}>
+      {" ۝" + toArabicDigits(number)}
+    </span>
   );
 }
 
@@ -673,7 +711,7 @@ function AyahCard({
       </div>
       <p dir="rtl" lang="ar" className="quran-text mt-2 text-right" style={{ fontSize: arabicSize }}>
         {ayah.arabic}
-        <span className="ayah-marker">{toArabicDigits(ayah.numberInSurah)}</span>
+        <AyahEnd number={ayah.numberInSurah} />
       </p>
       {showTranslation && ayah.bangla ? (
         <p className="mt-3 border-t border-hairline pt-3 font-bangla-serif leading-[1.95] text-foreground/90" style={{ fontSize: banglaSize }}>

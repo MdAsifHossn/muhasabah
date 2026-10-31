@@ -11,6 +11,7 @@ export function SiteNavLinks({ signedIn }: { signedIn: boolean }) {
   const links = [
     { label: "কুরআন", href: "/quran" },
     { label: "হাদীস", href: signedIn ? "/dashboard/hadith" : "/login?next=/dashboard/hadith" },
+    { label: "কিতাবখানা", href: "/library" },
     { label: "হিজরি ক্যালেন্ডার", href: "/calendar" },
   ];
   return (

@@ -2,6 +2,7 @@
 
 import type { Role } from "@prisma/client";
 import {
+  AlarmClock,
   BarChart3,
   BookMarked,
   BookOpen,
@@ -13,6 +14,7 @@ import {
   ClipboardCheck,
   Home,
   LayoutGrid,
+  Library,
   ListChecks,
   Megaphone,
   Menu,
@@ -47,6 +49,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "আমলের খাতা (৭/৩০/৪০ দিন)", href: "/dashboard/amalnama/grid", icon: LayoutGrid },
       { label: "আগের দিনের আমল", href: "/dashboard/amalnama/history", icon: CalendarRange },
       { label: "আমার উন্নতি", href: "/dashboard/progress", icon: BarChart3 },
+      { label: "নামাজের সময়", href: "/dashboard/prayer", icon: AlarmClock },
     ],
   },
   {
@@ -54,7 +57,8 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "আল-কুরআন", href: "/quran", icon: BookOpenCheck },
       { label: "হাদীস", href: "/dashboard/hadith", icon: BookMarked },
-      { label: "আমার বই পড়া", href: "/dashboard/books", icon: BookOpen },
+      { label: "কিতাবখানা (বই পড়ুন)", href: "/library", icon: Library },
+      { label: "আমার বই পড়ার হিসাব", href: "/dashboard/books", icon: BookOpen },
       { label: "নেট ছাড়া কুরআন", href: "/dashboard/offline", icon: WifiOff },
       { label: "হিজরি ক্যালেন্ডার", href: "/calendar", icon: CalendarDays },
     ],

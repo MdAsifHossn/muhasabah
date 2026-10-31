@@ -4,6 +4,7 @@ import {
   BookMarked,
   BookOpenCheck,
   CalendarDays,
+  Library,
   ClipboardCheck,
   Megaphone,
   MoonStar,
@@ -89,10 +90,11 @@ export default async function HomePage({ searchParams }: { searchParams: Promise
 
       {/* ── Quick access (public) ── */}
       <section className="mx-auto max-w-6xl px-4 pt-2 sm:px-6">
-        <div className="grid gap-3 sm:grid-cols-3">
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             { href: "/quran", icon: BookOpenCheck, title: "আল-কুরআন", text: "অর্থ ও তিলাওয়াতসহ পড়ুন", tone: "bg-cat-quran/12 text-cat-quran" },
             { href: hadithHref, icon: BookMarked, title: "হাদীস", text: "বুখারী, মুসলিমসহ প্রসিদ্ধ গ্রন্থ", tone: "bg-cat-dhikr/12 text-cat-dhikr" },
+            { href: "/library", icon: Library, title: "কিতাবখানা", text: "৫৬০+ বাংলা ইসলামি বই", tone: "bg-cat-reading/12 text-cat-reading" },
             { href: "/calendar", icon: CalendarDays, title: "হিজরি ক্যালেন্ডার", text: formatHijriDate(today), tone: "bg-cat-jumuah/14 text-cat-jumuah" },
           ].map((item) => (
             <Link key={item.title} href={item.href} className="surface group flex items-center gap-4 rounded-card p-4 transition hover:-translate-y-0.5 hover:shadow-md">

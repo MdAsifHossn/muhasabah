@@ -89,9 +89,10 @@ export function JumpToHadith({ bookId, className }: { bookId?: string; className
 
   return (
     <form onSubmit={submit} className={cn("space-y-2", className)}>
-      <div className="flex gap-2">
+      {/* Phones: book on its own row, number + button below. sm+: one row. */}
+      <div className="grid grid-cols-[1fr_auto] gap-2 sm:flex">
         {bookId ? null : (
-          <Select aria-label="গ্রন্থ" value={book} onChange={(event) => setBook(event.target.value)} className="min-w-0 flex-1">
+          <Select aria-label="গ্রন্থ" value={book} onChange={(event) => setBook(event.target.value)} className="col-span-2 h-12 min-w-0 sm:col-span-1 sm:flex-1">
             {HADITH_BOOKS.map((item) => (
               <option key={item.id} value={item.id}>
                 {item.nameBn}
@@ -99,7 +100,7 @@ export function JumpToHadith({ bookId, className }: { bookId?: string; className
             ))}
           </Select>
         )}
-        <div className="relative w-32 shrink-0 sm:w-40">
+        <div className="relative min-w-0 sm:w-40 sm:shrink-0">
           <Hash className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-subtle-foreground" />
           <Input
             inputMode="numeric"
@@ -107,10 +108,10 @@ export function JumpToHadith({ bookId, className }: { bookId?: string; className
             placeholder="নম্বর"
             value={value}
             onChange={(event) => setValue(event.target.value)}
-            className="pl-9"
+            className="h-12 pl-9"
           />
         </div>
-        <Button type="submit" aria-label="হাদীসে যান" className="shrink-0 px-4">
+        <Button type="submit" aria-label="হাদীসে যান" className="h-12 shrink-0 px-6">
           যান
         </Button>
       </div>
