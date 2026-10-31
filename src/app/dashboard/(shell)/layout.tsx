@@ -2,6 +2,7 @@ import { Role } from "@prisma/client";
 
 import { Brand } from "@/components/brand";
 import { DashboardNav, MobileBottomNav } from "@/components/layout/dashboard-nav";
+import { ShareButton } from "@/components/layout/share-button";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { UserMenu } from "@/components/layout/user-menu";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -63,6 +64,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
             <span className="text-muted-foreground">{formatBanglaDate(today)}</span>
           </div>
           <div className="flex items-center gap-2">
+            <ShareButton />
             <ThemeToggle className="hidden sm:grid" />
             <UserMenu name={session.user.name} email={session.user.email} roleLabel={roleLabel} isStaff={isStaffRole(role)} />
           </div>

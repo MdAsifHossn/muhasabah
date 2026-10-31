@@ -4,6 +4,7 @@ import Link from "next/link";
 
 import { Brand } from "@/components/brand";
 import { GuestMenu } from "@/components/layout/guest-menu";
+import { ShareButton } from "@/components/layout/share-button";
 import { SiteNavLinks } from "@/components/layout/site-nav-links";
 import { UserMenu } from "@/components/layout/user-menu";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
@@ -27,6 +28,7 @@ export async function SiteHeader() {
         <div className="flex items-center gap-1.5 sm:gap-2">
           <SiteNavLinks signedIn={Boolean(user)} />
           <ThemeToggle className="hidden sm:grid" />
+          <ShareButton />
           {user ? (
             <UserMenu site name={user.name} email={user.email} roleLabel={roleLabels[user.role as Role]} isStaff={isStaffRole(user.role)} />
           ) : (
