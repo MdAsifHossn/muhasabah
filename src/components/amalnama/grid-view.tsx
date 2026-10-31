@@ -176,6 +176,7 @@ export function GridLegend() {
 
 export function GridView({
   memberName,
+  memberGender,
   rangeLabel,
   windowLabel,
   truncatedNote,
@@ -190,6 +191,7 @@ export function GridView({
   canManage,
 }: {
   memberName: string;
+  memberGender: string;
   rangeLabel: string;
   windowLabel: string;
   truncatedNote: string | null;
@@ -211,7 +213,7 @@ export function GridView({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4 pb-20 sm:pb-0">
       <section className="surface rounded-card p-4 sm:p-5" aria-label="সারসংক্ষেপ">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="flex items-center gap-2 text-sm font-bold text-foreground">
@@ -227,7 +229,7 @@ export function GridView({
           <SummaryStat label="মিস আমল" value={toBn(summary.missed)} tone="danger" />
           <SummaryStat label="এন্ট্রি দেওয়া দিন" value={`${toBn(summary.enteredDays)}/${toBn(summary.totalDays)}`} tone="gold" />
           <SummaryStat label="এন্ট্রি নেই" value={`${toBn(summary.noEntryDays)} দিন`} tone="muted" />
-          <SummaryStat label="মাসিকের দিন" value={toBn(summary.periodDays)} note="নামাজ/রোজা গণনার বাইরে" tone="female" />
+          {memberGender === "FEMALE" ? <SummaryStat label="শরয়ী ওজরের দিন" value={toBn(summary.periodDays)} note="নামাজ/রোজা গণনার বাইরে" tone="female" /> : null}
         </div>
         <div className="mt-3 rounded-xl bg-surface-sunken p-3">
           <p className="text-xs font-bold text-muted-foreground">সবচেয়ে বেশি মিস</p>
@@ -273,7 +275,7 @@ export function GridView({
                 <th
                   key={column.key}
                   scope="col"
-                  title={`${column.fullLabel}${column.isPeriodDay ? " — মাসিকের দিন" : ""}`}
+                  title={`${column.fullLabel}${column.isPeriodDay ? " — শরয়ী ওজরের দিন" : ""}`}
                   className={cn(
                     "h-12 w-11 min-w-11 border-b-2 border-l border-hairline px-0 py-1 text-center align-middle",
                     column.isPeriodDay ? "bg-female-soft" : column.isToday ? "bg-gold-soft" : column.isFriday ? "bg-primary-soft" : "bg-surface",
