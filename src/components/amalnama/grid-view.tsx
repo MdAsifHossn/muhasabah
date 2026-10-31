@@ -231,16 +231,16 @@ export function GridView({
           <SummaryStat label="এন্ট্রি নেই" value={`${toBn(summary.noEntryDays)} দিন`} tone="muted" />
           {memberGender === "FEMALE" ? <SummaryStat label="শরয়ী ওজরের দিন" value={toBn(summary.periodDays)} note="নামাজ/রোজা গণনার বাইরে" tone="female" /> : null}
         </div>
-        <div className="mt-3 rounded-xl bg-surface-sunken p-3">
+        <div className="mt-3 min-w-0 overflow-hidden rounded-xl bg-surface-sunken p-3">
           <p className="text-xs font-bold text-muted-foreground">সবচেয়ে বেশি মিস</p>
           {summary.topMissed.length === 0 ? (
             <p className="mt-1.5 text-sm font-semibold text-success">এই সময়ে কোনো আমল মিস হয়নি। আলহামদুলিল্লাহ!</p>
           ) : (
-            <ul className="mt-1.5 grid gap-1.5 sm:grid-cols-2">
+            <ul className="mt-1.5 grid min-w-0 grid-cols-1 gap-1.5 sm:grid-cols-2">
               {summary.topMissed.map((row) => (
-                <li key={row.titleBn} className="flex items-center justify-between gap-2 text-sm text-foreground">
-                  <span className="min-w-0 truncate">{row.titleBn}</span>
-                  <span className="shrink-0 rounded-full bg-danger-soft px-2 py-0.5 text-xs font-bold text-danger">{toBn(row.count)} দিন</span>
+                <li key={row.titleBn} className="flex min-w-0 max-w-full items-center justify-between gap-2 text-sm text-foreground">
+                  <span className="min-w-0 flex-1 truncate">{row.titleBn}</span>
+                  <span className="max-w-[42%] shrink-0 truncate rounded-full bg-danger-soft px-2 py-0.5 text-xs font-bold text-danger">{toBn(row.count)} দিন</span>
                 </li>
               ))}
             </ul>
