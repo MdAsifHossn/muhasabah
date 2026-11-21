@@ -1,4 +1,4 @@
-﻿/* Muhasabah service worker
+/* Muhasabah service worker
  *
  * - Navigations: network-first (deploys are never served stale), cached copy
  *   as the offline fallback.
@@ -9,7 +9,7 @@
  *   to QURAN_CACHE_MAX entries there too.
  */
 
-const VERSION = "v6";
+const VERSION = "v7";
 /** On a dev server chunk URLs are NOT content-hashed, so caching them serves stale CSS/JS. */
 const IS_DEV_HOST = ["localhost", "127.0.0.1", "[::1]"].includes(self.location.hostname);
 const PAGE_CACHE = `muhasabah-pages-${VERSION}`;
@@ -24,7 +24,7 @@ const CACHE_PREFIX = "muhasabah-";
 const QURAN_API_PATTERN = /^\/api\/quran\/(?:surah|juz)\/\d+$/;
 /** Bounded so "save the whole Quran" can never grow the cache without limit. */
 const QURAN_CACHE_MAX = 200;
-/** The API serves this reciter when `?reciter=` is absent â€” same bytes either way. */
+/** The API serves this reciter when `?reciter=` is absent — same bytes either way. */
 const DEFAULT_RECITER = "ar.alafasy";
 
 /** Only handle requests we can meaningfully cache. */
@@ -41,7 +41,7 @@ self.addEventListener("install", (event) => {
         const cache = await caches.open(PAGE_CACHE);
         await cache.addAll(["/", "/manifest.webmanifest"]);
       } catch {
-        /* precache is best effort â€” never block install */
+        /* precache is best effort — never block install */
       }
       await self.skipWaiting();
     })(),
@@ -103,7 +103,7 @@ function isStaticAsset(url) {
 function canCache(response) {
   if (!response) return false;
   if (response.status === 206) return false;
-  // Opaque = cross-origin no-cors (Google Fonts stylesheet) â€” cacheable, just
+  // Opaque = cross-origin no-cors (Google Fonts stylesheet) — cacheable, just
   // not inspectable.
   if (response.type === "opaque") return true;
   return response.ok && (response.type === "basic" || response.type === "cors");
@@ -138,7 +138,7 @@ async function networkFirst(request, cacheName) {
   const cache = await caches.open(cacheName);
   try {
     const response = await fetch(request);
-    // Awaited so the HTML is guaranteed to be on disk before we hand it over â€”
+    // Awaited so the HTML is guaranteed to be on disk before we hand it over —
     // this is what makes a visited dashboard route reachable offline.
     if (canCache(response)) {
       try {
@@ -157,7 +157,7 @@ async function networkFirst(request, cacheName) {
   }
 }
 
-/* â”€â”€ Quran API (offline reading) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Quran API (offline reading) ─────────────────────────────────────── */
 
 function isQuranApi(url) {
   return url.origin === self.location.origin && QURAN_API_PATTERN.test(url.pathname);
@@ -179,7 +179,7 @@ function quranCacheKey(url) {
   key.searchParams.forEach((value, name) => {
     if (name === "v") return;
     if (name === "reciter" && (!reciter || reciter === DEFAULT_RECITER)) return;
-    // Indo-Pak is the default script â€” same entry as a request without ?script=.
+    // Indo-Pak is the default script — same entry as a request without ?script=.
     if (name === "script" && value === "indopak") return;
     rest.push([name, value]);
   });
@@ -193,7 +193,7 @@ function quranCacheKey(url) {
 /** Response headers are immutable, so mark hit/miss through a fresh Response. */
 function withHeader(response, name, value) {
   const headers = new Headers(response.headers);
-  // The body we hand back is already content-decoded â€” the original framing
+  // The body we hand back is already content-decoded — the original framing
   // headers must not survive, or the consumer would try to decode it twice.
   headers.delete("content-encoding");
   headers.delete("content-length");
@@ -202,9 +202,9 @@ function withHeader(response, name, value) {
   return new Response(body, { status: response.status, statusText: response.statusText, headers });
 }
 
-/** Explicit offline answer so the UI can say "à¦…à¦«à¦²à¦¾à¦‡à¦¨à§‡ à¦¨à§‡à¦‡" instead of hanging. */
+/** Explicit offline answer so the UI can say "অফলাইনে নেই" instead of hanging. */
 function quranOfflineResponse() {
-  return new Response(JSON.stringify({ offline: true, error: "à¦…à¦«à¦²à¦¾à¦‡à¦¨à§‡ à¦¨à§‡à¦‡" }), {
+  return new Response(JSON.stringify({ offline: true, error: "অফলাইনে নেই" }), {
     status: 504,
     statusText: "Gateway Timeout",
     headers: { "content-type": "application/json; charset=utf-8", "X-SW-Cache": "offline" },
@@ -214,9 +214,9 @@ function quranOfflineResponse() {
 /**
  * Stale-while-revalidate for the Quran API: the cached surah is returned
  * immediately (so it also works with the network off) while the same request
- * refreshes the entry in the background. Nothing cached + no network â‡’ 504.
+ * refreshes the entry in the background. Nothing cached + no network ⇒ 504.
  *
- * `event.waitUntil(refresh)` runs synchronously â€” waitUntil may only be called
+ * `event.waitUntil(refresh)` runs synchronously — waitUntil may only be called
  * while the fetch event is still dispatching, so it must not sit behind an
  * `await`.
  */
@@ -238,7 +238,7 @@ function quranApi(request, event) {
   return caches
     .open(QURAN_CACHE)
     // `ignoreVary`: the API answers with Next's `Vary: rsc, ...` list, and the
-    // cache key is already fully normalized â€” Vary must not add noise on top.
+    // cache key is already fully normalized — Vary must not add noise on top.
     .then((cache) => cache.match(key, { ignoreVary: true }))
     .then((cached) => {
       if (cached) return withHeader(cached, "X-SW-Cache", "hit");

@@ -58,17 +58,9 @@ function readSwOptIn(): boolean {
 
 export function PwaProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
-    /* ── install-prompt plumbing (works in every environment) ───────── */
-    const onBeforeInstall = (event: Event) => {
-      event.preventDefault();
-      window.dispatchEvent(new CustomEvent(INSTALL_PROMPT_EVENT, { detail: event }));
-    };
-    const onInstalled = () => {
-      window.dispatchEvent(new CustomEvent(APP_INSTALLED_EVENT));
-    };
-
-    window.addEventListener("beforeinstallprompt", onBeforeInstall);
-    window.addEventListener("appinstalled", onInstalled);
+    /* The install signal itself is captured by an inline script in the root
+       layout <head> (it can fire before React mounts) and re-broadcast as
+       INSTALL_PROMPT_EVENT / APP_INSTALLED_EVENT. */
 
     /* ── service worker (production, or dev with NEXT_PUBLIC_ENABLE_SW=1) ── */
     let detached = false;
@@ -133,8 +125,6 @@ export function PwaProvider({ children }: { children: ReactNode }) {
 
     return () => {
       detached = true;
-      window.removeEventListener("beforeinstallprompt", onBeforeInstall);
-      window.removeEventListener("appinstalled", onInstalled);
       window.removeEventListener("load", register);
       document.removeEventListener("visibilitychange", onVisibilityChange);
       swContainer?.removeEventListener("controllerchange", onControllerChange);

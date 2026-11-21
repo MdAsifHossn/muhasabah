@@ -1,6 +1,6 @@
 "use client";
 
-import { BookMarked, BookOpenCheck, CalendarDays, ChevronDown, ClipboardCheck, KeyRound, LayoutDashboard, Library, LogOut, MessagesSquare, Moon, Sun, UserRound, UsersRound } from "lucide-react";
+import { BookMarked, BookOpenCheck, CalendarDays, ChevronDown, ClipboardCheck, Globe, KeyRound, LayoutDashboard, Library, LogOut, MessagesSquare, Moon, Sun, UserRound, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
@@ -60,6 +60,13 @@ export function UserMenu({
           <span className="mt-1.5 inline-flex rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-semibold text-primary-soft-foreground">{roleLabel}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
+        {!site ? (
+          <DropdownMenuItem asChild className="h-10 rounded-lg">
+            <Link href="/">
+              <Globe /> মূল পাতা
+            </Link>
+          </DropdownMenuItem>
+        ) : null}
         {site ? (
           <>
             <DropdownMenuItem asChild className="h-10 rounded-lg">

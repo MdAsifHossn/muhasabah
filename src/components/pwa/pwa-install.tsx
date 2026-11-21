@@ -10,6 +10,18 @@ import {
 } from "./pwa-provider";
 
 const STORAGE_KEY = "muhasabah.install-dismissed";
+/** ✕ hides the banner for a week, not forever (old builds stored "1" = forever). */
+const DISMISS_DAYS = 7;
+
+function recentlyDismissed() {
+  try {
+    const value = Number(localStorage.getItem(STORAGE_KEY));
+    // "1" from old builds (or garbage) is treated as expired, so those phones see the banner again.
+    return value > 1_000_000_000_000 && Date.now() - value < DISMISS_DAYS * 24 * 60 * 60 * 1000;
+  } catch {
+    return false;
+  }
+}
 
 /** Never fires — subscribe fn for browser-only values read via useSyncExternalStore. */
 const emptySubscribe = () => () => {};
@@ -35,12 +47,16 @@ export function PwaInstall() {
 
   useEffect(() => {
     if (window.matchMedia("(display-mode: standalone)").matches) return;
-    if (localStorage.getItem(STORAGE_KEY) === "1") return;
+    if (recentlyDismissed()) return;
 
-    const onInstallPrompt = (event: Event) => {
-      setPrompt((event as CustomEvent).detail as InstallPromptEvent);
+    const show = (event: InstallPromptEvent) => {
+      setPrompt(event);
       setVisible(true);
     };
+    const onInstallPrompt = (event: Event) => show((event as CustomEvent).detail as InstallPromptEvent);
+    // The signal may already have fired before this component mounted (captured in <head>).
+    const early = (window as Window & { __muhasabahInstallPrompt?: InstallPromptEvent | null }).__muhasabahInstallPrompt;
+    if (early) queueMicrotask(() => show(early));
     const onInstalled = () => {
       setVisible(false);
       setPrompt(null);
@@ -56,6 +72,8 @@ export function PwaInstall() {
 
   async function install() {
     if (!prompt) return;
+    // A captured prompt can be shown only once — drop the early copy.
+    (window as Window & { __muhasabahInstallPrompt?: InstallPromptEvent | null }).__muhasabahInstallPrompt = null;
     try {
       await prompt.prompt();
       const choice = await prompt.userChoice;
@@ -68,7 +86,11 @@ export function PwaInstall() {
   }
 
   function dismiss() {
-    localStorage.setItem(STORAGE_KEY, "1");
+    try {
+      localStorage.setItem(STORAGE_KEY, String(Date.now()));
+    } catch {
+      /* storage blocked — the banner simply returns next visit */
+    }
     setVisible(false);
     setPrompt(null);
   }

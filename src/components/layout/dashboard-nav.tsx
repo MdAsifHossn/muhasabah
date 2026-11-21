@@ -8,6 +8,7 @@ import {
   BookOpen,
   BookOpenCheck,
   CalendarDays,
+  Globe,
   Inbox,
   MessagesSquare,
   CalendarRange,
@@ -42,6 +43,8 @@ type NavGroup = { title?: string; items: NavItem[]; roles?: Role[] };
 export const NAV_GROUPS: NavGroup[] = [
   {
     items: [
+      // The public landing page — otherwise a signed-in member (esp. on a phone) had no way back to it.
+      { label: "মূল পাতা", href: "/", icon: Globe },
       { label: "হোম", href: "/dashboard", icon: Home },
       { label: "আজকের আমল", href: "/dashboard/amalnama", icon: ClipboardCheck },
       { label: "আমলের খাতা (দিনভিত্তিক)", href: "/dashboard/amalnama/grid", icon: LayoutGrid },

@@ -11,6 +11,22 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 const FONTS_URL =
   "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+Bengali:wght@400;500;600;700&family=Noto+Serif+Bengali:wght@400;500;600&family=Noto+Naskh+Arabic:wght@400;500;600&family=Scheherazade+New:wght@400;700&display=swap";
 
+/**
+ * `beforeinstallprompt` fires once per page load, often before React mounts.
+ * Keep it on `window.__muhasabahInstallPrompt` and re-broadcast it, so the
+ * install banner can pick it up whenever it mounts (see PwaInstall).
+ */
+const EARLY_INSTALL_CAPTURE = `
+window.addEventListener("beforeinstallprompt", function (e) {
+  e.preventDefault();
+  window.__muhasabahInstallPrompt = e;
+  window.dispatchEvent(new CustomEvent("muhasabah:installprompt", { detail: e }));
+});
+window.addEventListener("appinstalled", function () {
+  window.__muhasabahInstallPrompt = null;
+  window.dispatchEvent(new CustomEvent("muhasabah:appinstalled"));
+});`;
+
 export const metadata: Metadata = {
   title: { default: "মুহাসাবাহ — আমল, কুরআন ও হাদীস", template: "%s | মুহাসাবাহ" },
   description: "প্রতিদিনের আমলনামা, আল-কুরআন, হাদীস ও উস্তাদের তত্ত্বাবধানে আত্মপর্যালোচনা।",
@@ -47,6 +63,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <link rel="stylesheet" href={FONTS_URL} />
+        {/* Catch the browser's one-shot install signal before React hydrates — on slow phones it fires first and was lost. */}
+        <script dangerouslySetInnerHTML={{ __html: EARLY_INSTALL_CAPTURE }} />
       </head>
       <body className="antialiased" suppressHydrationWarning>
         <ThemeProvider>
