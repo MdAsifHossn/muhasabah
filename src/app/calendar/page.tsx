@@ -81,7 +81,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
               <p className="mt-0.5 text-sm text-on-hero-muted">
                 {bn(next.h.d)} {HIJRI_MONTHS_BN[next.h.m - 1]} • {formatGregorian(next.g)}
               </p>
-              <p className="mt-3 inline-flex rounded-full bg-[#e3b25a] px-3 py-1 text-sm font-bold text-[#2a1d02]">{daysLeftLabel(next.daysLeft)}</p>
+              <p className="mt-3 inline-flex rounded-full bg-[#f4f1ea] px-3 py-1 text-sm font-bold text-[#0b3b40]">{daysLeftLabel(next.daysLeft)}</p>
             </div>
           ) : null}
         </div>

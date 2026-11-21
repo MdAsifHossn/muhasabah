@@ -217,7 +217,7 @@ export function ChatThread({
           </Link>
         ) : null}
         <span className="hero-surface grid size-11 shrink-0 place-items-center rounded-full text-base font-bold ring-2 ring-gold/40">
-          {isStaffView ? title.trim().slice(0, 1) : <MessageCircleHeart className="size-5 text-[#f0cf8c]" />}
+          {isStaffView ? title.trim().slice(0, 1) : <MessageCircleHeart className="size-5 text-[#ebe6da]" />}
         </span>
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-[15px] font-semibold leading-tight">{title}</h1>

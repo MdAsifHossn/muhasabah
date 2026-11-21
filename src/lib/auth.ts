@@ -49,6 +49,10 @@ export const auth = betterAuth({
       },
     },
   },
+  // Speed: a signed copy of the session lives in a cookie for 5 minutes, so most
+  // page loads skip the session lookup in the remote database. Role / isActive
+  // changes take effect within that window (sign-out clears it immediately).
+  session: { cookieCache: { enabled: true, maxAge: 5 * 60 } },
   advanced: { database: { generateId: false } },
 });
 

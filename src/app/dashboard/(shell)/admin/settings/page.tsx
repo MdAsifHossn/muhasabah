@@ -10,10 +10,13 @@ export const metadata = { title: "সেটিংস" };
 
 export default async function AdminSettingsPage() {
   await requireAdmin();
-  const [systemItems, customItems] = await Promise.all([prisma.amalItem.count({ where: { createdById: null } }), prisma.amalItem.count({ where: { createdById: { not: null } } })]);
+  // MongoDB: `createdById: null` misses rows where the field was never set — count in code.
+  const owners = await prisma.amalItem.findMany({ select: { createdById: true } });
+  const customItems = owners.filter((item) => item.createdById != null).length;
+  const systemItems = owners.length - customItems;
 
   const settings = [
-    { icon: MapPin, title: "সময় অঞ্চল", value: "বাংলাদেশ (Asia/Dhaka)", note: "দিনের শুরু-শেষ, সপ্তাহের দিন (জুমা) ও সাইকেলের দিন এই সময় অনুযায়ী গণনা হয়।" },
+    { icon: MapPin, title: "সময় অঞ্চল", value: "বাংলাদেশ (Asia/Dhaka)", note: "দিনের শুরু-শেষ, সপ্তাহের দিন (জুমা) এই সময় অনুযায়ী গণনা হয়।" },
     { icon: UsersRound, title: "নিবন্ধন", value: "সবার জন্য খোলা", note: "নতুন নিবন্ধন সাধারণ সদস্য (MEMBER) হিসেবে শুরু হয়। একমাত্র উস্তাদজি রোল থেকে পূর্ণ নিয়ন্ত্রণ করা যায়।" },
     { icon: CalendarClock, title: "আমলনামা সম্পাদনা", value: "আজ ও গতকাল", note: "সদস্য আজকের ও গতকালের আমলনামা পূরণ/সংশোধন করতে পারেন। জমা দেওয়ার পরও সংশোধন করা যায়।" },
     { icon: LockKeyhole, title: "গোপনীয়তা", value: "সদস্য নিয়ন্ত্রিত", note: "সদস্য আমলনামা গোপন করলে উস্তাদজি কোনো তথ্য দেখতে, মন্তব্য বা রিভিউ করতে পারবেন না।" },

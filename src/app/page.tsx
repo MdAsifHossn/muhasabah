@@ -156,10 +156,10 @@ export default async function HomePage({
           <div className="hero-surface mihrab relative overflow-hidden px-5 pb-8 pt-14 text-center sm:px-10 sm:pb-12 sm:pt-20">
             <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(60%_100%_at_50%_0%,rgb(252_211_77/0.28),transparent_70%)]" aria-hidden />
             <div className="relative mx-auto w-fit">
-              <span className="absolute inset-0 -m-3 rounded-[1.6rem] bg-amber-300/25 blur-xl" aria-hidden />
-              <BrandMark className="relative size-20 rounded-[1.4rem] ring-2 ring-amber-200/40 sm:size-24" />
+              <span className="absolute inset-0 -m-3 rounded-[1.6rem] bg-marble-300/25 blur-xl" aria-hidden />
+              <BrandMark className="relative size-20 rounded-[1.4rem] ring-2 ring-marble-200/40 sm:size-24" />
             </div>
-            <p dir="rtl" className="quran-text relative mt-6 text-2xl text-amber-200 sm:text-3xl">
+            <p dir="rtl" className="quran-text relative mt-6 text-2xl text-marble-200 sm:text-3xl">
               بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
             </p>
             <h1 className="relative mt-3 text-[2rem] font-bold leading-[1.25] sm:text-5xl">
@@ -170,7 +170,7 @@ export default async function HomePage({
               প্রতিদিনের আমলনামা, তাকবীরে উলার ধারাবাহিকতা, আল-কুরআন ও হাদীস — উস্তাদজির তত্ত্বাবধানে।
             </p>
             <div className="relative mx-auto mt-7 flex max-w-sm flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">
-              <Button asChild size="lg" className="bg-[#e3b25a] text-[#2a1d02] hover:bg-[#ecc272]">
+              <Button asChild size="lg" className="bg-[#f4f1ea] text-[#0b3b40] hover:bg-[#e9e4d8]">
                 <Link href={session ? "/dashboard/amalnama" : "/login"}>
                   {session ? "আজকের আমলনামা" : "প্রবেশ করুন"}
                   <ArrowRight className="size-5" />
@@ -358,7 +358,7 @@ export default async function HomePage({
           <Button
             asChild
             size="lg"
-            className="w-full bg-[#e3b25a] text-[#2a1d02] hover:bg-[#ecc272] sm:w-auto"
+            className="w-full bg-[#f4f1ea] text-[#0b3b40] hover:bg-[#e9e4d8] sm:w-auto"
           >
             <Link href={appHref}>
               {session ? "ড্যাশবোর্ড" : "প্রবেশ / নিবন্ধন"}{" "}

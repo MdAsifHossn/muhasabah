@@ -8,7 +8,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { isAdminRole, requireUstadhOrAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
-export const metadata = { title: "সাইকেল রিভিউ" };
+export const metadata = { title: "সদস্যদের রিভিউ" };
 
 const isId = (value: unknown): value is string => typeof value === "string" && /^[a-f\d]{24}$/i.test(value);
 

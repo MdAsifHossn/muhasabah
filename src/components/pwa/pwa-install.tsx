@@ -92,7 +92,7 @@ export function PwaInstall() {
       <button
         type="button"
         onClick={install}
-        className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-emerald-400 px-3 py-2 text-xs font-bold text-emerald-950 active:bg-emerald-300"
+        className="inline-flex shrink-0 items-center gap-1.5 rounded-xl bg-teal-400 px-3 py-2 text-xs font-bold text-teal-950 active:bg-teal-300"
       >
         <Download className="size-3.5" /> ইনস্টল করুন
       </button>

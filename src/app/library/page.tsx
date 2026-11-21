@@ -64,7 +64,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
               className="h-12 w-full rounded-xl border border-white/25 bg-white/10 pl-11 pr-3 text-base text-white outline-none placeholder:text-white/60 focus-visible:border-white/60 focus-visible:ring-[3px] focus-visible:ring-white/20"
             />
           </label>
-          <button type="submit" className="h-12 shrink-0 rounded-xl bg-[#e3b25a] px-5 text-sm font-bold text-[#2a1d02] transition hover:bg-[#ecc272] active:scale-[0.98]">
+          <button type="submit" className="h-12 shrink-0 rounded-xl bg-[#f4f1ea] px-5 text-sm font-bold text-[#0b3b40] transition hover:bg-[#e9e4d8] active:scale-[0.98]">
             খুঁজুন
           </button>
         </form>

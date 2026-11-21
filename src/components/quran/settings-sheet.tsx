@@ -242,7 +242,7 @@ export function SettingsSheet({
                     className="relative block h-16 overflow-hidden rounded-xl ring-1 ring-black/10"
                     style={{ background: theme.swatch }}
                   >
-                    <span className="absolute inset-x-3 top-4 h-0.5 rounded-full bg-emerald-500/80" />
+                    <span className="absolute inset-x-3 top-4 h-0.5 rounded-full bg-teal-500/80" />
                     <span
                       className="absolute inset-x-3 top-7 h-1 rounded-full opacity-80"
                       style={{ background: theme.ink }}

@@ -59,42 +59,52 @@ export const AMAL_CATALOG: CatalogItem[] = [
 
   // ── জুমার বিশেষ আমল (শুধু শুক্রবার) ──
   { titleBn: "জুমার দিনের গোসল, পরিচ্ছন্নতা ও সুগন্ধি", category: AmalCategory.JUMUAH, specificDay: Weekday.FRIDAY, genderScope: MALE },
-  { titleBn: "আগেভাগে মসজিদে গিয়ে জুমার নামাজ আদায়", category: AmalCategory.JUMUAH, specificDay: Weekday.FRIDAY, genderScope: MALE, points: 2 },
+  { titleBn: "আগেভাগে মসজিদে গিয়ে জুমা আদায়", legacy: ["আগেভাগে মসজিদে গিয়ে জুমার নামাজ আদায়"], category: AmalCategory.JUMUAH, specificDay: Weekday.FRIDAY, genderScope: MALE, points: 2 },
   { titleBn: "মনোযোগ দিয়ে খুতবা শোনা", category: AmalCategory.JUMUAH, specificDay: Weekday.FRIDAY, genderScope: MALE },
-  { titleBn: "শুক্রবার সূরা কাহাফের তিলাওয়াত", category: AmalCategory.JUMUAH, specificDay: Weekday.FRIDAY, points: 2, exemptOnPeriod: true },
-  { titleBn: "বেশি বেশি দরূদ শরীফ পাঠ", category: AmalCategory.JUMUAH, specificDay: Weekday.FRIDAY, inputType: AmalInputType.COUNT, targetValue: 100, unit: "বার", points: 2 },
+  { titleBn: "সূরা কাহাফ তিলাওয়াত", legacy: ["শুক্রবার সূরা কাহাফের তিলাওয়াত"], category: AmalCategory.JUMUAH, specificDay: Weekday.FRIDAY, points: 2, exemptOnPeriod: true },
+  { titleBn: "দরূদ শরীফ পাঠ", legacy: ["বেশি বেশি দরূদ শরীফ পাঠ"], category: AmalCategory.JUMUAH, specificDay: Weekday.FRIDAY, inputType: AmalInputType.COUNT, targetValue: 100, unit: "বার", points: 2 },
   { titleBn: "আসর থেকে মাগরিব পর্যন্ত দোয়ায় মশগুল থাকা", category: AmalCategory.JUMUAH, specificDay: Weekday.FRIDAY },
 
-  // ── কুরআন ──
-  { titleBn: "আধা ঘণ্টার অধিক কুরআন তিলাওয়াত", category: AmalCategory.QURAN, inputType: AmalInputType.MINUTES, targetValue: 30, unit: "মিনিট", points: 2, exemptOnPeriod: true },
-  { titleBn: "তরজমা পাঠের পরিমাণ", category: AmalCategory.QURAN, inputType: AmalInputType.AYAT, targetValue: 10, unit: "আয়াত", points: 2 },
+  // ── নফল রোজা (শুধু সোম ও বৃহস্পতিবার) ──
+  { titleBn: "সোমবারের নফল রোজা", legacy: ["আজকের নফল রোজা (সোম/বৃহস্পতি/আইয়ামে বীজ)"], category: AmalCategory.SUNNAH, specificDay: Weekday.MONDAY, points: 3, exemptOnPeriod: true },
+  { titleBn: "বৃহস্পতিবারের নফল রোজা", category: AmalCategory.SUNNAH, specificDay: Weekday.THURSDAY, points: 3, exemptOnPeriod: true },
 
-  // ── যিকির ──
+  // ── কুরআন ──
+  { titleBn: "কুরআন তিলাওয়াত", legacy: ["আধা ঘণ্টার অধিক কুরআন তিলাওয়াত"], category: AmalCategory.QURAN, inputType: AmalInputType.MINUTES, targetValue: 30, unit: "মিনিট", points: 2, exemptOnPeriod: true },
+  { titleBn: "কুরআনের তরজমা পাঠ", legacy: ["তরজমা পাঠের পরিমাণ"], category: AmalCategory.QURAN, inputType: AmalInputType.AYAT, targetValue: 10, unit: "আয়াত", points: 2 },
+
+  // ── যিকির ও দোয়া ──
   { titleBn: "সকাল-সন্ধ্যার মাসনুন যিকির", category: AmalCategory.DHIKR },
-  { titleBn: "অধিক মুনাজাত করা", category: AmalCategory.DHIKR },
-  { titleBn: "প্রতিদিন ৭০০ বার নির্ধারিত যিকির", category: AmalCategory.DHIKR, inputType: AmalInputType.COUNT, targetValue: 700, unit: "বার", points: 2 },
+  { titleBn: "আল্লাহর কাছে মুনাজাত ও দোয়া", legacy: ["অধিক মুনাজাত করা"], category: AmalCategory.DHIKR },
+  { titleBn: "নির্ধারিত যিকির", legacy: ["প্রতিদিন ৭০০ বার নির্ধারিত যিকির"], category: AmalCategory.DHIKR, inputType: AmalInputType.COUNT, targetValue: 700, unit: "বার", points: 2 },
 
   // ── সুন্নাহ ──
-  { titleBn: "প্রত্যেক অজুর পূর্বে মিসওয়াক করা", category: AmalCategory.SUNNAH },
-  { titleBn: "প্রত্যেক কাজে মাসনুন দুয়ার আমল", category: AmalCategory.SUNNAH },
-  { titleBn: "আজকের নফল রোজা (সোম/বৃহস্পতি/আইয়ামে বীজ)", category: AmalCategory.SUNNAH, points: 3, exemptOnPeriod: true },
-  { titleBn: "সময়মতো সুন্নাত অনুযায়ী সেহরি গ্রহণ", category: AmalCategory.SUNNAH, exemptOnPeriod: true },
-  { titleBn: "দোয়ার সাথে সময়মতো ইফতার পালন", category: AmalCategory.SUNNAH, exemptOnPeriod: true },
+  { titleBn: "অজুর আগে মিসওয়াক করা", legacy: ["প্রত্যেক অজুর পূর্বে মিসওয়াক করা"], category: AmalCategory.SUNNAH },
+  { titleBn: "দৈনন্দিন কাজে মাসনুন দোয়া পড়া", legacy: ["প্রত্যেক কাজে মাসনুন দুয়ার আমল"], category: AmalCategory.SUNNAH },
 
-  // ── আত্মসংযম ও আখলাক ──
+  // ── আত্মসংযম ──
   { titleBn: "শরয়ী পর্দা রক্ষা করা", category: AmalCategory.SELF_DISCIPLINE, genderScope: FEMALE },
-  { titleBn: "অতিরিক্ত মোবাইল ব্যবহার না করা", category: AmalCategory.SELF_DISCIPLINE },
-  { titleBn: "পাপে দৃষ্টি না দেওয়া", category: AmalCategory.SELF_DISCIPLINE },
-  { titleBn: "কারও গীবত বা অপ্রয়োজনীয় কথা না বলা", category: AmalCategory.CHARACTER },
-  { titleBn: "রাগ প্রকাশ না করা", category: AmalCategory.CHARACTER },
+  { titleBn: "দৃষ্টির হেফাজত করা", legacy: ["পাপে দৃষ্টি না দেওয়া"], category: AmalCategory.SELF_DISCIPLINE },
+  { titleBn: "মোবাইলের অপ্রয়োজনীয় ব্যবহার থেকে বিরত থাকা", legacy: ["অতিরিক্ত মোবাইল ব্যবহার না করা"], category: AmalCategory.SELF_DISCIPLINE },
+
+  // ── আখলাক ──
+  { titleBn: "গীবত ও অনর্থক কথা থেকে বিরত থাকা", legacy: ["কারও গীবত বা অপ্রয়োজনীয় কথা না বলা"], category: AmalCategory.CHARACTER },
+  { titleBn: "রাগ নিয়ন্ত্রণে রাখা", legacy: ["রাগ প্রকাশ না করা"], category: AmalCategory.CHARACTER },
 
   // ── খেদমত ──
-  { titleBn: "কারও উপকার / খেদমত / সেবা করা", category: AmalCategory.SERVICE },
-  { titleBn: "ঘরের কাজে সাহায্য করা", category: AmalCategory.SERVICE },
+  { titleBn: "মানুষের উপকার ও খেদমত করা", legacy: ["কারও উপকার / খেদমত / সেবা করা"], category: AmalCategory.SERVICE },
+  { titleBn: "ঘরের কাজে সহযোগিতা করা", legacy: ["ঘরের কাজে সাহায্য করা"], category: AmalCategory.SERVICE },
 
   // ── অধ্যয়ন ──
-  { titleBn: "দ্বীনি বই পাঠের পরিমাণ", category: AmalCategory.READING, inputType: AmalInputType.PAGES, targetValue: 10, unit: "পৃষ্ঠা", points: 2 },
+  { titleBn: "দ্বীনি বই পাঠ", legacy: ["দ্বীনি বই পাঠের পরিমাণ"], category: AmalCategory.READING, inputType: AmalInputType.PAGES, targetValue: 10, unit: "পৃষ্ঠা", points: 2 },
 ];
+
+/**
+ * System amals that were removed from the list. They are switched off (never
+ * deleted) so old Amalnama days that answered them keep their history.
+ * - সেহরি / ইফতার: a নফল রোজার দিন needs only the রোজা itself.
+ */
+const RETIRED_TITLES = ["সময়মতো সুন্নাত অনুযায়ী সেহরি গ্রহণ", "দোয়ার সাথে সময়মতো ইফতার পালন"];
 
 /** Old system items that the catalog replaced by a renamed entry. */
 const RENAMED_LEGACY: Record<string, string> = { "ইশার সুন্নাত": "ইশার সুন্নাত ও বিতর" };
@@ -153,6 +163,14 @@ export async function syncAmalCatalog(prisma: PrismaClient) {
   const custom = await prisma.amalItem.findMany({ where: { createdById: { not: null } }, orderBy: { order: "asc" }, select: { id: true } });
   for (const [index, item] of custom.entries()) {
     await prisma.amalItem.update({ where: { id: item.id }, data: { order: (AMAL_CATALOG.length + index + 1) * 10 } });
+  }
+  // Retired system amals: switch off, keep history.
+  const retired = new Set(RETIRED_TITLES.map(norm));
+  // (MongoDB: `createdById: null` misses rows where the field was never set, so filter here.)
+  const activeRows = await prisma.amalItem.findMany({ where: { isActive: true }, select: { id: true, titleBn: true, createdById: true } });
+  for (const row of activeRows.filter((candidate) => candidate.createdById == null && retired.has(norm(candidate.titleBn)))) {
+    await prisma.amalItem.update({ where: { id: row.id }, data: { isActive: false } });
+    removed += 1;
   }
   return { created, updated, removed, total: AMAL_CATALOG.length };
 }

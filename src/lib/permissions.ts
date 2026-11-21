@@ -1,6 +1,7 @@
 import { Role } from "@prisma/client";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { cache } from "react";
 
 import { auth } from "@/lib/auth";
 
@@ -13,8 +14,11 @@ import { auth } from "@/lib/auth";
  * ADMIN is kept only as a legacy database value so existing deployments can
  * be migrated safely. It is never granted access or offered in the UI.
  */
+/** One session lookup per request, shared by the layout and the page. */
+const getSession = cache(async () => auth.api.getSession({ headers: await headers() }));
+
 export async function requireUser() {
-  const session = await auth.api.getSession({ headers: await headers() });
+  const session = await getSession();
   if (!session?.user || !session.user.isActive) redirect("/login");
   return session;
 }

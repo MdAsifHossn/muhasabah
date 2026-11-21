@@ -134,7 +134,7 @@ export default async function UstadDashboardPage() {
             <p className="mt-1 text-sm text-on-hero-muted">{formatBanglaDate(today)}</p>
           </div>
           <div className="text-right">
-            <p className="text-4xl font-bold tabular-nums text-amber-300">
+            <p className="text-4xl font-bold tabular-nums text-marble-300">
               {submittedToday.length.toLocaleString("bn-BD")}
               <span className="text-xl text-on-hero-muted">/{visible.length.toLocaleString("bn-BD")}</span>
             </p>
@@ -142,7 +142,7 @@ export default async function UstadDashboardPage() {
           </div>
         </div>
         <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/15">
-          <div className="h-full rounded-full bg-amber-300" style={{ width: `${submittedShare}%` }} />
+          <div className="h-full rounded-full bg-marble-300" style={{ width: `${submittedShare}%` }} />
         </div>
       </section>
 

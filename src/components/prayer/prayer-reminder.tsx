@@ -168,7 +168,7 @@ export function PrayerReminder() {
               <span
                 className={cn(
                   "grid size-24 place-items-center rounded-full ring-1 sm:size-28",
-                  forbidden ? "bg-amber-500/15 text-amber-300 ring-amber-300/30" : "bg-white/10 text-[#f0cf8c] ring-white/20",
+                  forbidden ? "bg-amber-500/15 text-amber-300 ring-amber-300/30" : "bg-white/10 text-[#ebe6da] ring-white/20",
                 )}
               >
                 <Icon className="size-12 motion-safe:animate-pulse sm:size-14" strokeWidth={1.5} />
@@ -202,7 +202,7 @@ export function PrayerReminder() {
               </div>
 
               <div className="mt-8 grid w-full gap-2.5">
-                <Button size="lg" onClick={dismiss} className={cn("w-full text-base", forbidden ? "bg-amber-400 text-[#2a1203] hover:bg-amber-300" : "bg-[#e3b25a] text-[#2a1d02] hover:bg-[#ecc272]")} autoFocus>
+                <Button size="lg" onClick={dismiss} className={cn("w-full text-base", forbidden ? "bg-amber-400 text-[#2a1203] hover:bg-amber-300" : "bg-[#f4f1ea] text-[#0b3b40] hover:bg-[#e9e4d8]")} autoFocus>
                   ঠিক আছে
                 </Button>
                 {!forbidden ? (

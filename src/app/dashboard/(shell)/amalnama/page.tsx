@@ -67,7 +67,7 @@ export default async function AmalnamaPage({ searchParams }: { searchParams: Pro
       unit: item.unit,
       points: item.points,
       genderScope: item.genderScope,
-      isFridayOnly: item.specificDay === "FRIDAY",
+      dayLabel: item.specificDay ? weekdayBn[item.specificDay] : null,
       initial:
         item.inputType === "BOOLEAN"
           ? (response?.valueBoolean ?? false)

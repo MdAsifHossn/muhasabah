@@ -33,7 +33,7 @@ export default async function ProfilePage() {
 
       <section className="hero-surface overflow-hidden rounded-card p-5 sm:p-6">
         <div className="flex items-center gap-4">
-          <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-white/12 text-2xl font-bold text-amber-200 ring-1 ring-white/20">{name.trim().slice(0, 1)}</span>
+          <span className="grid size-16 shrink-0 place-items-center rounded-2xl bg-white/12 text-2xl font-bold text-marble-200 ring-1 ring-white/20">{name.trim().slice(0, 1)}</span>
           <div className="min-w-0">
             <h2 className="truncate text-xl font-bold">{name}</h2>
             <div className="mt-2 flex flex-wrap gap-1.5">

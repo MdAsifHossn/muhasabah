@@ -1,34 +1,34 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
   <defs>
     <radialGradient id="bg" cx="50%" cy="38%" r="75%">
-      <stop offset="0" stop-color="#11865f"/>
-      <stop offset="0.55" stop-color="#0a5c43"/>
-      <stop offset="1" stop-color="#043328"/>
+      <stop offset="0" stop-color="#1a7f82"/>
+      <stop offset="0.55" stop-color="#0f5257"/>
+      <stop offset="1" stop-color="#082e32"/>
     </radialGradient>
     <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#f8e3a8"/>
-      <stop offset="0.5" stop-color="#e3b25a"/>
-      <stop offset="1" stop-color="#c38f32"/>
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="0.5" stop-color="#f4f1ea"/>
+      <stop offset="1" stop-color="#d9d1bf"/>
     </linearGradient>
     <linearGradient id="page" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#e9f6ef"/>
+      <stop offset="1" stop-color="#eef6f4"/>
     </linearGradient>
   </defs>
   <rect width="512" height="512" fill="url(#bg)"/>
   <!-- ৮-কোণা তারা (রুবউল হিযব): two interlaced squares -->
-  <g fill="#e3b25a" fill-opacity="0.10" stroke="url(#gold)" stroke-width="14" stroke-linejoin="round">
+  <g fill="#f4f1ea" fill-opacity="0.10" stroke="url(#gold)" stroke-width="14" stroke-linejoin="round">
     <rect x="128" y="128" width="256" height="256" rx="10"/>
     <rect x="128" y="128" width="256" height="256" rx="10" transform="rotate(45 256 256)"/>
   </g>
-  <circle cx="256" cy="256" r="104" fill="#043328" fill-opacity="0.35"/>
+  <circle cx="256" cy="256" r="104" fill="#082e32" fill-opacity="0.35"/>
   <!-- নূরের শিখা -->
   <path d="M256 150c18 22 26 38 26 52a26 26 0 0 1-52 0c0-14 8-30 26-52z" fill="url(#gold)"/>
   <!-- খোলা কিতাব -->
   <path d="M256 250c-26-18-58-22-90-16v104c32-6 64-2 90 16z" fill="url(#page)"/>
   <path d="M256 250c26-18 58-22 90-16v104c-32-6-64-2-90 16z" fill="url(#page)"/>
-  <path d="M256 252v100" stroke="#0a5c43" stroke-width="6" stroke-linecap="round"/>
-  <g stroke="#0a5c43" stroke-opacity="0.35" stroke-width="5" stroke-linecap="round">
+  <path d="M256 252v100" stroke="#0f5257" stroke-width="6" stroke-linecap="round"/>
+  <g stroke="#0f5257" stroke-opacity="0.35" stroke-width="5" stroke-linecap="round">
     <path d="M186 262c18-3 36-1 52 6M186 286c18-3 36-1 52 6M186 310c18-3 36-1 52 6"/>
     <path d="M326 262c-18-3-36-1-52 6M326 286c-18-3-36-1-52 6M326 310c-18-3-36-1-52 6"/>
   </g>

@@ -47,7 +47,7 @@ export default async function AdminOverviewPage() {
             <h2 className="mt-1 text-xl font-bold sm:text-2xl">আজ জমা দিয়েছেন</h2>
             <p className="mt-1 text-sm text-on-hero-muted">সদস্যরা প্রতিদিন আমলনামা জমা দেন — কোনো মেয়াদ সেটআপের দরকার নেই।</p>
           </div>
-          <p className="text-4xl font-bold tabular-nums text-amber-300">
+          <p className="text-4xl font-bold tabular-nums text-marble-300">
             {n(submitted.length)}
             <span className="text-xl text-on-hero-muted">/{n(count(Role.MEMBER))}</span>
           </p>

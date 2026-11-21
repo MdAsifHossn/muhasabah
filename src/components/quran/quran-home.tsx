@@ -131,7 +131,7 @@ export function QuranHome({ isLoggedIn }: { isLoggedIn: boolean }) {
         {/* ── Continue reading ── */}
         <section className="hero-surface relative overflow-hidden rounded-card p-5 shadow-raised sm:p-6">
           <p className="flex items-center gap-1.5 text-xs font-semibold text-on-hero-muted">
-            <Sparkles className="size-3.5 text-amber-300" />
+            <Sparkles className="size-3.5 text-marble-300" />
             {resume ? "যেখানে থেমেছিলেন" : "পড়া শুরু করুন"}
           </p>
           <div className="mt-2 flex items-end justify-between gap-4">
@@ -145,7 +145,7 @@ export function QuranHome({ isLoggedIn }: { isLoggedIn: boolean }) {
                   : "কুরআনের সূচনা — ৭ আয়াত"}
               </p>
             </div>
-            <p dir="rtl" className="quran-text shrink-0 text-3xl leading-none text-amber-200/90">
+            <p dir="rtl" className="quran-text shrink-0 text-3xl leading-none text-marble-200/90">
               {resumeSurah?.name.replace(/^سُورَةُ\s*/, "") ?? "ٱلْفَاتِحَة"}
             </p>
           </div>
@@ -156,13 +156,13 @@ export function QuranHome({ isLoggedIn }: { isLoggedIn: boolean }) {
                 <span className="font-bold text-on-hero">{bnNum(progress?.readAyahs.length ?? 0)} / {bnNum(TOTAL_AYAHS)} আয়াত ({bnNum(readPercent)}%)</span>
               </div>
               <div className="mt-1.5 h-1.5 overflow-hidden rounded-full bg-white/15">
-                <div className="h-full rounded-full bg-amber-300" style={{ width: `${Math.min(100, readPercent)}%` }} />
+                <div className="h-full rounded-full bg-marble-300" style={{ width: `${Math.min(100, readPercent)}%` }} />
               </div>
             </div>
           ) : null}
           <Link
             href={resumeHref}
-            className="mt-5 inline-flex h-11 items-center gap-2 rounded-xl bg-amber-300 px-5 text-sm font-bold text-[#2a1d02] shadow-sm transition hover:brightness-105 active:scale-[0.98]"
+            className="mt-5 inline-flex h-11 items-center gap-2 rounded-xl bg-marble-300 px-5 text-sm font-bold text-[#0b3b40] shadow-sm transition hover:brightness-105 active:scale-[0.98]"
           >
             <BookOpen className="size-4" />
             {resume ? "পড়া চালিয়ে যান" : "পড়া শুরু করুন"}

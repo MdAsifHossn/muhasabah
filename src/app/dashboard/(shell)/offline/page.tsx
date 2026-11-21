@@ -364,7 +364,7 @@ export default function OfflineQuranPage() {
                 <div
                   className={cn(
                     "h-full rounded-full transition-[width] duration-300",
-                    batch.running ? "bg-emerald-600" : batch.failed > 0 ? "bg-warning-soft0" : "bg-emerald-700",
+                    batch.running ? "bg-teal-600" : batch.failed > 0 ? "bg-warning-soft0" : "bg-teal-700",
                   )}
                   style={{ width: `${progress}%` }}
                 />
@@ -511,7 +511,7 @@ export default function OfflineQuranPage() {
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder="সূরা খুঁজুন..."
                 aria-label="সূরা খুঁজুন"
-                className="h-10 w-full rounded-xl border border-stone-300 bg-surface pl-9 pr-3 text-sm outline-none focus:border-emerald-700 focus:ring-4 focus:ring-emerald-700/10 sm:w-56"
+                className="h-10 w-full rounded-xl border border-stone-300 bg-surface pl-9 pr-3 text-sm outline-none focus:border-teal-700 focus:ring-4 focus:ring-teal-700/10 sm:w-56"
               />
             </div>
           </div>
@@ -532,16 +532,16 @@ export default function OfflineQuranPage() {
                     onClick={() => void loadSurah(surah.number)}
                     className={cn(
                       "flex min-h-14 w-full items-center gap-3 rounded-2xl p-3 text-left transition-colors",
-                      active ? "bg-emerald-950 text-white" : "active:bg-primary-soft",
+                      active ? "bg-teal-950 text-white" : "active:bg-primary-soft",
                     )}
                   >
                     <span
                       className={cn(
                         "grid size-9 shrink-0 place-items-center rounded-xl text-xs font-black",
                         active
-                          ? "bg-amber-400 text-foreground"
+                          ? "bg-marble-400 text-foreground"
                           : isSaved
-                            ? "bg-emerald-100 text-foreground"
+                            ? "bg-teal-100 text-foreground"
                             : "bg-surface-sunken text-muted-foreground",
                       )}
                     >
@@ -552,7 +552,7 @@ export default function OfflineQuranPage() {
                       <small
                         className={cn(
                           "block truncate text-xs",
-                          active ? "text-emerald-200" : "text-subtle-foreground",
+                          active ? "text-teal-200" : "text-subtle-foreground",
                         )}
                       >
                         {surah.englishName} • {toBn(surah.numberOfAyahs)} আয়াত
@@ -562,7 +562,7 @@ export default function OfflineQuranPage() {
                       <span
                         className={cn(
                           "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold",
-                          active ? "bg-emerald-800 text-white" : "bg-primary-soft text-primary",
+                          active ? "bg-teal-800 text-white" : "bg-primary-soft text-primary",
                         )}
                       >
                         <BookOpen className="size-3" /> সেভ করা
@@ -571,7 +571,7 @@ export default function OfflineQuranPage() {
                       <span
                         className={cn(
                           "shrink-0 text-[11px] font-semibold",
-                          active ? "text-emerald-200" : "text-stone-300",
+                          active ? "text-teal-200" : "text-stone-300",
                         )}
                       >
                         নেই

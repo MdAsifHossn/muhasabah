@@ -75,7 +75,7 @@ export default async function DashboardPage() {
         {(
           <div className="mt-5 flex flex-col gap-4 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
-              <span className={todaySubmitted ? "grid size-11 place-items-center rounded-xl bg-emerald-300 text-emerald-950" : "grid size-11 place-items-center rounded-xl bg-amber-300 text-amber-950"}>
+              <span className={todaySubmitted ? "grid size-11 place-items-center rounded-xl bg-teal-300 text-teal-950" : "grid size-11 place-items-center rounded-xl bg-marble-300 text-marble-950"}>
                 {todaySubmitted ? <CheckCircle2 className="size-6" /> : <ClipboardCheck className="size-6" />}
               </span>
               <div>
@@ -106,7 +106,7 @@ export default async function DashboardPage() {
 
       {staff ? (
         <Link href="/dashboard/ustad" className="flex items-center gap-4 rounded-card border border-gold/40 bg-gold-soft p-4 transition hover:shadow-md">
-          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-gold text-white dark:text-[#2a1d02]">
+          <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-gold text-white dark:text-[#0b3b40]">
             <UsersRound className="size-5" />
           </span>
           <div className="min-w-0 flex-1">

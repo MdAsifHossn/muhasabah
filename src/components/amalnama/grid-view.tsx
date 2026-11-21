@@ -7,6 +7,7 @@ import Link from "next/link";
 import { CommentDeleteButton, CommentForm } from "@/components/amalnama/comment-form";
 import { DailyEntryActions } from "@/components/amalnama/daily-entry-actions";
 import { toBn } from "@/components/amalnama/report-data";
+import { weekdayLabels } from "@/lib/constants";
 import { cn } from "@/lib/utils";
 
 /**
@@ -301,7 +302,7 @@ export function GridView({
                 <th scope="row" className={`sticky left-0 z-10 ${AMAL_COL} border-b border-hairline bg-surface px-2 py-1.5 text-left align-middle shadow-[4px_0_8px_-6px] shadow-black/25 transition-colors group-hover:bg-primary-soft/35 sm:px-3 sm:py-2`}>
                   <span className="line-clamp-3 text-[11px] font-semibold leading-[14px] text-foreground sm:line-clamp-2 sm:text-xs sm:leading-4">{row.item.titleBn}</span>
                   <span className="hidden truncate text-[10px] leading-4 text-subtle-foreground sm:block">
-                    {row.item.specificDay === "FRIDAY" ? "শুধু শুক্রবার • " : ""}
+                    {row.item.specificDay ? `শুধু ${weekdayLabels[row.item.specificDay]} • ` : ""}
                     {row.item.targetValue ? `লক্ষ্য ${toBn(row.item.targetValue)} ${row.item.unit ?? ""}` : `+${toBn(row.item.points)} পয়েন্ট`}
                   </span>
                 </th>

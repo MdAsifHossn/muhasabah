@@ -1,6 +1,8 @@
 import type { Gender } from "@prisma/client";
+import { addDays } from "date-fns";
 
-import { buildReport, laterOf, reportEntrySelect, reportItemSelect, type ReportDay, type ReportItem } from "@/components/amalnama/report-data";
+import { buildReport, laterOf, reportEntrySelect, type ReportDay, type ReportItem } from "@/components/amalnama/report-data";
+import { getReportItems } from "@/lib/analytics";
 import { bangladeshDateKey, getBangladeshToday, startOfBangladeshDay } from "@/lib/dates";
 import { prisma } from "@/lib/prisma";
 
@@ -95,7 +97,7 @@ export async function loadPrayerStreak(member: { id: string; gender: Gender | st
   if (!first) return computePrayerStreak([], member.gender, bangladeshDateKey(today));
   const from = laterOf(startOfBangladeshDay(first.date), startOfBangladeshDay(member.joinedAt));
   const [items, entries] = await Promise.all([
-    prisma.amalItem.findMany({ orderBy: { order: "asc" }, select: reportItemSelect }),
+    getReportItems(),
     prisma.dailyAmalEntry.findMany({ where: { userId: member.id, date: { gte: from, lte: today } }, orderBy: { date: "asc" }, select: reportEntrySelect }),
   ]);
   const report = buildReport({ items, entries, gender: member.gender, start: from, end: today });
@@ -109,9 +111,10 @@ export async function loadPrayerStreaks(members: { id: string; gender: Gender | 
   const today = startOfBangladeshDay(getBangladeshToday());
   const todayKey = bangladeshDateKey(today);
   const [items, entries] = await Promise.all([
-    prisma.amalItem.findMany({ orderBy: { order: "asc" }, select: reportItemSelect }),
+    getReportItems(),
     prisma.dailyAmalEntry.findMany({
-      where: { userId: { in: members.map((member) => member.id) }, date: { lte: today } },
+      // A year of history is plenty for a running streak and keeps this query small as data grows.
+      where: { userId: { in: members.map((member) => member.id) }, date: { gte: startOfBangladeshDay(addDays(today, -365)), lte: today } },
       orderBy: { date: "asc" },
       select: { ...reportEntrySelect, userId: true },
     }),

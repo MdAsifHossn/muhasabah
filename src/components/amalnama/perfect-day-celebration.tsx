@@ -44,13 +44,13 @@ export function PerfectDayCelebration() {
           {SPARKS.map((index) => (
             <span
               key={index}
-              className="celebrate-spark absolute left-1/2 top-1/2 size-2 rounded-full bg-amber-300"
+              className="celebrate-spark absolute left-1/2 top-1/2 size-2 rounded-full bg-marble-300"
               style={{ "--angle": `${(360 / SPARKS.length) * index}deg`, animationDelay: `${(index % 4) * 60}ms` } as React.CSSProperties}
               aria-hidden
             />
           ))}
           <svg viewBox="0 0 100 100" className="celebrate-star size-24 drop-shadow-[0_0_18px_rgba(252,211,77,0.55)]" aria-hidden>
-            <g fill="#fcd34d" fillOpacity="0.18" stroke="#fcd34d" strokeWidth="4" strokeLinejoin="round">
+            <g fill="#f4f1ea" fillOpacity="0.18" stroke="#f4f1ea" strokeWidth="4" strokeLinejoin="round">
               <rect x="22" y="22" width="56" height="56" rx="3" />
               <rect x="22" y="22" width="56" height="56" rx="3" transform="rotate(45 50 50)" />
             </g>
@@ -58,7 +58,7 @@ export function PerfectDayCelebration() {
           </svg>
         </div>
 
-        <p className="mt-2 flex items-center justify-center gap-1.5 text-xs font-bold tracking-wide text-amber-200">
+        <p className="mt-2 flex items-center justify-center gap-1.5 text-xs font-bold tracking-wide text-marble-200">
           <Sparkles className="size-4" /> ১০০% সম্পন্ন
         </p>
         <h2 id="perfect-day-title" className="mt-1 text-2xl font-bold text-on-hero">মাশাআল্লাহ!</h2>
@@ -67,7 +67,7 @@ export function PerfectDayCelebration() {
         <p lang="ar" dir="rtl" className="arabic-text mt-4 text-xl text-on-hero">إِنَّ اللّٰهَ لَا يُضِيعُ أَجْرَ الْمُحْسِنِينَ</p>
         <p className="mt-1 text-xs text-on-hero-muted">নিশ্চয়ই আল্লাহ সৎকর্মশীলদের প্রতিদান নষ্ট করেন না। — সূরা তাওবা ১২০</p>
 
-        <button type="button" onClick={() => setOpen(false)} className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-xl bg-amber-300 text-sm font-bold text-[#2a1d02] transition hover:brightness-105 active:scale-[0.98]">
+        <button type="button" onClick={() => setOpen(false)} className="mt-5 inline-flex h-11 w-full items-center justify-center rounded-xl bg-marble-300 text-sm font-bold text-[#0b3b40] transition hover:brightness-105 active:scale-[0.98]">
           আলহামদুলিল্লাহ
         </button>
       </div>

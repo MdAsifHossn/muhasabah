@@ -3,7 +3,7 @@
 /* ══════════════════════════════════════════════════════════════════════
    মুহাসাবাহ — design system  ("Noor")
 
-   Palette: deep emerald (primary) + warm gold (accent) on an ivory canvas;
+   Palette: deep teal (primary) + minaret marble white (accent) on a cream canvas;
    a midnight-green night theme for reading. Every category of amal has its
    own hue so screens never feel monochrome.
 
@@ -25,135 +25,135 @@
 :root {
   --radius: 0.875rem;
 
-  --background: #f6f5ef;
-  --foreground: #10201a;
+  --background: #f7f3ea;
+  --foreground: #14282a;
 
   --card: #ffffff;
-  --card-foreground: #10201a;
+  --card-foreground: #14282a;
   --popover: #ffffff;
-  --popover-foreground: #10201a;
+  --popover-foreground: #14282a;
 
-  --primary: #0b6e4f;
+  --primary: #0f5257;
   --primary-foreground: #ffffff;
-  --primary-hover: #095c42;
-  --primary-soft: #e4f3ec;
-  --primary-soft-foreground: #0a5a41;
+  --primary-hover: #0b4246;
+  --primary-soft: #e2efee;
+  --primary-soft-foreground: #0c4a4e;
 
-  --secondary: #eef0e8;
-  --secondary-foreground: #1d2e27;
+  --secondary: #efeadf;
+  --secondary-foreground: #1f3335;
 
-  --muted: #eff0ea;
-  --muted-foreground: #5f6e67;
-  --subtle-foreground: #8d9893;
+  --muted: #f0ebe0;
+  --muted-foreground: #5e6d6c;
+  --subtle-foreground: #8e9897;
 
-  --accent: #e9f4ee;
-  --accent-foreground: #0a5a41;
+  --accent: #e6f0ee;
+  --accent-foreground: #0c4a4e;
 
-  --gold: #b9862c;
-  --gold-soft: #f8eed8;
-  --gold-foreground: #7a5512;
+  --gold: #8a7f6a;
+  --gold-soft: #f1ede4;
+  --gold-foreground: #4f4636;
 
-  --destructive: #d93b3b;
-  --border: #e5e7df;
-  --border-strong: #d3d7cc;
-  --input: #dadfd5;
-  --ring: #0b6e4f;
+  --destructive: #c8443a;
+  --border: #e8e1d3;
+  --border-strong: #d6cdbb;
+  --input: #ddd5c4;
+  --ring: #0f5257;
 
-  --success: #11845b;
-  --success-soft: #e2f4ea;
-  --warning: #b86e0a;
-  --warning-soft: #fdf1dc;
-  --danger: #d93b3b;
-  --danger-soft: #fdeaea;
-  --info: #2368d6;
-  --info-soft: #e7effd;
-  --female: #c2367a;
-  --female-soft: #fce8f1;
+  --success: #1b7f63;
+  --success-soft: #e1f1ea;
+  --warning: #b06d12;
+  --warning-soft: #fbefd9;
+  --danger: #c8443a;
+  --danger-soft: #fbe9e6;
+  --info: #2f6db0;
+  --info-soft: #e6eef8;
+  --female: #b83f78;
+  --female-soft: #f9e7ef;
 
   /* Category hues (icon tiles, chips, report stripes) */
-  --cat-salah: #0b6e4f;
-  --cat-jumuah: #b9862c;
-  --cat-quran: #0e7490;
-  --cat-dhikr: #7c3aed;
-  --cat-sunnah: #2368d6;
-  --cat-character: #c2367a;
-  --cat-service: #d9620f;
-  --cat-discipline: #4f46e5;
-  --cat-reading: #0f766e;
+  --cat-salah: #0f5257;
+  --cat-jumuah: #8a7f6a;
+  --cat-quran: #1c7a8c;
+  --cat-dhikr: #6d4fb3;
+  --cat-sunnah: #2f6db0;
+  --cat-character: #b83f78;
+  --cat-service: #c26a2b;
+  --cat-discipline: #4a55b8;
+  --cat-reading: #2a7d6f;
 
   /* Hero (same deep look in both themes) */
-  --hero-1: #053d2d;
-  --hero-2: #0a5c43;
-  --hero-3: #0f7a5a;
-  --on-hero: #f2fbf6;
-  --on-hero-muted: #b7dccb;
+  --hero-1: #0b3b40;
+  --hero-2: #0f5257;
+  --hero-3: #136b70;
+  --on-hero: #f4f8f3;
+  --on-hero-muted: #b9d6d3;
 
-  --reader-paper: #fffdf8;
+  --reader-paper: #fffcf5;
 
   color-scheme: light;
 }
 
 .dark {
-  --background: #08120f;
-  --foreground: #e8f0ec;
+  --background: #0a1a1c;
+  --foreground: #e6eeec;
 
-  --card: #0f1d18;
-  --card-foreground: #e8f0ec;
-  --popover: #12221c;
-  --popover-foreground: #e8f0ec;
+  --card: #102427;
+  --card-foreground: #e6eeec;
+  --popover: #132a2d;
+  --popover-foreground: #e6eeec;
 
-  --primary: #3fcf95;
-  --primary-foreground: #04261a;
-  --primary-hover: #6ee0b1;
-  --primary-soft: #12352a;
-  --primary-soft-foreground: #7ee6bb;
+  --primary: #5fc4c0;
+  --primary-foreground: #062224;
+  --primary-hover: #86d6d2;
+  --primary-soft: #133638;
+  --primary-soft-foreground: #8fdcd8;
 
-  --secondary: #162a23;
-  --secondary-foreground: #dbe7e1;
+  --secondary: #163033;
+  --secondary-foreground: #d9e6e4;
 
-  --muted: #13251f;
-  --muted-foreground: #9db3aa;
-  --subtle-foreground: #6f857c;
+  --muted: #132b2e;
+  --muted-foreground: #9fb4b2;
+  --subtle-foreground: #6f8785;
 
-  --accent: #163329;
-  --accent-foreground: #8fe9c4;
+  --accent: #163a3c;
+  --accent-foreground: #93e0dc;
 
-  --gold: #e3b25a;
-  --gold-soft: #302613;
-  --gold-foreground: #f0cf8c;
+  --gold: #f4f1ea;
+  --gold-soft: #26302e;
+  --gold-foreground: #f4f1ea;
 
-  --destructive: #f27373;
-  --border: #1d3029;
-  --border-strong: #2a4238;
-  --input: #2a4238;
-  --ring: #3fcf95;
+  --destructive: #ef7b70;
+  --border: #1d3538;
+  --border-strong: #2a474a;
+  --input: #2a474a;
+  --ring: #5fc4c0;
 
-  --success: #3fcf95;
-  --success-soft: #12352a;
-  --warning: #f2b54a;
-  --warning-soft: #33270f;
-  --danger: #f27373;
-  --danger-soft: #3a1a1c;
-  --info: #6aa4ff;
-  --info-soft: #14274a;
-  --female: #f07ab3;
-  --female-soft: #3a1a2b;
+  --success: #5cc9a2;
+  --success-soft: #12352c;
+  --warning: #efb756;
+  --warning-soft: #33280f;
+  --danger: #ef7b70;
+  --danger-soft: #3a1c1b;
+  --info: #7fa8e0;
+  --info-soft: #15284a;
+  --female: #ee80b4;
+  --female-soft: #3a1b2c;
 
-  --cat-salah: #3fcf95;
-  --cat-jumuah: #e3b25a;
-  --cat-quran: #38bdd8;
-  --cat-dhikr: #a78bfa;
-  --cat-sunnah: #6aa4ff;
-  --cat-character: #f07ab3;
-  --cat-service: #fb9a4b;
-  --cat-discipline: #8b8cf7;
-  --cat-reading: #34d3c0;
+  --cat-salah: #5fc4c0;
+  --cat-jumuah: #e9e4d8;
+  --cat-quran: #5ac0d6;
+  --cat-dhikr: #a990f5;
+  --cat-sunnah: #7fa8e0;
+  --cat-character: #ee80b4;
+  --cat-service: #f0a064;
+  --cat-discipline: #8f96f2;
+  --cat-reading: #5fcdb8;
 
-  --hero-1: #03241b;
-  --hero-2: #073a2c;
-  --hero-3: #0b5440;
+  --hero-1: #06272a;
+  --hero-2: #0b3b40;
+  --hero-3: #0f5257;
 
-  --reader-paper: #0c1814;
+  --reader-paper: #0d1f21;
 
   color-scheme: dark;
 }
@@ -217,6 +217,13 @@
   --color-hairline-strong: var(--border-strong);
   --color-on-primary: var(--primary-foreground);
 
+  --color-marble-50: #fbfaf6;
+  --color-marble-100: #f7f4ee;
+  --color-marble-200: #e9e4d8;
+  --color-marble-300: #f4f1ea;
+  --color-marble-400: #ddd6c6;
+  --color-marble-500: #cfc6b4;
+  --color-marble-950: #0b3b40;
   --color-gold: var(--gold);
   --color-gold-soft: var(--gold-soft);
   --color-gold-foreground: var(--gold-foreground);
@@ -250,13 +257,13 @@
 }
 
 @theme {
-  --shadow-xs: 0 1px 2px 0 rgb(16 32 26 / 0.05);
-  --shadow-sm: 0 1px 2px 0 rgb(16 32 26 / 0.04), 0 2px 8px -2px rgb(16 32 26 / 0.06);
-  --shadow-md: 0 2px 6px -2px rgb(16 32 26 / 0.06), 0 10px 24px -8px rgb(16 32 26 / 0.1);
-  --shadow-lg: 0 6px 12px -6px rgb(16 32 26 / 0.08), 0 22px 44px -14px rgb(16 32 26 / 0.16);
-  --shadow-xl: 0 10px 20px -10px rgb(16 32 26 / 0.1), 0 32px 64px -18px rgb(16 32 26 / 0.22);
-  --shadow-card: 0 1px 2px 0 rgb(16 32 26 / 0.03), 0 8px 24px -16px rgb(16 32 26 / 0.14);
-  --shadow-glow: 0 10px 30px -10px rgb(11 110 79 / 0.55);
+  --shadow-xs: 0 1px 2px 0 rgb(20 40 42 / 0.05);
+  --shadow-sm: 0 1px 2px 0 rgb(20 40 42 / 0.04), 0 2px 8px -2px rgb(20 40 42 / 0.06);
+  --shadow-md: 0 2px 6px -2px rgb(20 40 42 / 0.06), 0 10px 24px -8px rgb(20 40 42 / 0.1);
+  --shadow-lg: 0 6px 12px -6px rgb(20 40 42 / 0.08), 0 22px 44px -14px rgb(20 40 42 / 0.16);
+  --shadow-xl: 0 10px 20px -10px rgb(20 40 42 / 0.1), 0 32px 64px -18px rgb(20 40 42 / 0.22);
+  --shadow-card: 0 1px 2px 0 rgb(20 40 42 / 0.03), 0 8px 24px -16px rgb(20 40 42 / 0.14);
+  --shadow-glow: 0 10px 30px -10px rgb(15 82 87 / 0.55);
 
   --ease-soft: cubic-bezier(0.22, 0.61, 0.36, 1);
   --animate-rise: rise 420ms var(--ease-soft) both;
@@ -355,8 +362,8 @@
     color: var(--on-hero);
     background-color: var(--hero-2);
     background-image:
-      radial-gradient(90% 120% at 100% 0%, rgb(227 178 90 / 0.28) 0%, transparent 55%),
-      radial-gradient(70% 90% at 0% 100%, rgb(63 207 149 / 0.22) 0%, transparent 60%),
+      radial-gradient(90% 120% at 100% 0%, rgb(244 241 234 / 0.16) 0%, transparent 55%),
+      radial-gradient(70% 90% at 0% 100%, rgb(95 196 192 / 0.22) 0%, transparent 60%),
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.07' stroke-width='1'%3E%3Cpath d='M36 8l8.5 19.5L64 36l-19.5 8.5L36 64l-8.5-19.5L8 36l19.5-8.5z'/%3E%3Cpath d='M16 16h40v40H16z' transform='rotate(45 36 36)'/%3E%3Ccircle cx='36' cy='36' r='6'/%3E%3C/g%3E%3C/svg%3E"),
       linear-gradient(140deg, var(--hero-1) 0%, var(--hero-2) 50%, var(--hero-3) 100%);
   }
@@ -379,22 +386,22 @@
     position: relative;
     isolation: isolate;
     color: #fff;
-    background-color: #7a4f0e;
+    background-color: #0f5257;
     background-image:
-      radial-gradient(80% 120% at 100% 0%, rgb(255 222 140 / 0.35) 0%, transparent 55%),
+      radial-gradient(80% 120% at 100% 0%, rgb(244 241 234 / 0.22) 0%, transparent 55%),
       url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cg fill='none' stroke='%23ffffff' stroke-opacity='0.09' stroke-width='1'%3E%3Cpath d='M36 8l8.5 19.5L64 36l-19.5 8.5L36 64l-8.5-19.5L8 36l19.5-8.5z'/%3E%3Cpath d='M16 16h40v40H16z' transform='rotate(45 36 36)'/%3E%3C/g%3E%3C/svg%3E"),
-      linear-gradient(135deg, #a8701a 0%, #7d5210 38%, #0a5c43 100%);
+      linear-gradient(135deg, #1a7f82 0%, #0f5257 50%, #0b3b40 100%);
   }
 
   /* Ivory canvas with a faint star lattice (auth, landing). */
   .pattern-canvas {
     background-image:
       radial-gradient(70% 50% at 50% -5%, color-mix(in srgb, var(--primary) 12%, transparent) 0%, transparent 70%),
-      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cpath d='M36 8l8.5 19.5L64 36l-19.5 8.5L36 64l-8.5-19.5L8 36l19.5-8.5z' fill='none' stroke='%230b6e4f' stroke-opacity='0.06'/%3E%3C/svg%3E");
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='72' height='72' viewBox='0 0 72 72'%3E%3Cpath d='M36 8l8.5 19.5L64 36l-19.5 8.5L36 64l-8.5-19.5L8 36l19.5-8.5z' fill='none' stroke='%230f5257' stroke-opacity='0.06'/%3E%3C/svg%3E");
   }
 
   .text-gradient-gold {
-    background: linear-gradient(100deg, #f6dfa5 0%, #e3b25a 45%, #f6dfa5 100%);
+    background: linear-gradient(100deg, #ffffff 0%, #f4f1ea 45%, #ffffff 100%);
     -webkit-background-clip: text;
     background-clip: text;
     color: transparent;

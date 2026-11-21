@@ -47,7 +47,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
           <ul className="mt-8 hidden gap-3 lg:grid">
             {points.map((point) => (
               <li key={point.title} className="flex items-center gap-4 rounded-2xl bg-white/[0.07] p-3.5 ring-1 ring-white/10 backdrop-blur-sm">
-                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/10 text-[#f0cf8c]">
+                <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/10 text-[#ebe6da]">
                   <point.icon className="size-5" />
                 </span>
                 <span>

@@ -139,13 +139,13 @@ export function AyahAudioButton({
           type="button"
           onClick={toggle}
           aria-pressed={playing}
-          className="inline-flex min-h-10 items-center gap-2 rounded-full bg-emerald-100 px-4 py-2 text-sm font-bold text-emerald-900 transition hover:bg-emerald-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-emerald-700/40"
+          className="inline-flex min-h-10 items-center gap-2 rounded-full bg-teal-100 px-4 py-2 text-sm font-bold text-teal-900 transition hover:bg-teal-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-teal-700/40"
         >
           {playing ? <Pause className="size-4" /> : <Volume2 className="size-4" />}
           {playing ? "থামান" : "তিলাওয়াত শুনুন"}
         </button>
         {playing && total > 1 ? (
-          <span className="text-xs font-bold tabular-nums text-emerald-700">
+          <span className="text-xs font-bold tabular-nums text-teal-700">
             আয়াত {toBnDigits(current + 1)}/{toBnDigits(total)}
           </span>
         ) : null}

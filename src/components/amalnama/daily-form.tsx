@@ -50,7 +50,8 @@ export type DailyFormItem = {
   unit: string | null;
   points: number;
   genderScope: "ALL" | "MALE" | "FEMALE";
-  isFridayOnly: boolean;
+  /** Weekday name when this amal applies only on one day (জুমা, সোম/বৃহস্পতির রোজা). */
+  dayLabel: string | null;
   initial: boolean | number | string;
 };
 
@@ -246,7 +247,7 @@ export function DailyForm({
       {/* ── Summary ── */}
       <section className="hero-surface overflow-hidden rounded-[1.6rem] p-5 shadow-lg sm:p-6">
         <div className="flex items-center gap-5">
-          <Ring percent={percent} size={112} stroke={11} className="text-[#f0cf8c]">
+          <Ring percent={percent} size={112} stroke={11} className="text-[#ebe6da]">
             <span className="text-center leading-none">
               <span className="block text-[1.75rem] font-bold tabular-nums text-on-hero">{toBn(percent)}%</span>
               <span className="mt-1 block text-[11px] font-medium text-on-hero-muted">সম্পন্ন</span>
@@ -255,7 +256,7 @@ export function DailyForm({
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap gap-1.5">
               {meta.isFriday ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#e3b25a] px-2.5 py-0.5 text-[11px] font-bold text-[#2a1d02]">
+                <span className="inline-flex items-center gap-1 rounded-full bg-[#f4f1ea] px-2.5 py-0.5 text-[11px] font-bold text-[#0b3b40]">
                   <Sparkles className="size-3" /> জুমার দিন
                 </span>
               ) : null}
@@ -290,7 +291,7 @@ export function DailyForm({
           </div>
           <div>
             <p className="truncate px-1 text-[13px] font-semibold leading-7">{meta.cycleLabel}</p>
-            <p className="text-[11px] text-on-hero-muted">মেয়াদ</p>
+            <p className="text-[11px] text-on-hero-muted">যোগদানের পর</p>
           </div>
         </div>
         {meta.isExcused ? (
@@ -476,6 +477,7 @@ function AmalRow({
         </span>
         <span className="min-w-0 flex-1">
           <span className={cn("block text-[15px] leading-6 transition-colors", checked ? "font-medium text-foreground" : "text-foreground/85")}>{item.titleBn}</span>
+          {item.dayLabel ? <span className="mt-0.5 inline-flex items-center rounded-full bg-gold-soft px-2 py-0.5 text-[10px] font-bold text-gold-foreground">আজকের বিশেষ আমল • শুধু {item.dayLabel}</span> : null}
           {item.description ? <span className="block text-xs leading-5 text-muted-foreground">{item.description}</span> : null}
         </span>
         <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums", checked ? accent.tile : "text-subtle-foreground")}>

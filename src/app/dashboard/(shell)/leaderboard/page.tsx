@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils";
 
 export const metadata = { title: "লিডারবোর্ড" };
 
-const medal = ["bg-amber-400 text-amber-950", "bg-slate-300 text-slate-900", "bg-orange-300 text-orange-950"];
+const medal = ["bg-marble-400 text-marble-950", "bg-slate-300 text-slate-900", "bg-orange-300 text-orange-950"];
 
 type Tab = "overall" | "streak";
 

@@ -1,5 +1,6 @@
 import type { Gender } from "@prisma/client";
 import { differenceInCalendarDays } from "date-fns";
+import { cache } from "react";
 
 import { buildReport, laterOf, reportEntrySelect, reportItemSelect } from "@/components/amalnama/report-data";
 import { getBangladeshToday, startOfBangladeshDay } from "@/lib/dates";
@@ -13,6 +14,9 @@ export function getElapsedCycleDays(startDate: Date, endDate: Date, today = getB
   return Math.min(differenceInCalendarDays(day, start) + 1, differenceInCalendarDays(startOfBangladeshDay(endDate), start) + 1);
 }
 
+/** Every amal item (active or not), fetched once per request and shared by reports and streaks. */
+export const getReportItems = cache(() => prisma.amalItem.findMany({ orderBy: { order: "asc" }, select: reportItemSelect }));
+
 /**
  * Loads one member's report for [start, end] (Bangladesh days), never earlier
  * than the day they joined. All amal items are loaded (inactive ones still
@@ -21,7 +25,7 @@ export function getElapsedCycleDays(startDate: Date, endDate: Date, today = getB
 export async function loadMemberReport(member: { id: string; gender: Gender | string; joinedAt: Date }, start: Date, end: Date) {
   const from = laterOf(startOfBangladeshDay(start), startOfBangladeshDay(member.joinedAt));
   const [items, entries] = await Promise.all([
-    prisma.amalItem.findMany({ orderBy: { order: "asc" }, select: reportItemSelect }),
+    getReportItems(),
     prisma.dailyAmalEntry.findMany({ where: { userId: member.id, date: { gte: from, lte: end } }, orderBy: { date: "asc" }, select: reportEntrySelect }),
   ]);
   return { items, report: buildReport({ items, entries, gender: member.gender, start: from, end }) };

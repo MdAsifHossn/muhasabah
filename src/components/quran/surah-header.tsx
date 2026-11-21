@@ -17,17 +17,17 @@ export function SurahHeader({ surah, continuedFrom, script = "indopak" }: { sura
           {surah.revelationType === "Meccan" ? "মাক্কী" : "মাদানী"} • {bnNum(surah.numberOfAyahs)} আয়াত
         </span>
       </div>
-      <p dir="rtl" className="quran-text mt-3 text-[2.4rem] leading-[1.6] text-amber-100">
+      <p dir="rtl" className="quran-text mt-3 text-[2.4rem] leading-[1.6] text-marble-100">
         {surah.name}
       </p>
       <h2 className="text-xl font-bold text-on-hero">{shortBanglaName(surah)}</h2>
       <p className="mt-0.5 text-sm text-on-hero-muted">
         {surah.banglaMeaning} • {surah.englishName}
       </p>
-      {continuedFrom ? <p className="mt-3 text-xs font-semibold text-amber-200">আয়াত {bnNum(continuedFrom)} থেকে চলমান</p> : null}
+      {continuedFrom ? <p className="mt-3 text-xs font-semibold text-marble-200">আয়াত {bnNum(continuedFrom)} থেকে চলমান</p> : null}
       {showBismillah ? (
         <>
-          <div className="mx-auto mt-4 flex max-w-xs items-center gap-3 text-amber-200/60" aria-hidden>
+          <div className="mx-auto mt-4 flex max-w-xs items-center gap-3 text-marble-200/60" aria-hidden>
             <span className="h-px flex-1 bg-current" />
             <span className="text-xs">✦</span>
             <span className="h-px flex-1 bg-current" />

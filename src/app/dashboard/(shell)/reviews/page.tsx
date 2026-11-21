@@ -22,9 +22,9 @@ export default async function ReviewsPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-5">
-      <PageHeader eyebrow="যোগাযোগ" title="উস্তাদের রিভিউ" description="প্রতিটি সাইকেলে উস্তাদজি আপনার আমলনামা দেখে যে পরামর্শ দিয়েছেন।" />
+      <PageHeader eyebrow="যোগাযোগ" title="উস্তাদের রিভিউ" description="উস্তাদজি আপনার আমলনামা দেখে যে পরামর্শ দিয়েছেন।" />
       {reviews.length === 0 ? (
-        <EmptyState icon={MessageCircleHeart} title="এখনো কোনো রিভিউ নেই" description="সাইকেল চলাকালীন বা শেষে উস্তাদজি রিভিউ প্রকাশ করলে এখানে দেখা যাবে।" />
+        <EmptyState icon={MessageCircleHeart} title="এখনো কোনো রিভিউ নেই" description="উস্তাদজি রিভিউ প্রকাশ করলে এখানে দেখা যাবে।" />
       ) : (
         <div className="space-y-4">
           {reviews.map((review) => (
