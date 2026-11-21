@@ -44,7 +44,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "হোম", href: "/dashboard", icon: Home },
       { label: "আজকের আমল", href: "/dashboard/amalnama", icon: ClipboardCheck },
-      { label: "আমলের খাতা (৭/৩০/৪০ দিন)", href: "/dashboard/amalnama/grid", icon: LayoutGrid },
+      { label: "আমলের খাতা (দিনভিত্তিক)", href: "/dashboard/amalnama/grid", icon: LayoutGrid },
       { label: "আগের দিনের আমল", href: "/dashboard/amalnama/history", icon: CalendarRange },
       { label: "আমার উন্নতি", href: "/dashboard/progress", icon: BarChart3 },
       { label: "নামাজের সময়", href: "/dashboard/prayer", icon: AlarmClock },

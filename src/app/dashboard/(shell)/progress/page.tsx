@@ -53,7 +53,7 @@ export default async function ProgressPage() {
       {streak ? <PrayerStreakCard streak={streak} /> : null}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile label="টানা আমলনামা জমা" value={`${toBn(report.streak)} দিন`} icon={Flame} tone="gold" />
+        <StatTile label="টানা জমা" value={`${toBn(report.streak)} দিন`} icon={Flame} tone="gold" />
         <StatTile label="জমা দেওয়া দিন" value={`${toBn(report.submittedDays)}/${toBn(report.totalDays)}`} icon={CalendarCheck2} />
         <StatTile label="এন্ট্রি নেই" value={`${toBn(report.noEntryDays)} দিন`} icon={TriangleAlert} tone="danger" />
         <StatTile label="গড় সম্পন্নতা" value={`${toBn(report.percent)}%`} icon={Gauge} tone="info" progress={report.percent} />

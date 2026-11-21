@@ -166,13 +166,12 @@ export function GuidanceCarousel({
           data-ayah-index={absolute}
           data-active={active ? "true" : "false"}
           aria-label={`আয়াত ${ayah.numberInSurah} — এখান থেকে তিলাওয়াত শুরু করুন`}
-          className={`block w-full rounded-2xl border px-3 py-2.5 text-left transition-colors ${
-            active
-              ? "border-gold bg-gold-soft ring-2 ring-gold/40"
-              : "border-primary/20 bg-surface/60 hover:bg-surface"
+          // No card per ayah — a hairline between ayahs keeps the full width for the text.
+          className={`block w-full rounded-xl px-1 py-3 text-left transition-colors ${
+            active ? "bg-gold-soft" : "hover:bg-surface-sunken/60"
           }`}
         >
-          <div className="flex items-start gap-3">
+          <div className="flex items-start gap-2.5">
             <span
               className={`mt-1 grid size-6 shrink-0 place-items-center rounded-full border text-[11px] font-bold transition-colors ${
                 active
@@ -189,7 +188,7 @@ export function GuidanceCarousel({
               {stripBismillah(ayah.arabic, ayah.surahNumber, ayah.numberInSurah)}
             </p>
           </div>
-          <p className="mt-1 pl-9 text-sm leading-7 text-foreground/85 sm:text-base">
+          <p className="mt-1 text-sm leading-7 text-foreground/85 sm:text-base">
             {ayah.bangla}
           </p>
         </button>
@@ -235,9 +234,9 @@ export function GuidanceCarousel({
       </div>
 
       {/* 2-COLUMN INDEPENDENT CAROUSELS */}
-      <div className="grid gap-8 lg:grid-cols-2 items-stretch">
+      <div className="grid gap-5 sm:gap-6">
         {/* ================= QURAN CAROUSEL ================= */}
-        <div className="flex flex-col justify-between rounded-2xl border border-primary/20 bg-card p-6 shadow-sm sm:p-8">
+        <div className="flex flex-col justify-between rounded-2xl border border-primary/20 bg-card px-3.5 py-4 shadow-sm sm:p-8">
           <div>
             {/* Top Toolbar */}
             <div className="flex flex-wrap items-center justify-between gap-4 gap-y-3 border-b border-primary/20 pb-4">
@@ -311,7 +310,7 @@ export function GuidanceCarousel({
 
             {page ? (
               <div
-                className="mt-4 min-h-[220px] space-y-2"
+                className="mt-3 min-h-[220px] divide-y divide-hairline"
                 data-page-index={quranIndex}
                 data-page-size={page.ayahs.length}
                 data-pages-count={quranPages.length}
@@ -353,7 +352,7 @@ export function GuidanceCarousel({
         </div>
 
         {/* ================= HADITH CAROUSEL ================= */}
-        <div className="flex flex-col justify-between rounded-2xl border border-cat-quran/25 bg-card p-6 shadow-sm sm:p-8">
+        <div className="flex flex-col justify-between rounded-2xl border border-cat-quran/25 bg-card px-3.5 py-4 shadow-sm sm:p-8">
           <div>
             {/* Top Toolbar */}
             <div className="flex flex-wrap items-center justify-between gap-4 gap-y-3 border-b border-cat-quran/25 pb-4">

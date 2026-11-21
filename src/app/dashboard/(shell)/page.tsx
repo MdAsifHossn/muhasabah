@@ -62,43 +62,45 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-5">
       {/* ── Greeting + today ── */}
-      <section className="hero-surface relative overflow-hidden rounded-card p-5 shadow-raised sm:p-7">
-        <p className="text-sm text-on-hero-muted">
-          {greeting()} • {formatHijriDate(today)}
-        </p>
-        <h1 className="mt-1 text-2xl font-bold leading-tight sm:text-3xl">আসসালামু আলাইকুম, {session.user.name}</h1>
-        <p className="mt-1 text-sm text-on-hero-muted">
-          {formatBanglaDate(today)}
-          {isFriday ? " • আজ জুমার দিন — সূরা কাহাফ ও বেশি বেশি দরূদ ভুলবেন না" : ""}
-        </p>
+      {/* One banner: greeting, today's Amalnama and the তাকবীরে উলা / আউয়াল ওয়াক্ত streak side by side. */}
+      <section className="hero-surface relative overflow-hidden rounded-card p-4 shadow-raised sm:p-5">
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-1">
+          <div className="min-w-0">
+            <p className="text-xs text-on-hero-muted sm:text-sm">{greeting()} • {formatHijriDate(today)}</p>
+            <h1 className="mt-0.5 truncate text-xl font-bold leading-tight sm:text-2xl">আসসালামু আলাইকুম, {session.user.name}</h1>
+          </div>
+          <p className="text-xs text-on-hero-muted sm:text-sm">
+            {formatBanglaDate(today)}
+            {isFriday ? " • আজ জুমার দিন — সূরা কাহাফ ও দরূদ" : ""}
+          </p>
+        </div>
 
-        {(
-          <div className="mt-5 flex flex-col gap-4 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 sm:flex-row sm:items-center sm:justify-between">
+        <div className={streak ? "mt-4 grid gap-3 lg:grid-cols-2" : "mt-4"}>
+          <div className="flex flex-col justify-between gap-3 rounded-2xl bg-white/10 px-4 py-3 ring-1 ring-white/15">
             <div className="flex items-center gap-3">
-              <span className={todaySubmitted ? "grid size-11 place-items-center rounded-xl bg-teal-300 text-teal-950" : "grid size-11 place-items-center rounded-xl bg-marble-300 text-marble-950"}>
+              <span className={todaySubmitted ? "grid size-11 shrink-0 place-items-center rounded-xl bg-teal-300 text-teal-950" : "grid size-11 shrink-0 place-items-center rounded-xl bg-marble-300 text-marble-950"}>
                 {todaySubmitted ? <CheckCircle2 className="size-6" /> : <ClipboardCheck className="size-6" />}
               </span>
-              <div>
-                <p className="font-bold">{todaySubmitted ? "আজকের আমলনামা জমা হয়েছে" : todayEntry ? "আজকের আমলনামা খসড়ায় আছে" : "আজকের আমলনামা বাকি"}</p>
+              <div className="min-w-0">
+                <p className="font-bold leading-5">{todaySubmitted ? "আজকের আমলনামা জমা হয়েছে" : todayEntry ? "আজকের আমলনামা খসড়ায় আছে" : "আজকের আমলনামা বাকি"}</p>
                 <p className="text-xs text-on-hero-muted">
                   প্রতিদিনের আমলনামা
                   {todayDay?.percent != null ? ` • আজ ${toBn(todayDay.percent)}%` : ""}
                 </p>
               </div>
             </div>
-            <Button asChild variant={todaySubmitted ? "hero" : "gold"} className="w-full sm:w-auto">
+            <Button asChild variant={todaySubmitted ? "hero" : "gold"} className="w-full">
               <Link href="/dashboard/amalnama">
                 {todaySubmitted ? "দেখুন / সংশোধন" : "আমলনামা পূরণ করুন"} <ArrowRight className="size-4" />
               </Link>
             </Button>
           </div>
-        )}
+          {streak ? <PrayerStreakCard streak={streak} embedded /> : null}
+        </div>
       </section>
 
-      {streak ? <PrayerStreakCard streak={streak} /> : null}
-
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile label="টানা আমলনামা জমা" value={`${toBn(report.streak)} দিন`} icon={Flame} tone="gold" />
+        <StatTile label="টানা জমা" value={`${toBn(report.streak)} দিন`} icon={Flame} tone="gold" />
         <StatTile label="গড় সম্পন্নতা" value={`${toBn(report.percent)}%`} note={`শেষ ${toBn(report.totalDays)} দিন`} icon={Gauge} progress={report.percent} />
         <StatTile label="জমা দেওয়া দিন" value={`${toBn(report.submittedDays)}/${toBn(report.totalDays)}`} note="শেষ ৩০ দিনে" icon={ClipboardCheck} tone="info" />
         <StatTile label="সম্পন্ন আমল" value={toBn(report.done)} note={`মিস ${toBn(report.missed)}টি`} icon={CalendarCheck2} />

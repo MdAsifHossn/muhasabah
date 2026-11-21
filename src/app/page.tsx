@@ -8,17 +8,14 @@ import {
   Library,
   NotebookPen,
   ClipboardCheck,
-  Megaphone,
   MoonStar,
-  ShieldCheck,
   UsersRound,
-  WifiOff,
 } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { Brand, BrandMark } from "@/components/brand";
+import { Brand } from "@/components/brand";
 import { SiteHeader } from "@/components/layout/site-header";
 import { GuidanceCarousel } from "@/components/guidance-carousel";
 import { TodayPrayerCard } from "@/components/today-prayer-card";
@@ -105,24 +102,6 @@ function Ornament({ className = "" }: { className?: string }) {
   );
 }
 
-const roles = [
-  {
-    icon: ClipboardCheck,
-    title: "সদস্য",
-    text: "নিজের আমলনামা, কুরআন, হাদীস, বই ও অগ্রগতি।",
-  },
-  {
-    icon: UsersRound,
-    title: "উস্তাদজি",
-    text: "সদস্যদের আমলনামা দেখা, মন্তব্য, রিভিউ, নোটিশ ও আমল তালিকা।",
-  },
-  {
-    icon: ShieldCheck,
-    title: "উস্তাদজি (সিস্টেম অ্যাডমিন)",
-    text: "ব্যবহারকারী, রোল, পাসওয়ার্ড ও পুরো সিস্টেম নিয়ন্ত্রণ করেন।",
-  },
-];
-
 export default async function HomePage({
   searchParams,
 }: {
@@ -151,34 +130,31 @@ export default async function HomePage({
       <SiteHeader />
 
       {/* ── Hero ── */}
-      <section className="pattern-canvas">
-        <div className="mx-auto grid max-w-6xl gap-6 px-3 pb-10 pt-5 sm:px-6 sm:pt-10 lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:gap-10 lg:pb-16">
-          <div className="hero-surface mihrab relative overflow-hidden px-5 pb-8 pt-14 text-center sm:px-10 sm:pb-12 sm:pt-20">
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(60%_100%_at_50%_0%,rgb(252_211_77/0.28),transparent_70%)]" aria-hidden />
-            <div className="relative mx-auto w-fit">
-              <span className="absolute inset-0 -m-3 rounded-[1.6rem] bg-marble-300/25 blur-xl" aria-hidden />
-              <BrandMark className="relative size-20 rounded-[1.4rem] ring-2 ring-marble-200/40 sm:size-24" />
-            </div>
-            <p dir="rtl" className="quran-text relative mt-6 text-2xl text-marble-200 sm:text-3xl">
+      {/* The teal banner background spans the whole hero; compact text so the prayer card is visible on phones. */}
+      <section className="hero-surface">
+        {/* Bottom fade: the teal pattern melts into the page background instead of ending in a hard edge. */}
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent to-background sm:h-40" aria-hidden />
+        <div className="relative mx-auto grid max-w-6xl grid-cols-1 gap-5 px-3 pb-10 pt-6 sm:px-6 sm:pb-16 sm:pt-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,.9fr)] lg:items-center lg:gap-10 lg:pb-14 lg:pt-14 [&>*]:min-w-0">
+          <div className="text-center lg:text-left">
+            <p dir="rtl" className="quran-text text-xl text-marble-200 sm:text-2xl lg:text-left">
               بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
             </p>
-            <h1 className="relative mt-3 text-[2rem] font-bold leading-[1.25] sm:text-5xl">
-              হিসাব দিনের আগে
-              <span className="text-gradient-gold block">নিজের হিসাব নিন</span>
+            <h1 className="mt-1 text-[1.75rem] font-bold leading-[1.25] sm:text-5xl">
+              হিসাব দিনের আগে <span className="text-gradient-gold sm:block">নিজের হিসাব নিন</span>
             </h1>
-            <p className="relative mx-auto mt-4 max-w-md text-[15px] leading-7 text-on-hero-muted sm:text-lg">
+            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-on-hero-muted sm:text-lg sm:leading-7 lg:mx-0">
               প্রতিদিনের আমলনামা, তাকবীরে উলার ধারাবাহিকতা, আল-কুরআন ও হাদীস — উস্তাদজির তত্ত্বাবধানে।
             </p>
-            <div className="relative mx-auto mt-7 flex max-w-sm flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">
-              <Button asChild size="lg" className="bg-[#f4f1ea] text-[#0b3b40] hover:bg-[#e9e4d8]">
+            <div className="mx-auto mt-5 flex max-w-md gap-2 sm:gap-3 lg:mx-0">
+              <Button asChild size="lg" className="min-w-0 flex-[1.4] gap-1.5 rounded-[10px] bg-[#f4f1ea] px-3 text-[#0b3b40] hover:bg-[#e9e4d8] sm:flex-none sm:px-6">
                 <Link href={session ? "/dashboard/amalnama" : "/login"}>
                   {session ? "আজকের আমলনামা" : "প্রবেশ করুন"}
-                  <ArrowRight className="size-5" />
+                  <ArrowRight className="size-4" />
                 </Link>
               </Button>
-              <Button asChild size="lg" variant="hero">
+              <Button asChild size="lg" variant="hero" className="min-w-0 flex-1 gap-1.5 rounded-[10px] px-2.5 sm:flex-none sm:px-6">
                 <Link href="/quran">
-                  <BookOpenCheck className="size-5" /> কুরআন পড়ুন
+                  <BookOpenCheck className="size-4" /> কুরআন পড়ুন
                 </Link>
               </Button>
             </div>
@@ -193,7 +169,7 @@ export default async function HomePage({
       </section>
 
       {/* ── Quick access (public) ── */}
-      <section className="mx-auto max-w-6xl px-3 pt-2 sm:px-6">
+      <section className="mx-auto max-w-6xl px-3 pt-4 sm:px-6 sm:pt-6">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
@@ -247,6 +223,17 @@ export default async function HomePage({
         </div>
       </section>
 
+      {/* ── Daily guidance ── */}
+      <section
+        id="guidance"
+        className="mx-auto max-w-6xl px-3 pt-8 sm:px-6 sm:pt-12"
+      >
+        <GuidanceCarousel
+          quranPages={guidance.quranPages}
+          hadiths={guidance.hadiths}
+        />
+      </section>
+
       {/* ── How it works ── */}
       <section className="mx-auto max-w-6xl px-3 pt-12 sm:px-6 sm:pt-20">
         <Ornament />
@@ -295,52 +282,6 @@ export default async function HomePage({
               </p>
             </div>
           ))}
-        </div>
-      </section>
-
-      {/* ── Daily guidance ── */}
-      <section
-        id="guidance"
-        className="mx-auto max-w-6xl px-3 pb-12 sm:px-6 sm:pb-20"
-      >
-        <GuidanceCarousel
-          quranPages={guidance.quranPages}
-          hadiths={guidance.hadiths}
-        />
-      </section>
-
-      {/* ── Roles ── */}
-      <section className="border-y border-hairline bg-surface">
-        <div className="mx-auto max-w-6xl px-3 py-12 sm:px-6 sm:py-16">
-          <Ornament />
-          <h2 className="mt-3 text-center text-2xl font-bold sm:text-3xl">
-            তিন ধরনের ব্যবহারকারী
-          </h2>
-          <div className="mt-6 grid gap-3 sm:grid-cols-3">
-            {roles.map((role) => (
-              <div
-                key={role.title}
-                className="rounded-card border border-hairline bg-background p-5"
-              >
-                <role.icon className="size-6 text-primary" />
-                <h3 className="mt-3 font-bold">{role.title}</h3>
-                <p className="mt-1 text-sm leading-6 text-muted-foreground">
-                  {role.text}
-                </p>
-              </div>
-            ))}
-          </div>
-          <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs font-semibold text-muted-foreground">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-sunken px-3 py-1.5">
-              <WifiOff className="size-3.5" /> অফলাইনে কুরআন
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-sunken px-3 py-1.5">
-              <Megaphone className="size-3.5" /> নোটিশ বোর্ড
-            </span>
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-sunken px-3 py-1.5">
-              <ShieldCheck className="size-3.5" /> প্রাইভেসি নিয়ন্ত্রণ
-            </span>
-          </div>
         </div>
       </section>
 
