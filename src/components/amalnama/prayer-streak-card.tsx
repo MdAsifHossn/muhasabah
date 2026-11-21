@@ -15,33 +15,33 @@ function motivation(streak: PrayerStreak) {
  * Highlight of the member's best amal: how many days in a row every waqt was
  * prayed with তাকবীরে উলা (brothers) / আউয়াল ওয়াক্তে (sisters).
  */
-export function PrayerStreakCard({ streak, name, className }: { streak: PrayerStreak; name?: string; className?: string }) {
+export function PrayerStreakCard({ streak, className }: { streak: PrayerStreak; className?: string }) {
   const isRecord = streak.current > 0 && streak.current >= streak.best;
   return (
     <section
       aria-label={`${streak.label} ধারাবাহিকতা`}
-      className={cn("streak-surface relative overflow-hidden rounded-card p-4 shadow-raised sm:p-5", className)}
+      className={cn("streak-surface relative overflow-hidden rounded-card px-4 py-3 shadow-raised sm:px-5 sm:py-4", className)}
     >
-      <div className="relative flex items-start gap-3 sm:gap-4">
-        <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-white/15 ring-1 ring-white/25 sm:size-16">
-          {isRecord ? <Crown className="size-7 text-marble-200" /> : <Flame className="size-7 text-marble-200" />}
+      <div className="relative flex items-center gap-3">
+        <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/15 ring-1 ring-white/25">
+          {isRecord ? <Crown className="size-6 text-marble-200" /> : <Flame className="size-6 text-marble-200" />}
         </span>
         <div className="min-w-0 flex-1">
-          <p className="truncate text-[11px] font-bold tracking-wide text-marble-100/90">{name ? `${name}-এর সেরা আমল` : "আপনার সেরা আমল"}</p>
-          <h2 className="mt-0.5 text-base font-bold leading-6 text-white sm:text-lg">পাঁচ ওয়াক্তে {streak.label}</h2>
-          <p className="mt-1 flex items-baseline gap-1.5 text-white">
-            <span className="text-4xl font-extrabold tabular-nums leading-none sm:text-5xl">{toBn(streak.current)}</span>
+          <h2 className="truncate text-[15px] font-bold leading-5 text-white sm:text-base">পাঁচ ওয়াক্তে {streak.label}</h2>
+          <p className="mt-0.5 flex items-baseline gap-1.5 text-white">
+            <span className="text-3xl font-extrabold tabular-nums leading-none">{toBn(streak.current)}</span>
             <span className="text-sm font-semibold text-marble-100">দিন টানা</span>
           </p>
         </div>
-        <div className="shrink-0 rounded-2xl bg-black/15 px-3 py-2 text-center ring-1 ring-white/15">
-          <Trophy className="mx-auto size-4 text-marble-200" />
-          <p className="mt-1 text-lg font-bold tabular-nums leading-none text-white">{toBn(streak.best)}</p>
+        <div className="shrink-0 rounded-xl bg-black/15 px-2.5 py-1.5 text-center ring-1 ring-white/15">
+          <p className="flex items-center justify-center gap-1 text-base font-bold tabular-nums leading-none text-white">
+            <Trophy className="size-3.5 text-marble-200" /> {toBn(streak.best)}
+          </p>
           <p className="mt-1 text-[10px] font-semibold text-marble-100/90">সর্বোচ্চ</p>
         </div>
       </div>
 
-      <div className="relative mt-4 flex items-center gap-1" aria-label="শেষ ১৪ দিন">
+      <div className="relative mt-3 flex items-center gap-1" aria-label="শেষ ১৪ দিন">
         {streak.recent.map((mark, index) => (
           <span
             key={index}
@@ -53,7 +53,7 @@ export function PrayerStreakCard({ streak, name, className }: { streak: PrayerSt
           />
         ))}
       </div>
-      <div className="relative mt-3 flex flex-wrap items-center justify-between gap-2 text-xs">
+      <div className="relative mt-2 flex flex-wrap items-center justify-between gap-2 text-xs">
         <p className="font-medium text-white/85">{motivation(streak)}</p>
         {streak.todayTotal > 0 ? (
           <p className="rounded-full bg-white/15 px-2.5 py-1 font-semibold text-white">

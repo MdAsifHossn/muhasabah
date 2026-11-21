@@ -68,7 +68,7 @@ export async function saveDailyAmalnama(formData: FormData) {
   if (existing?.status === DailyEntryStatus.LOCKED && !isStaffRole(session.user.role)) throw actionError(403, "এই দিনের আমলনামা লক করা হয়েছে — আর পরিবর্তন করা যাবে না।");
 
   const isPeriodDay = existing?.isPeriodDay ?? false;
-  const items = applicableItems(allItems, { gender: viewer?.gender ?? Gender.OTHER, weekday, isPeriodDay });
+  const items = applicableItems(allItems, { gender: viewer?.gender ?? Gender.OTHER, weekday, isPeriodDay, date });
   const responses = items.map((item) => {
     const raw = formData.get(`item_${item.id}`);
     const value =
@@ -130,7 +130,7 @@ export async function setPeriodDayForMember(day: "today" | "yesterday" = "today"
   const next = !existing?.isPeriodDay;
 
   const allItems = await prisma.amalItem.findMany({ where: { isActive: true }, orderBy: { order: "asc" } });
-  const items = applicableItems(allItems, { gender: viewer.gender, weekday, isPeriodDay: next });
+  const items = applicableItems(allItems, { gender: viewer.gender, weekday, isPeriodDay: next, date });
   const ids = new Set(items.map((item) => item.id));
   // Keep every stored answer (so switching the ওজর day off restores the
   // prayer ticks); only the applicable ones are scored.

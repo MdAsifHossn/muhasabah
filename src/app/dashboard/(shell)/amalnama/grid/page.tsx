@@ -254,7 +254,7 @@ async function GridData({
 
   return (
     <>
-    {streak ? <PrayerStreakCard streak={streak} name={isSelf ? undefined : member.name} className="mb-4" /> : null}
+    {streak ? <PrayerStreakCard streak={streak} className="mb-4" /> : null}
     <GridView
       memberName={member.name}
       memberGender={member.gender}

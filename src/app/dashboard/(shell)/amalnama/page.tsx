@@ -6,7 +6,7 @@ import { DailyForm, type DailyFormItem } from "@/components/amalnama/daily-form"
 import { PerfectDayCelebration } from "@/components/amalnama/perfect-day-celebration";
 import { PeriodToggle } from "@/components/amalnama/period-toggle";
 import { EmptyState } from "@/components/design/empty-state";
-import { applicableItems } from "@/lib/amal-rules";
+import { applicableItems, isNaflFastingItem, naflFastingReasonFor } from "@/lib/amal-rules";
 import { categoryLabels } from "@/lib/constants";
 import { findEntryForDay } from "@/lib/cycles";
 import { formatBanglaDate, formatHijriDate, getBangladeshToday, getBangladeshWeekday, startOfBangladeshDay, toBanglaDigits } from "@/lib/dates";
@@ -50,7 +50,7 @@ export default async function AmalnamaPage({ searchParams }: { searchParams: Pro
   const gender = viewer?.gender ?? "OTHER";
   const isFemale = gender === "FEMALE";
   const isPeriodDay = entry?.isPeriodDay ?? false;
-  const items = applicableItems(allItems, { gender, weekday, isPeriodDay });
+  const items = applicableItems(allItems, { gender, weekday, isPeriodDay, date });
   const responses = new Map((entry?.responses ?? []).map((response) => [response.amalItemId, response]));
   const locked = entry?.status === "LOCKED" && !staffEditor;
 
@@ -67,7 +67,7 @@ export default async function AmalnamaPage({ searchParams }: { searchParams: Pro
       unit: item.unit,
       points: item.points,
       genderScope: item.genderScope,
-      dayLabel: item.specificDay ? weekdayBn[item.specificDay] : null,
+      dayLabel: item.specificDay ? weekdayBn[item.specificDay] : isNaflFastingItem(item) ? naflFastingReasonFor(date) : null,
       initial:
         item.inputType === "BOOLEAN"
           ? (response?.valueBoolean ?? false)

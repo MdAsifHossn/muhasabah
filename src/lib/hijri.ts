@@ -210,6 +210,26 @@ export function eventsFor(h: HDate, weekday: number): EventKind[] {
   return events;
 }
 
+/**
+ * Why the নফল রোজা amal shows on a Bangladesh calendar day (`YYYY-MM-DD`), or
+ * null when it should not: সোম/বৃহস্পতিবার, আরাফা, আশুরা, আইয়ামে বীজ and
+ * শাওয়ালের ছয় রোজা — never in রমজান or on a day fasting is forbidden (ঈদ, তাশরিক).
+ */
+export function naflFastingReason(dateKey: string): string | null {
+  const [y, m, d] = dateKey.split("-").map(Number);
+  const day: GDay = { y, m, d };
+  const h = toHijri(day);
+  if (h.m === 9 || FORBIDDEN_FAST(h)) return null;
+  if (h.m === 12 && h.d === 9) return "আরাফার দিন";
+  if (h.m === 1 && (h.d === 9 || h.d === 10)) return "আশুরা";
+  if (h.d >= 13 && h.d <= 15) return "আইয়ামে বীজ";
+  const weekday = gWeekday(day);
+  if (weekday === 1) return "সোমবার";
+  if (weekday === 4) return "বৃহস্পতিবার";
+  if (h.m === 10 && h.d >= 2) return "শাওয়ালের রোজা";
+  return null;
+}
+
 /** Plain-language fasting / worship notes for the day sheet. */
 export function dayNotes(h: HDate, weekday: number): string[] {
   const notes: string[] = [];

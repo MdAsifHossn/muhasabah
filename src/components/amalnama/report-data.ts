@@ -94,7 +94,7 @@ export function buildReport({
     const isPeriodDay = entry?.isPeriodDay ?? false;
     const answered = new Map((entry?.responses ?? []).map((response) => [response.amalItemId, response]));
 
-    const dayItems = applicableItems(items, { gender, weekday, isPeriodDay }).filter(
+    const dayItems = applicableItems(items, { gender, weekday, isPeriodDay, date }).filter(
       (item) => (createdKey.get(item.id) ?? "") <= key && (item.isActive || answered.has(item.id)),
     );
 
