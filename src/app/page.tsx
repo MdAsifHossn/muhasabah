@@ -4,7 +4,9 @@ import {
   BookMarked,
   BookOpenCheck,
   CalendarDays,
+  Flame,
   Library,
+  NotebookPen,
   ClipboardCheck,
   Megaphone,
   MoonStar,
@@ -16,7 +18,7 @@ import { headers } from "next/headers";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
-import { Brand } from "@/components/brand";
+import { Brand, BrandMark } from "@/components/brand";
 import { SiteHeader } from "@/components/layout/site-header";
 import { GuidanceCarousel } from "@/components/guidance-carousel";
 import { TodayPrayerCard } from "@/components/today-prayer-card";
@@ -64,10 +66,44 @@ const features = [
   {
     icon: BarChart3,
     title: "অগ্রগতি",
-    text: "৭ / ৩০ / ৪০ দিনের রিপোর্ট",
+    text: "দিনভিত্তিক গ্রিড ও রিপোর্ট",
     tone: "bg-cat-sunnah/12 text-cat-sunnah",
   },
 ];
+
+const steps = [
+  {
+    icon: NotebookPen,
+    title: "প্রতিদিন আমলনামা লিখুন",
+    text: "নামাজ, কুরআন, যিকির, আখলাক — দিনের শেষে দুই মিনিটে নিজের হিসাব।",
+  },
+  {
+    icon: Flame,
+    title: "ধারাবাহিকতা গড়ুন",
+    text: "পাঁচ ওয়াক্তে তাকবীরে উলা টানা কত দিন — আপনার সেরা আমল হিসেবে চোখের সামনে।",
+  },
+  {
+    icon: UsersRound,
+    title: "উস্তাদজির পরামর্শ নিন",
+    text: "উস্তাদজি আমলনামা দেখে উৎসাহ ও সংশোধনের নসীহত দেন।",
+  },
+];
+
+/** Gold rule with an ৮-কোণা তারা in the middle. */
+function Ornament({ className = "" }: { className?: string }) {
+  return (
+    <div className={`flex items-center justify-center gap-3 text-gold ${className}`} aria-hidden>
+      <span className="h-px w-16 bg-gradient-to-r from-transparent to-current sm:w-28" />
+      <svg viewBox="0 0 24 24" className="size-5">
+        <g fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round">
+          <rect x="6" y="6" width="12" height="12" rx="0.6" />
+          <rect x="6" y="6" width="12" height="12" rx="0.6" transform="rotate(45 12 12)" />
+        </g>
+      </svg>
+      <span className="h-px w-16 bg-gradient-to-l from-transparent to-current sm:w-28" />
+    </div>
+  );
+}
 
 const roles = [
   {
@@ -83,7 +119,7 @@ const roles = [
   {
     icon: ShieldCheck,
     title: "উস্তাদজি (সিস্টেম অ্যাডমিন)",
-    text: "ব্যবহারকারী, রোল, পাসওয়ার্ড, সাইকেল ও পুরো সিস্টেম নিয়ন্ত্রণ করেন।",
+    text: "ব্যবহারকারী, রোল, পাসওয়ার্ড ও পুরো সিস্টেম নিয়ন্ত্রণ করেন।",
   },
 ];
 
@@ -116,27 +152,25 @@ export default async function HomePage({
 
       {/* ── Hero ── */}
       <section className="pattern-canvas">
-        <div className="mx-auto grid max-w-6xl gap-6 px-4 pb-10 pt-6 sm:px-6 sm:pt-10 lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:gap-10 lg:pb-16">
-          <div className="hero-surface relative overflow-hidden rounded-[1.75rem] px-5 py-8 sm:px-10 sm:py-12">
-            <p
-              dir="rtl"
-              className="quran-text inline-block rounded-full bg-white/10 px-4 pt-2 pb-4 text-xl text-amber-200 ring-1 ring-white/15 sm:text-2xl"
-            >
+        <div className="mx-auto grid max-w-6xl gap-6 px-3 pb-10 pt-5 sm:px-6 sm:pt-10 lg:grid-cols-[1.15fr_.85fr] lg:items-center lg:gap-10 lg:pb-16">
+          <div className="hero-surface mihrab relative overflow-hidden px-5 pb-8 pt-14 text-center sm:px-10 sm:pb-12 sm:pt-20">
+            <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-[radial-gradient(60%_100%_at_50%_0%,rgb(252_211_77/0.28),transparent_70%)]" aria-hidden />
+            <div className="relative mx-auto w-fit">
+              <span className="absolute inset-0 -m-3 rounded-[1.6rem] bg-amber-300/25 blur-xl" aria-hidden />
+              <BrandMark className="relative size-20 rounded-[1.4rem] ring-2 ring-amber-200/40 sm:size-24" />
+            </div>
+            <p dir="rtl" className="quran-text relative mt-6 text-2xl text-amber-200 sm:text-3xl">
               بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
             </p>
-            <h1 className="mt-6 text-[2rem] font-bold leading-[1.2] sm:text-5xl">
-              নিজের আমলের হিসাব
-              <span className="block text-emerald-300">প্রতিদিন, নিয়মিত।</span>
+            <h1 className="relative mt-3 text-[2rem] font-bold leading-[1.25] sm:text-5xl">
+              হিসাব দিনের আগে
+              <span className="text-gradient-gold block">নিজের হিসাব নিন</span>
             </h1>
-            <p className="mt-4 max-w-xl text-base leading-7 text-on-hero-muted sm:text-lg">
-              আমলনামা, আল-কুরআন ও হাদীস — উস্তাদজির তত্ত্বাবধানে।
+            <p className="relative mx-auto mt-4 max-w-md text-[15px] leading-7 text-on-hero-muted sm:text-lg">
+              প্রতিদিনের আমলনামা, তাকবীরে উলার ধারাবাহিকতা, আল-কুরআন ও হাদীস — উস্তাদজির তত্ত্বাবধানে।
             </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Button
-                asChild
-                size="lg"
-                className="bg-[#e3b25a] text-[#2a1d02] hover:bg-[#ecc272]"
-              >
+            <div className="relative mx-auto mt-7 flex max-w-sm flex-col gap-3 sm:max-w-none sm:flex-row sm:justify-center">
+              <Button asChild size="lg" className="bg-[#e3b25a] text-[#2a1d02] hover:bg-[#ecc272]">
                 <Link href={session ? "/dashboard/amalnama" : "/login"}>
                   {session ? "আজকের আমলনামা" : "প্রবেশ করুন"}
                   <ArrowRight className="size-5" />
@@ -159,7 +193,7 @@ export default async function HomePage({
       </section>
 
       {/* ── Quick access (public) ── */}
-      <section className="mx-auto max-w-6xl px-4 pt-2 sm:px-6">
+      <section className="mx-auto max-w-6xl px-3 pt-2 sm:px-6">
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           {[
             {
@@ -213,12 +247,36 @@ export default async function HomePage({
         </div>
       </section>
 
+      {/* ── How it works ── */}
+      <section className="mx-auto max-w-6xl px-3 pt-12 sm:px-6 sm:pt-20">
+        <Ornament />
+        <h2 className="mt-3 text-center text-2xl font-bold sm:text-3xl">যেভাবে মুহাসাবাহ সাহায্য করে</h2>
+        <p className="mx-auto mt-2 max-w-xl text-center text-sm leading-6 text-muted-foreground sm:text-base">
+          উমর (রা.)-এর নসীহত মনে রেখে — প্রতিদিন নিজের আমলের হিসাব নেওয়ার একটি সহজ অভ্যাস।
+        </p>
+        <ol className="mt-8 grid gap-3 sm:grid-cols-3 sm:gap-4">
+          {steps.map((step, index) => (
+            <li key={step.title} className="surface relative overflow-hidden rounded-card p-5">
+              <span className="absolute -top-4 right-2 text-7xl font-extrabold text-primary/[0.07]" aria-hidden>
+                {["১", "২", "৩"][index]}
+              </span>
+              <span className={index === 1 ? "streak-surface grid size-12 place-items-center rounded-2xl text-white" : "grid size-12 place-items-center rounded-2xl bg-primary-soft text-primary"}>
+                <step.icon className="size-6" />
+              </span>
+              <h3 className="mt-4 text-lg font-bold">{step.title}</h3>
+              <p className="mt-1 text-sm leading-6 text-muted-foreground">{step.text}</p>
+            </li>
+          ))}
+        </ol>
+      </section>
+
       {/* ── Features ── */}
-      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-16">
-        <h2 className="text-xl font-bold sm:text-3xl">
+      <section className="mx-auto max-w-6xl px-3 py-12 sm:px-6 sm:py-20">
+        <Ornament />
+        <h2 className="mt-3 text-center text-2xl font-bold sm:text-3xl">
           এক জায়গায় দ্বীনি রুটিন
         </h2>
-        <div className="mt-5 grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4">
+        <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4">
           {features.map((feature) => (
             <div
               key={feature.title}
@@ -243,7 +301,7 @@ export default async function HomePage({
       {/* ── Daily guidance ── */}
       <section
         id="guidance"
-        className="mx-auto max-w-6xl px-4 pb-10 sm:px-6 sm:pb-16"
+        className="mx-auto max-w-6xl px-3 pb-12 sm:px-6 sm:pb-20"
       >
         <GuidanceCarousel
           quranPages={guidance.quranPages}
@@ -253,8 +311,9 @@ export default async function HomePage({
 
       {/* ── Roles ── */}
       <section className="border-y border-hairline bg-surface">
-        <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-14">
-          <h2 className="text-2xl font-bold sm:text-3xl">
+        <div className="mx-auto max-w-6xl px-3 py-12 sm:px-6 sm:py-16">
+          <Ornament />
+          <h2 className="mt-3 text-center text-2xl font-bold sm:text-3xl">
             তিন ধরনের ব্যবহারকারী
           </h2>
           <div className="mt-6 grid gap-3 sm:grid-cols-3">
@@ -271,7 +330,7 @@ export default async function HomePage({
               </div>
             ))}
           </div>
-          <div className="mt-6 flex flex-wrap gap-2 text-xs font-semibold text-muted-foreground">
+          <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs font-semibold text-muted-foreground">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-sunken px-3 py-1.5">
               <WifiOff className="size-3.5" /> অফলাইনে কুরআন
             </span>
@@ -286,7 +345,7 @@ export default async function HomePage({
       </section>
 
       {/* ── CTA ── */}
-      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-16">
+      <section className="mx-auto max-w-6xl px-3 py-12 sm:px-6 sm:py-20">
         <div className="hero-surface flex flex-col items-start gap-5 rounded-[1.75rem] p-6 sm:flex-row sm:items-center sm:justify-between sm:p-10">
           <div>
             <h2 className="text-2xl font-bold sm:text-3xl">
@@ -310,7 +369,7 @@ export default async function HomePage({
       </section>
 
       <footer className="border-t border-hairline">
-        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-3 py-8 pb-[max(2rem,env(safe-area-inset-bottom))] text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <Brand />
           <div className="sm:text-right">
             <p>মুহাসাবাহ • প্রতিদিনের আত্মপর্যালোচনা ও আমলের সঙ্গী</p>

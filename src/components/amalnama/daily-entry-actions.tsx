@@ -28,10 +28,10 @@ export function DailyEntryActions({ entryId, memberId, dateKey }: { entryId: str
   }
 
   return (
-    <span className="flex shrink-0 items-center gap-1">
+    <span className="mt-1 flex flex-col items-center gap-0.5">
       <Link
         href={`/dashboard/amalnama?member=${memberId}&date=${dateKey}`}
-        className="grid size-7 place-items-center rounded-lg text-muted-foreground transition hover:bg-primary-soft hover:text-primary"
+        className="grid size-6 place-items-center rounded-md text-muted-foreground transition hover:bg-primary-soft hover:text-primary"
         aria-label="এই দিনের আমলনামা সম্পাদনা করুন"
         title="সম্পাদনা"
       >
@@ -41,7 +41,7 @@ export function DailyEntryActions({ entryId, memberId, dateKey }: { entryId: str
         type="button"
         onClick={remove}
         disabled={isPending}
-        className="grid size-7 place-items-center rounded-lg text-muted-foreground transition hover:bg-danger-soft hover:text-danger disabled:opacity-50"
+        className="grid size-6 place-items-center rounded-md text-muted-foreground transition hover:bg-danger-soft hover:text-danger disabled:opacity-50"
         aria-label="এই দিনের আমলনামা মুছুন"
         title="মুছে ফেলুন"
       >

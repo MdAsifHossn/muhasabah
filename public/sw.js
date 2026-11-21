@@ -9,13 +9,14 @@
  *   to QURAN_CACHE_MAX entries there too.
  */
 
-const VERSION = "v2";
+const VERSION = "v3";
 /** On a dev server chunk URLs are NOT content-hashed, so caching them serves stale CSS/JS. */
 const IS_DEV_HOST = ["localhost", "127.0.0.1", "[::1]"].includes(self.location.hostname);
 const PAGE_CACHE = `muhasabah-pages-${VERSION}`;
 const ASSET_CACHE = `muhasabah-assets-${VERSION}`;
 const RUNTIME_CACHE = `muhasabah-runtime-${VERSION}`;
-const QURAN_CACHE = `muhasabah-quran-${VERSION}`;
+// Pinned: the offline Quran download must survive app-shell version bumps.
+const QURAN_CACHE = "muhasabah-quran-v2";
 const CURRENT_CACHES = [PAGE_CACHE, ASSET_CACHE, RUNTIME_CACHE, QURAN_CACHE];
 const CACHE_PREFIX = "muhasabah-";
 

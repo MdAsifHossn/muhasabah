@@ -1,13 +1,14 @@
-import { addDays } from "date-fns";
+import { addDays, differenceInCalendarDays } from "date-fns";
 import { CalendarOff, LayoutGrid } from "lucide-react";
 import Link from "next/link";
 
 import { DailyForm, type DailyFormItem } from "@/components/amalnama/daily-form";
+import { PerfectDayCelebration } from "@/components/amalnama/perfect-day-celebration";
 import { PeriodToggle } from "@/components/amalnama/period-toggle";
 import { EmptyState } from "@/components/design/empty-state";
 import { applicableItems } from "@/lib/amal-rules";
 import { categoryLabels } from "@/lib/constants";
-import { getActiveCycle, getCycleProgress, isDateInsideCycle } from "@/lib/cycles";
+import { findEntryForDay } from "@/lib/cycles";
 import { formatBanglaDate, formatHijriDate, getBangladeshToday, getBangladeshWeekday, startOfBangladeshDay, toBanglaDigits } from "@/lib/dates";
 import { isStaffRole, requireUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -32,24 +33,18 @@ export default async function AmalnamaPage({ searchParams }: { searchParams: Pro
   const targetUserId = staffEditor ? params.member! : session.user.id;
   const day: "today" | "yesterday" = params.day === "yesterday" ? "yesterday" : "today";
   const dateKey = staffEditor && typeof params.date === "string" && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : null;
-  const cycle = await getActiveCycle();
-  if (!cycle) {
-    return <EmptyState icon={CalendarOff} title="এখন কোনো সক্রিয় মেয়াদ নেই" description="নতুন মেয়াদ শুরু হলে প্রতিদিনের আমলনামা পূরণ করা যাবে।" />;
-  }
-
   const today = startOfBangladeshDay(getBangladeshToday());
   const yesterday = startOfBangladeshDay(addDays(today, -1));
   const date = dateKey ? startOfBangladeshDay(new Date(`${dateKey}T00:00:00+06:00`)) : day === "yesterday" ? yesterday : today;
-  const yesterdayAllowed = isDateInsideCycle(yesterday, cycle.startDate, cycle.endDate);
-  const inCycle = isDateInsideCycle(date, cycle.startDate, cycle.endDate);
+  const yesterdayAllowed = true;
+  const inFuture = date.getTime() > today.getTime();
   const weekday = getBangladeshWeekday(date);
   const isFriday = weekday === "FRIDAY";
-  const progress = getCycleProgress(cycle.startDate, cycle.endDate, date);
 
   const [viewer, allItems, entry] = await Promise.all([
-    prisma.user.findUnique({ where: { id: targetUserId }, select: { id: true, name: true, gender: true } }),
+    prisma.user.findUnique({ where: { id: targetUserId }, select: { id: true, name: true, gender: true, joinedAt: true } }),
     prisma.amalItem.findMany({ where: { isActive: true }, orderBy: { order: "asc" } }),
-    inCycle ? prisma.dailyAmalEntry.findUnique({ where: { userId_cycleId_date: { userId: targetUserId, cycleId: cycle.id, date } } }) : null,
+    inFuture ? null : findEntryForDay(targetUserId, date),
   ]);
   if (!viewer) return <EmptyState title="সদস্যটি পাওয়া যায়নি" description="এই সদস্যের আমলনামা আর খুঁজে পাওয়া যাচ্ছে না।" />;
   const gender = viewer?.gender ?? "OTHER";
@@ -87,7 +82,7 @@ export default async function AmalnamaPage({ searchParams }: { searchParams: Pro
     weekdayLabel: weekdayBn[weekday],
     banglaDate: formatBanglaDate(date),
     hijriDate: formatHijriDate(date),
-    cycleLabel: `${toBanglaDigits(progress.day)}/${toBanglaDigits(progress.totalDays)} দিন`,
+    cycleLabel: `${toBanglaDigits(Math.max(1, differenceInCalendarDays(date, startOfBangladeshDay(viewer.joinedAt)) + 1))}তম দিন`,
     isFriday,
     isExcused: isPeriodDay,
   };
@@ -121,8 +116,8 @@ export default async function AmalnamaPage({ searchParams }: { searchParams: Pro
         })}
       </div>
 
-      {!inCycle ? (
-        <EmptyState icon={CalendarOff} title="এই দিনটি সক্রিয় মেয়াদের বাইরে" description="মেয়াদের নির্ধারিত দিনগুলোতেই আমলনামা পূরণ করা যায়।" />
+      {inFuture ? (
+        <EmptyState icon={CalendarOff} title="এই দিনটি এখনো আসেনি" description="আজ বা আগের দিনের আমলনামাই লেখা যায়।" />
       ) : formItems.length === 0 ? (
         <EmptyState title="এই দিনের জন্য কোনো আমল নেই" description="উস্তাদজি আমল যোগ করলে এখানে দেখা যাবে।" />
       ) : (
@@ -142,6 +137,7 @@ export default async function AmalnamaPage({ searchParams }: { searchParams: Pro
             dateKey={dateKey ?? undefined}
             excuseSlot={isFemale && !dateKey ? <PeriodToggle key="excuse" isPeriod={isPeriodDay} day={day} disabled={locked} memberId={staffEditor ? targetUserId : undefined} /> : null}
           />
+          {!staffEditor ? <PerfectDayCelebration /> : null}
           <Link href={`/dashboard/amalnama/grid${staffEditor ? `?member=${targetUserId}` : ""}`} className="flex items-center justify-center gap-1.5 py-2 text-sm font-semibold text-primary">
             <LayoutGrid className="size-4" /> আগের দিনগুলোর হিসাব দেখুন
           </Link>

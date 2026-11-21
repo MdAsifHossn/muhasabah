@@ -20,7 +20,7 @@ const gradeClass: Record<GradeTone, string> = {
 export function ReaderToolbar({ language }: { language: "bn" | "en" }) {
   const { prefs, update } = usePrefs();
   return (
-    <div className="sticky top-14 z-20 -mx-4 border-b border-hairline bg-background/90 px-4 py-2 backdrop-blur-xl sm:top-16 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
+    <div className="sticky top-14 z-20 -mx-3 border-b border-hairline bg-background/90 px-3 py-2 backdrop-blur-xl sm:top-16 sm:-mx-6 sm:px-6 lg:-mx-8 lg:px-8">
       <div className="flex items-center justify-between gap-2">
         <button
           type="button"
@@ -114,7 +114,7 @@ export function HadithCard({ hadith, book, section, language }: { hadith: Hadith
   }
 
   return (
-    <article id={`h-${hadith.number}`} data-hadith={hadith.number} className="surface scroll-mt-32 rounded-card p-4 target:ring-2 target:ring-primary/50 sm:p-6">
+    <article id={`h-${hadith.number}`} data-hadith={hadith.number} className="surface -mx-1.5 scroll-mt-32 rounded-2xl px-3 py-3.5 target:ring-2 target:ring-primary/50 sm:mx-0 sm:rounded-card sm:p-6">
       <header className="flex flex-wrap items-center gap-2">
         <span className="inline-flex h-8 items-center rounded-lg bg-primary px-2.5 text-sm font-bold tabular-nums text-on-primary">
           {bn(hadith.number)}
@@ -142,7 +142,7 @@ export function HadithCard({ hadith, book, section, language }: { hadith: Hadith
       ) : null}
 
       {prefs.showArabic && hadith.arabic ? (
-        <p lang="ar" dir="rtl" className="arabic-text mt-4 rounded-xl bg-surface-sunken/70 px-4 py-3 text-right text-xl text-foreground sm:text-2xl">
+        <p lang="ar" dir="rtl" className="arabic-text mt-3 rounded-xl bg-surface-sunken/70 px-3 py-2.5 text-right sm:mt-4 sm:px-4 sm:py-3 text-xl text-foreground sm:text-2xl">
           {hadith.arabic}
         </p>
       ) : null}

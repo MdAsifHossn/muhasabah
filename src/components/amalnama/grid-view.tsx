@@ -22,6 +22,10 @@ import { cn } from "@/lib/utils";
  * - offDay  blank — not applicable that day (e.g. a Friday-only amal)
  */
 
+/** Sticky amal-name column: narrow on phones so ৬–৭ days fit beside it. */
+const AMAL_COL = "w-[112px] min-w-[112px] max-w-[112px] sm:w-[220px] sm:min-w-[220px] sm:max-w-[220px]";
+const DAY_COL = "w-10 min-w-10 sm:w-11 sm:min-w-11";
+
 export const GRID_RANGE_OPTIONS = [
   { key: "1", label: "১ দিন" },
   { key: "7", label: "৭ দিন" },
@@ -93,7 +97,7 @@ export type GridSummary = {
 
 export function GridRangeChips({ active, memberId }: { active: GridRangeKey; memberId?: string }) {
   return (
-    <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0" role="group" aria-label="সময় পরিসীমা">
+    <div className="no-scrollbar -mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:px-0" role="group" aria-label="সময় পরিসীমা">
       {GRID_RANGE_OPTIONS.map((option) => (
         <Link
           key={option.key}
@@ -250,12 +254,12 @@ export function GridView({
 
       <GridLegend />
 
-      <div className="overflow-x-auto overscroll-x-contain rounded-xl border border-hairline bg-surface shadow-card sm:rounded-card">
+      <div className="-mx-3 overflow-x-auto overscroll-x-contain border-y border-hairline bg-surface shadow-card sm:mx-0 sm:rounded-card sm:border">
         <table className="w-max border-separate border-spacing-0 text-sm">
           <caption className="sr-only">{`${memberName} — ${rangeLabel} আমলনামা`}</caption>
           <thead>
             <tr>
-              <th scope="col" className="sticky left-0 z-30 w-[164px] min-w-[164px] border-b border-hairline bg-surface-sunken/95 px-3 py-2.5 text-left text-xs font-bold tracking-wide text-foreground backdrop-blur sm:w-[230px] sm:min-w-[230px] sm:py-3">
+              <th scope="col" className={`sticky left-0 z-30 ${AMAL_COL} border-b border-hairline bg-surface-sunken/95 px-2 py-2.5 sm:px-3 text-left text-xs font-bold tracking-wide text-foreground backdrop-blur sm:py-3`}>
                 আমল
               </th>
               {monthBands.map((band) => (
@@ -263,13 +267,13 @@ export function GridView({
                   {band.label}
                 </th>
               ))}
-              <th scope="col" className="sticky right-0 z-30 border-b border-l border-hairline bg-surface-sunken/95 px-2 py-2.5 text-center text-xs font-bold tracking-wide text-foreground shadow-[-4px_0_10px_-8px] shadow-black/50 backdrop-blur sm:py-3">
+              <th scope="col" className="border-b border-l-2 border-hairline bg-surface-sunken/95 px-2 py-2.5 text-center text-xs font-bold tracking-wide text-foreground backdrop-blur sm:py-3">
                 মিস
               </th>
             </tr>
             <tr>
-              <th scope="col" className="sticky left-0 z-20 w-[150px] min-w-[150px] border-b-2 border-hairline bg-surface px-3 py-2 text-left text-xs font-bold text-foreground sm:w-[220px] sm:min-w-[220px]">
-                {memberName}
+              <th scope="col" className={`sticky left-0 z-20 ${AMAL_COL} border-b-2 border-hairline bg-surface px-2 py-2 text-left text-[11px] font-bold text-foreground sm:px-3 sm:text-xs`}>
+                <span className="line-clamp-2">{memberName}</span>
               </th>
               {columns.map((column) => (
                 <th
@@ -277,7 +281,7 @@ export function GridView({
                   scope="col"
                   title={`${column.fullLabel}${column.isPeriodDay ? " — শরয়ী ওজরের দিন" : ""}`}
                   className={cn(
-                    "sticky z-20 h-16 w-11 min-w-11 border-b-2 border-l border-hairline px-0 py-2 text-center align-middle backdrop-blur",
+                    `h-16 ${DAY_COL} border-b-2 border-l border-hairline px-0 py-2 text-center align-middle`,
                     column.isPeriodDay ? "bg-female-soft" : column.isToday ? "bg-gold-soft" : column.isFriday ? "bg-primary-soft" : "bg-surface",
                   )}
                 >
@@ -286,7 +290,7 @@ export function GridView({
                   {canManage ? <DailyEntryActions entryId={column.entryId} memberId={memberId} dateKey={column.key} /> : null}
                 </th>
               ))}
-              <th scope="col" className="sticky right-0 z-30 border-b-2 border-l border-hairline bg-surface px-2 py-2 text-center text-[10px] font-bold text-muted-foreground shadow-[-4px_0_10px_-8px] shadow-black/50">
+              <th scope="col" className="border-b-2 border-l-2 border-hairline bg-surface px-2 py-2 text-center text-[10px] font-bold text-muted-foreground">
                 মোট
               </th>
             </tr>
@@ -294,19 +298,19 @@ export function GridView({
           <tbody>
             {rows.map((row) => (
               <tr key={row.item.id} className="group">
-                <th scope="row" className="sticky left-0 z-10 w-[164px] min-w-[164px] max-w-[164px] border-b border-hairline bg-surface px-3 py-2 text-left align-middle transition-colors group-hover:bg-primary-soft/35 sm:w-[230px] sm:min-w-[230px] sm:max-w-[230px]">
-                  <span className="line-clamp-2 text-xs font-semibold leading-4 text-foreground">{row.item.titleBn}</span>
-                  <span className="block truncate text-[10px] leading-4 text-subtle-foreground">
+                <th scope="row" className={`sticky left-0 z-10 ${AMAL_COL} border-b border-hairline bg-surface px-2 py-1.5 text-left align-middle shadow-[4px_0_8px_-6px] shadow-black/25 transition-colors group-hover:bg-primary-soft/35 sm:px-3 sm:py-2`}>
+                  <span className="line-clamp-3 text-[11px] font-semibold leading-[14px] text-foreground sm:line-clamp-2 sm:text-xs sm:leading-4">{row.item.titleBn}</span>
+                  <span className="hidden truncate text-[10px] leading-4 text-subtle-foreground sm:block">
                     {row.item.specificDay === "FRIDAY" ? "শুধু শুক্রবার • " : ""}
                     {row.item.targetValue ? `লক্ষ্য ${toBn(row.item.targetValue)} ${row.item.unit ?? ""}` : `+${toBn(row.item.points)} পয়েন্ট`}
                   </span>
                 </th>
                 {row.cells.map((cell, index) => (
-                  <td key={`${row.item.id}-${columns[index].key}`} className={cn("h-11 w-11 min-w-11 border-b border-l border-hairline text-center align-middle transition-[filter] group-hover:brightness-105", cellTone[cell.state])} title={cell.title}>
+                  <td key={`${row.item.id}-${columns[index].key}`} className={cn(`h-11 ${DAY_COL} border-b border-l border-hairline text-center align-middle transition-[filter] group-hover:brightness-105`, cellTone[cell.state])} title={cell.title}>
                     <CellContent cell={cell} />
                   </td>
                 ))}
-                <td className="sticky right-0 z-10 min-w-14 border-b border-l border-hairline bg-surface px-2 text-center align-middle shadow-[-4px_0_10px_-8px] shadow-black/50">
+                <td className="min-w-12 border-b border-l-2 border-hairline bg-surface px-2 text-center align-middle">
                   {row.missedCount > 0 ? (
                     <span className="inline-flex rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger">{toBn(row.missedCount)}</span>
                   ) : row.doneCount > 0 ? (
@@ -320,14 +324,14 @@ export function GridView({
           </tbody>
           <tfoot>
             <tr>
-              <th scope="row" className="sticky left-0 z-10 w-[164px] min-w-[164px] border-t-2 border-hairline bg-surface-sunken px-3 py-2 text-left text-[11px] font-bold text-muted-foreground sm:w-[230px] sm:min-w-[230px]">
+              <th scope="row" className={`sticky left-0 z-10 ${AMAL_COL} border-t-2 border-hairline bg-surface-sunken px-2 py-2 text-left text-[11px] font-bold text-muted-foreground sm:px-3`}>
                 দিনের সম্পন্নতা
               </th>
               {columns.map((column) => (
                 <td
                   key={`foot-${column.key}`}
                   className={cn(
-                    "h-9 w-11 min-w-11 border-l border-t-2 border-hairline text-center align-middle text-[10px] font-bold",
+                    `h-9 ${DAY_COL} border-l border-t-2 border-hairline text-center align-middle text-[10px] font-bold`,
                     column.percent === null
                       ? "bg-surface-sunken text-subtle-foreground"
                       : column.percent >= 80
@@ -340,7 +344,7 @@ export function GridView({
                   {column.percent === null ? "·" : `${toBn(column.percent)}%`}
                 </td>
               ))}
-              <td className="sticky right-0 z-10 border-l border-t-2 border-hairline bg-surface-sunken px-2 text-center text-[11px] font-bold text-foreground shadow-[-4px_0_10px_-8px] shadow-black/50">{toBn(summary.percent)}%</td>
+              <td className="border-l-2 border-t-2 border-hairline bg-surface-sunken px-2 text-center text-[11px] font-bold text-foreground">{toBn(summary.percent)}%</td>
             </tr>
           </tfoot>
         </table>

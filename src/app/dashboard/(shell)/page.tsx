@@ -1,15 +1,17 @@
-import { ArrowRight, BarChart3, BookMarked, BookOpenCheck, CalendarOff, CheckCircle2, ClipboardCheck, Flame, Gauge, LayoutGrid, Megaphone, MessageCircleHeart, UsersRound } from "lucide-react";
+import { addDays } from "date-fns";
+import { ArrowRight, BarChart3, BookMarked, BookOpenCheck, CalendarCheck2, CheckCircle2, ClipboardCheck, Flame, Gauge, LayoutGrid, Megaphone, MessageCircleHeart, UsersRound } from "lucide-react";
 import Link from "next/link";
 
 import { NoticeCard } from "@/components/amalnama/notice-card";
+import { PrayerStreakCard } from "@/components/amalnama/prayer-streak-card";
 import { toBn } from "@/components/amalnama/report-data";
-import { EmptyState } from "@/components/design/empty-state";
 import { StatTile } from "@/components/design/stat-tile";
 import { TodayPrayerCard } from "@/components/today-prayer-card";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { loadMemberReport } from "@/lib/analytics";
-import { getActiveCycle, getCycleProgress } from "@/lib/cycles";
+import { SUMMARY_WINDOW_DAYS } from "@/lib/cycles";
+import { loadPrayerStreak } from "@/lib/streaks";
 import { bangladeshDateKey, formatBanglaDate, formatEnglishDate, formatHijriDate, getBangladeshToday, getBangladeshWeekday, startOfBangladeshDay } from "@/lib/dates";
 import { getNoticesFor } from "@/lib/notices";
 import { isStaffRole, requireUser } from "@/lib/permissions";
@@ -28,7 +30,7 @@ function greeting() {
 const quickLinks = [
   { label: "কুরআন পড়ুন", note: "যেখানে থেমেছিলেন", href: "/quran", icon: BookOpenCheck },
   { label: "হাদীস", note: "১০টি গ্রন্থ", href: "/dashboard/hadith", icon: BookMarked },
-  { label: "আমার গ্রিড", note: "৭/৩০/৪০ দিন", href: "/dashboard/amalnama/grid", icon: LayoutGrid },
+  { label: "আমার গ্রিড", note: "দিনভিত্তিক হিসাব", href: "/dashboard/amalnama/grid", icon: LayoutGrid },
   { label: "অগ্রগতি", note: "বিশ্লেষণ", href: "/dashboard/progress", icon: BarChart3 },
 ];
 
@@ -38,25 +40,24 @@ export default async function DashboardPage() {
   const today = startOfBangladeshDay(getBangladeshToday());
   const isFriday = getBangladeshWeekday(today) === "FRIDAY";
 
-  const [cycle, user, timings] = await Promise.all([
-    getActiveCycle(),
+  const [user, timings] = await Promise.all([
     prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true, gender: true, joinedAt: true } }),
     getTodayFastingInfo(),
   ]);
   if (!user) return null;
 
-  const [notices, latestReview, cycleData] = await Promise.all([
+  const [notices, latestReview, windowData, streak] = await Promise.all([
     getNoticesFor({ role: session.user.role, gender: user.gender }, 3),
     prisma.ustadhReview.findFirst({ where: { memberId: user.id, isVisibleToMember: true }, orderBy: { updatedAt: "desc" }, include: { reviewer: { select: { name: true } } } }),
-    cycle ? loadMemberReport(user, cycle.startDate, cycle.endDate.getTime() < today.getTime() ? startOfBangladeshDay(cycle.endDate) : today) : null,
+    loadMemberReport(user, startOfBangladeshDay(addDays(today, -(SUMMARY_WINDOW_DAYS - 1))), today),
+    loadPrayerStreak(user),
   ]);
 
-  const report = cycleData?.report ?? null;
+  const report = windowData.report;
   const lastDay = report?.days.at(-1);
   const todayDay = lastDay && lastDay.key === bangladeshDateKey(today) ? lastDay : null;
   const todayEntry = todayDay?.entry ?? null;
   const todaySubmitted = todayEntry && todayEntry.status !== "DRAFT";
-  const progress = cycle ? getCycleProgress(cycle.startDate, cycle.endDate) : null;
 
   return (
     <div className="space-y-5">
@@ -71,7 +72,7 @@ export default async function DashboardPage() {
           {isFriday ? " • আজ জুমার দিন — সূরা কাহাফ ও বেশি বেশি দরূদ ভুলবেন না" : ""}
         </p>
 
-        {cycle && progress ? (
+        {(
           <div className="mt-5 flex flex-col gap-4 rounded-2xl bg-white/10 p-4 ring-1 ring-white/15 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-3">
               <span className={todaySubmitted ? "grid size-11 place-items-center rounded-xl bg-emerald-300 text-emerald-950" : "grid size-11 place-items-center rounded-xl bg-amber-300 text-amber-950"}>
@@ -80,7 +81,7 @@ export default async function DashboardPage() {
               <div>
                 <p className="font-bold">{todaySubmitted ? "আজকের আমলনামা জমা হয়েছে" : todayEntry ? "আজকের আমলনামা খসড়ায় আছে" : "আজকের আমলনামা বাকি"}</p>
                 <p className="text-xs text-on-hero-muted">
-                  {cycle.title} • {toBn(progress.day)}/{toBn(progress.totalDays)} দিন
+                  প্রতিদিনের আমলনামা
                   {todayDay?.percent != null ? ` • আজ ${toBn(todayDay.percent)}%` : ""}
                 </p>
               </div>
@@ -91,19 +92,17 @@ export default async function DashboardPage() {
               </Link>
             </Button>
           </div>
-        ) : null}
+        )}
       </section>
 
-      {!cycle || !report ? (
-        <EmptyState icon={CalendarOff} title="কোনো সক্রিয় সাইকেল নেই" description="উস্তাদজি নতুন সাইকেল চালু করলে এখানে আপনার আমলনামার হিসাব দেখা যাবে।" />
-      ) : (
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatTile label="টানা ধারাবাহিকতা" value={`${toBn(report.streak)} দিন`} icon={Flame} tone="gold" />
-          <StatTile label="গড় সম্পন্নতা" value={`${toBn(report.percent)}%`} icon={Gauge} progress={report.percent} />
-          <StatTile label="জমা দেওয়া দিন" value={`${toBn(report.submittedDays)}/${toBn(report.totalDays)}`} icon={ClipboardCheck} tone="info" />
-          <StatTile label="সাইকেলের সময়" value={`${toBn(progress?.percentage ?? 0)}%`} note={`${toBn(progress?.day ?? 0)}তম দিন`} icon={BarChart3} progress={progress?.percentage} />
-        </div>
-      )}
+      {streak ? <PrayerStreakCard streak={streak} /> : null}
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <StatTile label="টানা আমলনামা জমা" value={`${toBn(report.streak)} দিন`} icon={Flame} tone="gold" />
+        <StatTile label="গড় সম্পন্নতা" value={`${toBn(report.percent)}%`} note={`শেষ ${toBn(report.totalDays)} দিন`} icon={Gauge} progress={report.percent} />
+        <StatTile label="জমা দেওয়া দিন" value={`${toBn(report.submittedDays)}/${toBn(report.totalDays)}`} note="শেষ ৩০ দিনে" icon={ClipboardCheck} tone="info" />
+        <StatTile label="সম্পন্ন আমল" value={toBn(report.done)} note={`মিস ${toBn(report.missed)}টি`} icon={CalendarCheck2} />
+      </div>
 
       {staff ? (
         <Link href="/dashboard/ustad" className="flex items-center gap-4 rounded-card border border-gold/40 bg-gold-soft p-4 transition hover:shadow-md">

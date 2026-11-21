@@ -1,6 +1,6 @@
 import { DailyEntryStatus, Gender, Role } from "@prisma/client";
 import { addDays } from "date-fns";
-import { AlertTriangle, CalendarCheck2, ClipboardList, Gauge, ListChecks, Megaphone, MessageCircleHeart, UsersRound } from "lucide-react";
+import { AlertTriangle, CalendarCheck2, ClipboardList, Flame, Gauge, ListChecks, Megaphone, MessageCircleHeart, UsersRound } from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/design/empty-state";
@@ -8,7 +8,7 @@ import { PageHeader } from "@/components/design/page-header";
 import { StatTile } from "@/components/design/stat-tile";
 import { MemberBoard, type BoardMember } from "@/components/ustad/member-board";
 import { Badge } from "@/components/ui/badge";
-import { getActiveCycle, getCycleProgress } from "@/lib/cycles";
+import { loadPrayerStreaks } from "@/lib/streaks";
 import { bangladeshDateKey, formatBanglaDate, getBangladeshToday, startOfBangladeshDay } from "@/lib/dates";
 import { requireUstadhOrAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -28,7 +28,6 @@ function timeAgo(date: Date) {
 
 export default async function UstadDashboardPage() {
   const session = await requireUstadhOrAdmin();
-  const cycle = await getActiveCycle();
   const today = startOfBangladeshDay(getBangladeshToday());
 
   const members = await prisma.user.findMany({
@@ -47,33 +46,25 @@ export default async function UstadDashboardPage() {
     />
   );
 
-  if (!cycle) {
-    return (
-      <div className="space-y-5">
-        {header}
-        <EmptyState icon={CalendarCheck2} title="কোনো সক্রিয় সাইকেল নেই" description="উস্তাদজি একটি সাইকেল সক্রিয় করলে সদস্যদের আমলনামার হিসাব এখানে দেখা যাবে।" />
-      </div>
-    );
-  }
-
-  // Last 7 Bangladesh days that fall inside the cycle (oldest first).
-  const cycleStart = startOfBangladeshDay(cycle.startDate);
-  const days = Array.from({ length: 7 }, (_, index) => startOfBangladeshDay(addDays(today, index - 6))).filter((day) => day >= cycleStart && day <= today);
+  // Last 7 Bangladesh days (oldest first).
+  const days = Array.from({ length: 7 }, (_, index) => startOfBangladeshDay(addDays(today, index - 6)));
   const dayKeys = days.map(bangladeshDateKey);
-  const visibleIds = members.filter((member) => !member.hideAmalnama).map((member) => member.id);
+  const visibleMembers = members.filter((member) => !member.hideAmalnama);
+  const visibleIds = visibleMembers.map((member) => member.id);
 
-  const [weekEntries, lastSubmitted, recent] = await Promise.all([
+  const [weekEntries, lastSubmitted, streaks, recent] = await Promise.all([
     prisma.dailyAmalEntry.findMany({
-      where: { cycleId: cycle.id, userId: { in: visibleIds }, date: { gte: days[0] ?? today, lte: today } },
+      where: { userId: { in: visibleIds }, date: { gte: days[0], lte: today } },
       select: { userId: true, date: true, status: true, completionPercentage: true, isPeriodDay: true },
     }),
     prisma.dailyAmalEntry.groupBy({
       by: ["userId"],
-      where: { cycleId: cycle.id, userId: { in: visibleIds }, status: { in: SUBMITTED } },
+      where: { userId: { in: visibleIds }, status: { in: SUBMITTED } },
       _max: { date: true },
     }),
+    loadPrayerStreaks(visibleMembers),
     prisma.dailyAmalEntry.findMany({
-      where: { cycleId: cycle.id, userId: { in: visibleIds }, status: { in: SUBMITTED } },
+      where: { userId: { in: visibleIds }, status: { in: SUBMITTED } },
       orderBy: { updatedAt: "desc" },
       take: 8,
       select: { id: true, date: true, completionPercentage: true, updatedAt: true, isPeriodDay: true, user: { select: { id: true, name: true, gender: true } } },
@@ -88,7 +79,7 @@ export default async function UstadDashboardPage() {
 
   const board: BoardMember[] = members.map((member) => {
     if (member.hideAmalnama)
-      return { id: member.id, name: member.name, gender: member.gender, hidden: true, todayStatus: null, todayPercent: null, weekPercent: null, lastSubmitted: null, needsAttention: false, spark: [] };
+      return { id: member.id, name: member.name, gender: member.gender, hidden: true, todayStatus: null, todayPercent: null, weekPercent: null, lastSubmitted: null, needsAttention: false, spark: [], streak: null };
     const joined = startOfBangladeshDay(member.joinedAt);
     const memberDays = days.filter((day) => day >= joined);
     const spark = dayKeys.map((key, index) => {
@@ -113,15 +104,23 @@ export default async function UstadDashboardPage() {
       lastSubmitted: last ? formatBanglaDate(last) : null,
       needsAttention: inactiveLong || (weekPercent !== null && memberDays.length >= 3 && weekPercent < 40),
       spark,
+      streak: (() => {
+        const value = streaks.get(member.id);
+        return value ? { current: value.current, best: value.best, label: value.label } : null;
+      })(),
     };
   });
+  const topStreaks = board
+    .filter((member) => member.streak && member.streak.current > 0)
+    .sort((a, b) => (b.streak?.current ?? 0) - (a.streak?.current ?? 0))
+    .slice(0, 5);
 
   const visible = board.filter((member) => !member.hidden);
   const submittedToday = visible.filter((member) => member.todayStatus === "submitted");
   const todayAverage = avg(submittedToday.map((member) => member.todayPercent ?? 0));
   const weekAverage = avg(visible.map((member) => member.weekPercent).filter((value): value is number => value !== null));
   const attention = board.filter((member) => member.needsAttention);
-  const progress = getCycleProgress(cycle.startDate, cycle.endDate, today);
+  const submittedShare = visible.length ? Math.round((submittedToday.length / visible.length) * 100) : 0;
 
   return (
     <div className="space-y-5 sm:space-y-6">
@@ -130,11 +129,9 @@ export default async function UstadDashboardPage() {
       <section className="hero-surface overflow-hidden rounded-card p-5 shadow-raised sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold text-on-hero-muted">সক্রিয় সাইকেল</p>
-            <h2 className="mt-1 text-xl font-bold sm:text-2xl">{cycle.title}</h2>
-            <p className="mt-1 text-sm text-on-hero-muted">
-              {progress.day.toLocaleString("bn-BD")}তম দিন / {progress.totalDays.toLocaleString("bn-BD")} দিন
-            </p>
+            <p className="text-xs font-semibold text-on-hero-muted">প্রতিদিনের আমলনামা</p>
+            <h2 className="mt-1 text-xl font-bold sm:text-2xl">আজকের জমার অবস্থা</h2>
+            <p className="mt-1 text-sm text-on-hero-muted">{formatBanglaDate(today)}</p>
           </div>
           <div className="text-right">
             <p className="text-4xl font-bold tabular-nums text-amber-300">
@@ -145,7 +142,7 @@ export default async function UstadDashboardPage() {
           </div>
         </div>
         <div className="mt-4 h-2 overflow-hidden rounded-full bg-white/15">
-          <div className="h-full rounded-full bg-amber-300" style={{ width: `${progress.percentage}%` }} />
+          <div className="h-full rounded-full bg-amber-300" style={{ width: `${submittedShare}%` }} />
         </div>
       </section>
 
@@ -179,6 +176,30 @@ export default async function UstadDashboardPage() {
         </section>
 
         <aside className="space-y-5">
+          <section className="surface rounded-card p-4">
+            <h2 className="flex items-center gap-2 font-bold text-foreground">
+              <Flame className="size-4 text-gold" /> সেরা ধারাবাহিকতা
+            </h2>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">পাঁচ ওয়াক্তে তাকবীরে উলা (ভাই) / আউয়াল ওয়াক্ত (বোন) — টানা দিন</p>
+            {topStreaks.length === 0 ? (
+              <p className="mt-3 text-sm text-muted-foreground">এখনো কারো চলমান ধারাবাহিকতা নেই।</p>
+            ) : (
+              <ol className="mt-3 space-y-2">
+                {topStreaks.map((member, index) => (
+                  <li key={member.id} className="flex items-center gap-2.5">
+                    <span className={index === 0 ? "grid size-7 shrink-0 place-items-center rounded-full bg-gold text-xs font-bold text-white" : "grid size-7 shrink-0 place-items-center rounded-full bg-surface-sunken text-xs font-bold text-muted-foreground"}>
+                      {(index + 1).toLocaleString("bn-BD")}
+                    </span>
+                    <Link href={`/dashboard/amalnama/grid?member=${member.id}&days=7`} className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground hover:text-primary">
+                      {member.name}
+                    </Link>
+                    <span className="shrink-0 rounded-full bg-gold-soft px-2 py-0.5 text-xs font-bold text-gold-foreground">{member.streak!.current.toLocaleString("bn-BD")} দিন</span>
+                  </li>
+                ))}
+              </ol>
+            )}
+          </section>
+
           <section className="surface rounded-card p-4">
             <h2 className="flex items-center gap-2 font-bold text-foreground">
               <AlertTriangle className="size-4 text-warning" /> মনোযোগ দরকার

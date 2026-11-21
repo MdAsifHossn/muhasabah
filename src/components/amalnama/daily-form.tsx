@@ -30,6 +30,8 @@ import { useRouter } from "next/navigation";
 import { useMemo, useState, useTransition, type ReactNode } from "react";
 import { toast } from "sonner";
 
+import { celebratePerfectDay } from "@/components/amalnama/perfect-day-celebration";
+
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/input";
 import { actionErrorMessage } from "@/lib/action-error";
@@ -218,7 +220,9 @@ export function DailyForm({
     startTransition(async () => {
       try {
         await saveDailyAmalnama(formData);
-        toast.success(intent === "submit" || status === "SUBMITTED" ? "আমলনামা জমা হয়েছে। জাযাকাল্লাহু খাইরান!" : "খসড়া সংরক্ষিত হয়েছে।");
+        const submitted = intent === "submit" || status === "SUBMITTED";
+        if (submitted && percent >= 100 && !staffEditor) celebratePerfectDay();
+        else toast.success(submitted ? "আমলনামা জমা হয়েছে। জাযাকাল্লাহু খাইরান!" : "খসড়া সংরক্ষিত হয়েছে।");
         setDirty(false);
         router.refresh();
       } catch (error) {
@@ -301,7 +305,7 @@ export function DailyForm({
       {/* ── Category jump chips (sticky under the top bar) ── */}
       <nav
         aria-label="বিভাগ"
-        className="no-scrollbar sticky top-[calc(env(safe-area-inset-top)+3.5rem)] z-20 -mx-4 flex gap-2 overflow-x-auto bg-background/85 px-4 py-2.5 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:top-16 lg:mx-0 lg:rounded-2xl lg:px-2"
+        className="no-scrollbar sticky top-[calc(env(safe-area-inset-top)+3.5rem)] z-20 -mx-3 flex gap-2 overflow-x-auto bg-background/85 px-3 py-2.5 backdrop-blur-xl sm:-mx-6 sm:px-6 lg:top-16 lg:mx-0 lg:rounded-2xl lg:px-2"
       >
         {groups.map((group) => {
           const style = styleOf(group.key);

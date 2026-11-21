@@ -204,7 +204,7 @@ export function ChatThread({
       className={cn(
         "flex flex-col overflow-hidden bg-background",
         // Phone: fill between top bar (56px) and bottom nav (60px).
-        "-mx-4 -mb-28 -mt-4 h-[calc(100dvh-116px-env(safe-area-inset-top)-env(safe-area-inset-bottom))] sm:-mx-6 sm:-mt-6",
+        "-mx-3 -mb-28 -mt-3 h-[calc(100dvh-112px-env(safe-area-inset-top)-env(safe-area-inset-bottom))] sm:-mx-6 sm:-mt-6",
         // Desktop: a card in the content area.
         "lg:m-0 lg:h-[calc(100dvh-64px-5rem)] lg:rounded-card lg:border lg:bg-card lg:shadow-card",
       )}

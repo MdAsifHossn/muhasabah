@@ -1,11 +1,10 @@
-import { CycleStatus, Role } from "@prisma/client";
+import { Role } from "@prisma/client";
 import { MessageCircleHeart } from "lucide-react";
 
 import { EmptyState } from "@/components/design/empty-state";
 import { PageHeader } from "@/components/design/page-header";
 import { ReviewCard, ReviewComposer, type ReviewView } from "@/components/ustad/review-composer";
 import { Card, CardContent } from "@/components/ui/card";
-import { cycleStatusLabels } from "@/lib/constants";
 import { isAdminRole, requireUstadhOrAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -18,9 +17,8 @@ export default async function UstadReviewsPage({ searchParams }: { searchParams:
   const params = await searchParams;
   const isAdmin = isAdminRole(session.user.role);
 
-  const [members, cycles, reviews] = await Promise.all([
+  const [members, reviews] = await Promise.all([
     prisma.user.findMany({ where: { isActive: true, role: Role.MEMBER, hideAmalnama: false }, orderBy: { name: "asc" }, select: { id: true, name: true, gender: true } }),
-    prisma.cycle.findMany({ where: { status: { not: CycleStatus.DRAFT } }, orderBy: { startDate: "desc" }, select: { id: true, title: true, status: true } }),
     prisma.ustadhReview.findMany({
       // Admin sees every review; an Ustadh sees the ones they wrote.
       where: { member: { hideAmalnama: false }, ...(isAdmin ? {} : { reviewerId: session.user.id }) },
@@ -42,31 +40,24 @@ export default async function UstadReviewsPage({ searchParams }: { searchParams:
     updatedAt: review.updatedAt.toISOString(),
     mine: review.reviewerId === session.user.id,
   }));
-  const activeCycle = cycles.find((cycle) => cycle.status === CycleStatus.ACTIVE);
 
   return (
     <div className="space-y-5">
       <PageHeader
         eyebrow="উস্তাদ প্যানেল"
-        title="সাইকেল রিভিউ"
-        description="প্রতিটি সাইকেল শেষে বা চলাকালীন সদস্যকে তার আমলনামার ভিত্তিতে উৎসাহ ও নসীহত দিন। প্রতি সাইকেলে প্রতি সদস্যের জন্য আপনার একটি রিভিউ থাকে — আবার লিখলে আপডেট হবে।"
+        title="সদস্যদের রিভিউ"
+        description="সদস্যের আমলনামা দেখে উৎসাহ ও নসীহত দিন। প্রতি সদস্যের জন্য আপনার একটি চলমান রিভিউ থাকে — আবার লিখলে আপডেট হবে।"
       />
       <div className="grid gap-5 lg:grid-cols-[380px_1fr]">
         <Card className="h-fit lg:sticky lg:top-24">
           <CardContent>
             <h2 className="mb-4 font-bold text-foreground">রিভিউ লিখুন</h2>
-            {cycles.length === 0 ? (
-              <p className="text-sm text-muted-foreground">এখনও কোনো সাইকেল শুরু হয়নি।</p>
-            ) : (
               <ReviewComposer
-                key={`${params.member ?? ""}:${params.cycle ?? ""}`}
+                key={params.member ?? ""}
                 members={members.map((member) => ({ id: member.id, label: `${member.name}${member.gender === "FEMALE" ? " (বোন)" : member.gender === "MALE" ? " (ভাই)" : ""}` }))}
-                cycles={cycles.map((cycle) => ({ id: cycle.id, label: `${cycle.title} — ${cycleStatusLabels[cycle.status]}` }))}
                 mine={views.filter((view) => view.mine)}
                 initialMemberId={isId(params.member) ? params.member : undefined}
-                initialCycleId={isId(params.cycle) ? params.cycle : activeCycle?.id}
               />
-            )}
           </CardContent>
         </Card>
         <section className="space-y-3">

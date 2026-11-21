@@ -20,7 +20,7 @@ export function parseRange(value: string | string[] | undefined): RangeKey {
 /** Server-rendered chips; keeps the other query params (search, gender). */
 export function RangeFilter({ active, params }: { active: RangeKey; params?: Record<string, string | undefined> }) {
   return (
-    <div className="no-scrollbar -mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0" role="group" aria-label="সময় পরিসীমা">
+    <div className="no-scrollbar -mx-3 flex gap-2 overflow-x-auto px-3 pb-1 sm:mx-0 sm:px-0" role="group" aria-label="সময় পরিসীমা">
       {RANGE_OPTIONS.map((option) => {
         const query = new URLSearchParams();
         for (const [key, value] of Object.entries(params ?? {})) if (value) query.set(key, value);

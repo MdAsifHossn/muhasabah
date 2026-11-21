@@ -127,7 +127,7 @@ export function QuranHome({ isLoggedIn }: { isLoggedIn: boolean }) {
       </header>
       <SettingsSheet open={settingsOpen} onClose={() => setSettingsOpen(false)} prefs={prefs} onChange={setPrefs} />
 
-      <main className="mx-auto max-w-3xl px-4 pt-4 sm:pt-6">
+      <main className="mx-auto max-w-3xl px-3 pt-3 sm:px-4 sm:pt-6">
         {/* ── Continue reading ── */}
         <section className="hero-surface relative overflow-hidden rounded-card p-5 shadow-raised sm:p-6">
           <p className="flex items-center gap-1.5 text-xs font-semibold text-on-hero-muted">
@@ -170,7 +170,7 @@ export function QuranHome({ isLoggedIn }: { isLoggedIn: boolean }) {
         </section>
 
         {/* ── Popular surahs ── */}
-        <div className="no-scrollbar -mx-4 mt-4 flex gap-2 overflow-x-auto px-4 pb-1">
+        <div className="no-scrollbar -mx-3 mt-4 flex gap-2 overflow-x-auto px-3 pb-1 sm:-mx-4 sm:px-4">
           {POPULAR.map((number) => {
             const surah = SURAH_LIST[number - 1];
             return (

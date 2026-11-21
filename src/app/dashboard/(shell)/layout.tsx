@@ -55,7 +55,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
 
       {/* ── Top bar (mobile + desktop) ── */}
       <header className="sticky top-0 z-30 border-b border-hairline bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl lg:ml-64">
-        <div className="flex h-14 items-center justify-between gap-3 px-4 sm:px-6 lg:h-16 lg:px-8">
+        <div className="flex h-14 items-center justify-between gap-3 px-3 sm:px-6 lg:h-16 lg:px-8">
           <div className="lg:hidden">
             <Brand href="/dashboard" />
           </div>
@@ -71,7 +71,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
         </div>
       </header>
 
-      <main id="main-content" className="px-4 pb-28 pt-4 sm:px-6 sm:pt-6 lg:ml-64 lg:px-8 lg:pb-12 lg:pt-8">
+      <main id="main-content" className="px-3 pb-28 pt-3 sm:px-6 sm:pt-6 lg:ml-64 lg:px-8 lg:pb-12 lg:pt-8">
         <div className="mx-auto w-full max-w-6xl">{children}</div>
       </main>
 

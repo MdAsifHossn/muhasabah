@@ -5,6 +5,7 @@ import { AlertTriangle, LayoutGrid, Lock, MessageSquarePlus, Search } from "luci
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
+import { PrayerStreakPill } from "@/components/amalnama/prayer-streak-card";
 import { Segmented } from "@/components/ustad/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -24,6 +25,8 @@ export type BoardMember = {
   needsAttention: boolean;
   /** Last 7 days, oldest first: percentage or null (no submission). */
   spark: (number | null)[];
+  /** তাকবীরে উলা / আউয়াল ওয়াক্ত streak (null when hidden or not applicable). */
+  streak: { current: number; best: number; label: string } | null;
 };
 
 type Filter = "all" | "MALE" | "FEMALE" | "attention" | "pending";
@@ -104,6 +107,7 @@ export function MemberBoard({ members }: { members: BoardMember[] }) {
                       ) : (
                         <Badge variant="secondary">আজ এখনও জমা নেই</Badge>
                       )}
+                      {member.streak ? <PrayerStreakPill {...member.streak} /> : null}
                       <span className="text-[10px] text-subtle-foreground">শেষ জমা: {member.lastSubmitted ?? "কখনো নয়"}</span>
                     </div>
                   )}
@@ -136,7 +140,7 @@ export function MemberBoard({ members }: { members: BoardMember[] }) {
                       <LayoutGrid className="size-3.5" /> রিপোর্ট
                     </Link>
                     <Link
-                      href={`/dashboard/amalnama/grid?member=${member.id}&days=7`}
+                      href={`/dashboard/amalnama?member=${member.id}`}
                       className="inline-flex h-8 flex-1 items-center justify-center gap-1 rounded-lg border border-hairline-strong text-[11px] font-semibold text-foreground"
                     >
                       <MessageSquarePlus className="size-3.5" /> আমলনামা

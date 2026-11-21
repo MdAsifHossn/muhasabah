@@ -8,7 +8,7 @@ import { z } from "zod";
 import { getAmalCommentClient } from "@/components/amalnama/comment-db";
 import { actionError } from "@/lib/action-error";
 import { applicableItems } from "@/lib/amal-rules";
-import { getActiveCycle, isDateInsideCycle } from "@/lib/cycles";
+import { findEntryForDay, getStorageCycle } from "@/lib/cycles";
 import { bangladeshDateKey, getBangladeshToday, getBangladeshWeekday, startOfBangladeshDay } from "@/lib/dates";
 import { isStaffRole, requireUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -28,25 +28,19 @@ function revalidateAmalnama() {
 
 /**
  * The day a member may write: today, or yesterday (so an amal finished after
- * midnight — or a forgotten evening — can still be recorded). Both must lie
- * inside the active cycle.
+ * midnight — or a forgotten evening — can still be recorded). Amalnama is a
+ * daily habit now — there is no cycle window to check.
  */
-async function resolveEntryDay(day: "today" | "yesterday") {
-  const cycle = await getActiveCycle();
-  if (!cycle) throw actionError(400, "বর্তমানে কোনো সক্রিয় সাইকেল নেই।");
+function resolveEntryDay(day: "today" | "yesterday") {
   const today = startOfBangladeshDay(getBangladeshToday());
   const date = day === "yesterday" ? startOfBangladeshDay(addDays(today, -1)) : today;
-  if (!isDateInsideCycle(date, cycle.startDate, cycle.endDate))
-    throw actionError(400, day === "yesterday" ? "গতকালের তারিখ সক্রিয় সাইকেলের অন্তর্ভুক্ত নয়।" : "আজকের তারিখ সক্রিয় সাইকেলের অন্তর্ভুক্ত নয়।");
-  return { cycle, date, weekday: getBangladeshWeekday(date) };
+  return { date, weekday: getBangladeshWeekday(date) };
 }
 
-async function resolveStaffEntryDay(value: string) {
-  const cycle = await getActiveCycle();
-  if (!cycle) throw actionError(400, "বর্তমানে কোনো সক্রিয় সাইকেল নেই।");
+function resolveStaffEntryDay(value: string) {
   const date = startOfBangladeshDay(new Date(`${value}T00:00:00+06:00`));
-  if (!isDateInsideCycle(date, cycle.startDate, cycle.endDate)) throw actionError(400, "এই তারিখ সক্রিয় সাইকেলের অন্তর্ভুক্ত নয়।");
-  return { cycle, date, weekday: getBangladeshWeekday(date) };
+  if (date.getTime() > startOfBangladeshDay(getBangladeshToday()).getTime()) throw actionError(400, "ভবিষ্যতের দিনের আমলনামা লেখা যাবে না।");
+  return { date, weekday: getBangladeshWeekday(date) };
 }
 
 export async function saveDailyAmalnama(formData: FormData) {
@@ -64,12 +58,11 @@ export async function saveDailyAmalnama(formData: FormData) {
   if (targetUserId !== session.user.id && !isStaffRole(session.user.role)) throw actionError(403, "শুধু উস্তাদজি অন্য সদস্যের আমলনামা সম্পাদনা করতে পারবেন।");
   if (parsed.data.date && !isStaffRole(session.user.role)) throw actionError(403, "শুধু উস্তাদজি পুরনো দিনের আমলনামা সম্পাদনা করতে পারবেন।");
 
-  const resolved = parsed.data.date ? await resolveStaffEntryDay(parsed.data.date) : await resolveEntryDay(parsed.data.day);
-  const { cycle, date, weekday } = resolved;
+  const { date, weekday } = parsed.data.date ? resolveStaffEntryDay(parsed.data.date) : resolveEntryDay(parsed.data.day);
   const [viewer, allItems, existing] = await Promise.all([
     prisma.user.findUnique({ where: { id: targetUserId }, select: { gender: true } }),
     prisma.amalItem.findMany({ where: { isActive: true }, orderBy: { order: "asc" } }),
-    prisma.dailyAmalEntry.findUnique({ where: { userId_cycleId_date: { userId: targetUserId, cycleId: cycle.id, date } } }),
+    findEntryForDay(targetUserId, date),
   ]);
   if (!viewer) throw actionError(404, "সদস্যটি পাওয়া যায়নি।");
   if (existing?.status === DailyEntryStatus.LOCKED && !isStaffRole(session.user.role)) throw actionError(403, "এই দিনের আমলনামা লক করা হয়েছে — আর পরিবর্তন করা যাবে না।");
@@ -105,11 +98,12 @@ export async function saveDailyAmalnama(formData: FormData) {
   const completionPercentage = calculateCompletionPercentage(totalScore, maxPossibleScore);
   const submittedAt = status === DailyEntryStatus.SUBMITTED ? (existing?.submittedAt ?? new Date()) : null;
 
-  await prisma.dailyAmalEntry.upsert({
-    where: { userId_cycleId_date: { userId: targetUserId, cycleId: cycle.id, date } },
-    update: { responses: keptResponses, totalScore, maxPossibleScore, completionPercentage, personalNote: parsed.data.personalNote || null, status, submittedAt },
-    create: { userId: targetUserId, cycleId: cycle.id, date, isPeriodDay: false, responses, totalScore, maxPossibleScore, completionPercentage, personalNote: parsed.data.personalNote || null, status, submittedAt },
-  });
+  const data = { responses: keptResponses, totalScore, maxPossibleScore, completionPercentage, personalNote: parsed.data.personalNote || null, status, submittedAt };
+  if (existing) await prisma.dailyAmalEntry.update({ where: { id: existing.id }, data });
+  else {
+    const cycle = await getStorageCycle(session.user.id);
+    await prisma.dailyAmalEntry.create({ data: { userId: targetUserId, cycleId: cycle.id, date, isPeriodDay: false, ...data } });
+  }
 
   revalidateAmalnama();
 }
@@ -130,8 +124,8 @@ export async function setPeriodDayForMember(day: "today" | "yesterday" = "today"
   const viewer = await prisma.user.findUnique({ where: { id: targetUserId }, select: { gender: true } });
   if (viewer?.gender !== Gender.FEMALE) throw actionError(403, "এই সেটিং শুধুমাত্র নারী সদস্যদের জন্য প্রযোজ্য।");
 
-  const { cycle, date, weekday } = await resolveEntryDay(day === "yesterday" ? "yesterday" : "today");
-  const existing = await prisma.dailyAmalEntry.findUnique({ where: { userId_cycleId_date: { userId: targetUserId, cycleId: cycle.id, date } } });
+  const { date, weekday } = resolveEntryDay(day === "yesterday" ? "yesterday" : "today");
+  const existing = await findEntryForDay(targetUserId, date);
   if (existing?.status === DailyEntryStatus.LOCKED && targetUserId === session.user.id) throw actionError(403, "এই দিনের আমলনামা লক করা হয়েছে।");
   const next = !existing?.isPeriodDay;
 
@@ -146,7 +140,10 @@ export async function setPeriodDayForMember(day: "today" | "yesterday" = "today"
   const data = { isPeriodDay: next, responses, totalScore, maxPossibleScore, completionPercentage: calculateCompletionPercentage(totalScore, maxPossibleScore) };
 
   if (existing) await prisma.dailyAmalEntry.update({ where: { id: existing.id }, data });
-  else await prisma.dailyAmalEntry.create({ data: { userId: targetUserId, cycleId: cycle.id, date, status: DailyEntryStatus.DRAFT, ...data } });
+  else {
+    const cycle = await getStorageCycle(session.user.id);
+    await prisma.dailyAmalEntry.create({ data: { userId: targetUserId, cycleId: cycle.id, date, status: DailyEntryStatus.DRAFT, ...data } });
+  }
 
   revalidateAmalnama();
   return { isPeriodDay: next, dateKey: bangladeshDateKey(date) };

@@ -1,12 +1,12 @@
 "use server";
 
-import { AmalAudience, AmalCategory, AmalInputType, CycleStatus, Weekday } from "@prisma/client";
+import { AmalAudience, AmalCategory, AmalInputType, Weekday } from "@prisma/client";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { syncAmalCatalog } from "../../../prisma/amal-catalog";
 import { actionError } from "@/lib/action-error";
-import { endOfBangladeshDay, startOfBangladeshDay } from "@/lib/dates";
+import { getStorageCycle } from "@/lib/cycles";
 import { isAdminRole, requireAdmin, requireUstadhOrAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -149,58 +149,28 @@ export async function resyncAmalCatalog() {
   return result;
 }
 
-const dateInput = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "তারিখ সঠিক নয়।");
-
-/** `YYYY-MM-DD` from a date input is a Bangladesh calendar day (00:00 Asia/Dhaka = 18:00 UTC the day before). */
-function bangladeshDay(value: string) {
-  return new Date(`${value}T00:00:00+06:00`);
-}
-
-export async function createCycle(formData: FormData) {
-  const session = await requireAdmin();
-  const parsed = z
-    .object({ title: z.string().trim().min(2, "সাইকেলের নাম লিখুন").max(120), description: z.string().trim().max(1000).optional(), startDate: dateInput, endDate: dateInput })
-    .safeParse({ title: formData.get("title"), description: optionalText(formData.get("description")), startDate: formData.get("startDate"), endDate: formData.get("endDate") });
-  if (!parsed.success) throw actionError(400, parsed.error.issues[0]?.message ?? "সাইকেলের তথ্য সঠিক নয়।");
-  const startDate = startOfBangladeshDay(bangladeshDay(parsed.data.startDate));
-  const endDate = endOfBangladeshDay(bangladeshDay(parsed.data.endDate));
-  if (endDate < startDate) throw actionError(400, "শেষ তারিখ শুরুর তারিখের আগে হতে পারে না।");
-  await prisma.cycle.create({
-    data: { title: parsed.data.title, description: parsed.data.description ?? null, startDate, endDate, status: CycleStatus.DRAFT, createdById: session.user.id },
-  });
-  refreshDashboard();
-}
-
-export async function changeCycleStatus(formData: FormData) {
-  await requireAdmin();
-  const parsed = z.object({ cycleId: objectId, status: z.enum(CycleStatus) }).safeParse({ cycleId: formData.get("cycleId"), status: formData.get("status") });
-  if (!parsed.success) throw actionError(400, "সাইকেলের অবস্থা সঠিক নয়।");
-  // Only one cycle may be active: activating one completes the previous active cycle.
-  if (parsed.data.status === CycleStatus.ACTIVE)
-    await prisma.cycle.updateMany({ where: { status: CycleStatus.ACTIVE, id: { not: parsed.data.cycleId } }, data: { status: CycleStatus.COMPLETED } });
-  await prisma.cycle.update({ where: { id: parsed.data.cycleId }, data: { status: parsed.data.status } });
-  refreshDashboard();
-}
-
 /** Cycle review — written by an Ustadh or an Admin, optionally shown to the member. */
 export async function saveReview(formData: FormData) {
   const session = await requireUstadhOrAdmin();
   const parsed = z
-    .object({ memberId: objectId, cycleId: objectId, comment: z.string().trim().min(3, "রিভিউ অন্তত ৩ অক্ষর").max(3000), isVisibleToMember: z.boolean() })
-    .safeParse({ memberId: formData.get("memberId"), cycleId: formData.get("cycleId"), comment: formData.get("comment"), isVisibleToMember: checkbox(formData, "isVisibleToMember") });
+    .object({ memberId: objectId, cycleId: objectId.optional(), comment: z.string().trim().min(3, "রিভিউ অন্তত ৩ অক্ষর").max(3000), isVisibleToMember: z.boolean() })
+    .safeParse({ memberId: formData.get("memberId"), cycleId: formData.get("cycleId") || undefined, comment: formData.get("comment"), isVisibleToMember: checkbox(formData, "isVisibleToMember") });
   if (!parsed.success) throw actionError(400, parsed.error.issues[0]?.message ?? "রিভিউ তথ্য সঠিক নয়।");
-  const [member, cycle] = await Promise.all([
-    prisma.user.findUnique({ where: { id: parsed.data.memberId }, select: { id: true, hideAmalnama: true } }),
-    prisma.cycle.findUnique({ where: { id: parsed.data.cycleId }, select: { id: true } }),
-  ]);
+  const member = await prisma.user.findUnique({ where: { id: parsed.data.memberId }, select: { id: true, hideAmalnama: true } });
   if (!member) throw actionError(404, "সদস্য পাওয়া যায়নি।");
-  if (!cycle) throw actionError(404, "সাইকেল পাওয়া যায়নি।");
   if (member.hideAmalnama) throw actionError(403, "সদস্যটি তার আমলনামা লুকিয়ে রেখেছেন — রিভিউ দেওয়া যাচ্ছে না।");
-  await prisma.ustadhReview.upsert({
-    where: { memberId_cycleId_reviewerId: { memberId: member.id, cycleId: cycle.id, reviewerId: session.user.id } },
-    update: { comment: parsed.data.comment, isVisibleToMember: parsed.data.isVisibleToMember },
-    create: { ...parsed.data, reviewerId: session.user.id },
+  const data = { comment: parsed.data.comment, isVisibleToMember: parsed.data.isVisibleToMember };
+  // No more cycles to choose: a reviewer keeps one running review per member (the latest one is edited).
+  const existing = await prisma.ustadhReview.findFirst({
+    where: { memberId: member.id, reviewerId: session.user.id, ...(parsed.data.cycleId ? { cycleId: parsed.data.cycleId } : {}) },
+    orderBy: { updatedAt: "desc" },
+    select: { id: true },
   });
+  if (existing) await prisma.ustadhReview.update({ where: { id: existing.id }, data });
+  else {
+    const cycle = await getStorageCycle(session.user.id);
+    await prisma.ustadhReview.create({ data: { ...data, memberId: member.id, cycleId: cycle.id, reviewerId: session.user.id } });
+  }
   refreshDashboard();
 }
 

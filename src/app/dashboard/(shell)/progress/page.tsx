@@ -1,13 +1,15 @@
+import { addDays } from "date-fns";
 import { CalendarCheck2, Flame, Gauge, TriangleAlert } from "lucide-react";
 
+import { PrayerStreakCard } from "@/components/amalnama/prayer-streak-card";
 import { toBn } from "@/components/amalnama/report-data";
 import { CardSection } from "@/components/design/card-section";
-import { EmptyState } from "@/components/design/empty-state";
 import { PageHeader } from "@/components/design/page-header";
 import { StatTile } from "@/components/design/stat-tile";
 import { loadMemberReport } from "@/lib/analytics";
 import { categoryLabels } from "@/lib/constants";
-import { getActiveCycle, getCycleProgress } from "@/lib/cycles";
+import { SUMMARY_WINDOW_DAYS } from "@/lib/cycles";
+import { loadPrayerStreak } from "@/lib/streaks";
 import { getBangladeshToday, startOfBangladeshDay } from "@/lib/dates";
 import { requireUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -19,15 +21,13 @@ const weekdayShort: Record<string, string> = { SUNDAY: "র", MONDAY: "সো", 
 
 export default async function ProgressPage() {
   const session = await requireUser();
-  const cycle = await getActiveCycle();
-  if (!cycle) return <EmptyState icon={Gauge} title="কোনো সক্রিয় সাইকেল নেই" description="সাইকেল সক্রিয় হলে অগ্রগতি দেখা যাবে।" />;
-
   const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true, gender: true, joinedAt: true } });
   if (!user) return null;
   const today = startOfBangladeshDay(getBangladeshToday());
-  const end = cycle.endDate.getTime() < today.getTime() ? startOfBangladeshDay(cycle.endDate) : today;
-  const { report } = await loadMemberReport(user, cycle.startDate, end);
-  const timeProgress = getCycleProgress(cycle.startDate, cycle.endDate);
+  const [{ report }, streak] = await Promise.all([
+    loadMemberReport(user, startOfBangladeshDay(addDays(today, -(SUMMARY_WINDOW_DAYS - 1))), today),
+    loadPrayerStreak(user),
+  ]);
 
   // Per-category completion over the days that have an entry.
   const categories = new Map<string, { done: number; total: number }>();
@@ -48,21 +48,16 @@ export default async function ProgressPage() {
 
   return (
     <div className="space-y-5">
-      <PageHeader eyebrow={cycle.title} title="আমার অগ্রগতি" description="ধারাবাহিকতা, গড় সম্পন্নতা আর কোন জায়গায় আরও মনোযোগ দরকার।" />
+      <PageHeader eyebrow="শেষ ৩০ দিন" title="আমার অগ্রগতি" description="ধারাবাহিকতা, গড় সম্পন্নতা আর কোন জায়গায় আরও মনোযোগ দরকার।" />
+
+      {streak ? <PrayerStreakCard streak={streak} /> : null}
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatTile label="টানা ধারাবাহিকতা" value={`${toBn(report.streak)} দিন`} icon={Flame} tone="gold" />
+        <StatTile label="টানা আমলনামা জমা" value={`${toBn(report.streak)} দিন`} icon={Flame} tone="gold" />
         <StatTile label="জমা দেওয়া দিন" value={`${toBn(report.submittedDays)}/${toBn(report.totalDays)}`} icon={CalendarCheck2} />
         <StatTile label="এন্ট্রি নেই" value={`${toBn(report.noEntryDays)} দিন`} icon={TriangleAlert} tone="danger" />
         <StatTile label="গড় সম্পন্নতা" value={`${toBn(report.percent)}%`} icon={Gauge} tone="info" progress={report.percent} />
       </div>
-
-      <CardSection title="সাইকেলের সময়" description={`${toBn(timeProgress.day)}তম দিন — মোট ${toBn(timeProgress.totalDays)} দিন`}>
-        <div className="h-3 overflow-hidden rounded-full bg-surface-sunken">
-          <div className="h-full rounded-full bg-primary" style={{ width: `${timeProgress.percentage}%` }} />
-        </div>
-        <p className="mt-2 text-right text-xs font-semibold text-muted-foreground">{toBn(timeProgress.percentage)}% সময় পার হয়েছে</p>
-      </CardSection>
 
       <CardSection title="শেষ ১৪ দিন">
         <div className="flex h-40 items-end gap-1.5 sm:gap-2">

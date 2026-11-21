@@ -445,7 +445,7 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
         </div>
       </header>
 
-      <main className={cn("mx-auto max-w-3xl px-3 pt-4 sm:px-4 sm:pt-6", playingAyah ? "pb-40" : "pb-24")}>
+      <main className={cn("mx-auto max-w-3xl px-1.5 pt-3 sm:px-4 sm:pt-6", playingAyah ? "pb-40" : "pb-24")}>
         {loading ? <ReaderSkeleton /> : null}
 
         {failed ? (
@@ -505,7 +505,7 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
                         id={`a-${ayah.surahNumber}-${ayah.numberInSurah}`}
                         data-global={ayah.number}
                         onClick={() => setActionAyah(ayah)}
-                        className={cn("flex w-full scroll-mt-24 gap-3 px-4 py-4 text-left transition hover:bg-surface-sunken", current === index && "bg-primary-soft")}
+                        className={cn("flex w-full scroll-mt-24 gap-2.5 px-3 py-3.5 text-left transition hover:bg-surface-sunken sm:gap-3 sm:px-4 sm:py-4", current === index && "bg-primary-soft")}
                       >
                         <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-primary-soft text-[11px] font-bold text-primary">
                           {bnNum(ayah.numberInSurah)}
@@ -690,7 +690,7 @@ function AyahCard({
       id={`a-${ayah.surahNumber}-${ayah.numberInSurah}`}
       data-global={ayah.number}
       className={cn(
-        "scroll-mt-24 rounded-card border bg-surface px-4 pb-4 pt-3 shadow-card transition-colors sm:px-6 sm:pb-5",
+        "scroll-mt-24 rounded-2xl border bg-surface px-3 pb-3.5 pt-2.5 shadow-card transition-colors sm:rounded-card sm:px-6 sm:pb-5 sm:pt-3",
         active ? "border-primary/60 ring-2 ring-primary/15" : "border-hairline",
       )}
     >

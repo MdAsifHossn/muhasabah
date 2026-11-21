@@ -17,6 +17,8 @@ import {
 } from "@/components/amalnama/grid-view";
 import { getAmalCommentClient } from "@/components/amalnama/comment-db";
 import { HiddenAmalnamaCard } from "@/components/amalnama/member-report";
+import { MemberPicker } from "@/components/amalnama/member-picker";
+import { PrayerStreakCard } from "@/components/amalnama/prayer-streak-card";
 import { toBn, type ReportItem } from "@/components/amalnama/report-data";
 import { EmptyState } from "@/components/design/empty-state";
 import { PageHeader } from "@/components/design/page-header";
@@ -32,6 +34,7 @@ import {
 } from "@/lib/dates";
 import { isStaffRole, requireUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { loadPrayerStreak } from "@/lib/streaks";
 
 export const metadata = { title: "আমলনামা গ্রিড" };
 
@@ -76,6 +79,9 @@ export default async function AmalnamaGridPage({
     );
 
   const isSelf = member.id === session.user.id;
+  const pickerMembers = isSupervisor
+    ? await prisma.user.findMany({ where: { isActive: true }, orderBy: [{ role: "asc" }, { name: "asc" }], select: { id: true, name: true, gender: true } })
+    : [];
   const blockedOther =
     !isSupervisor && !!requestedId && requestedId !== session.user.id;
   const hidden = !isSelf && member.hideAmalnama && !isSupervisor;
@@ -105,6 +111,8 @@ export default async function AmalnamaGridPage({
           দেখানো হচ্ছে।
         </p>
       ) : null}
+
+      {isSupervisor ? <MemberPicker members={pickerMembers} selectedId={member.id} days={range} /> : null}
 
       <GridRangeChips
         active={range}
@@ -149,11 +157,10 @@ async function GridData({
   const truncated =
     range === "all" && joined.getTime() < requestedStart.getTime();
 
-  const { items, report } = await loadMemberReport(
-    member,
-    requestedStart,
-    today,
-  );
+  const [{ items, report }, streak] = await Promise.all([
+    loadMemberReport(member, requestedStart, today),
+    loadPrayerStreak(member),
+  ]);
   if (report.days.length === 0)
     return (
       <EmptyState
@@ -246,6 +253,8 @@ async function GridData({
     .slice(0, 6);
 
   return (
+    <>
+    {streak ? <PrayerStreakCard streak={streak} name={isSelf ? undefined : member.name} className="mb-4" /> : null}
     <GridView
       memberName={member.name}
       memberGender={member.gender}
@@ -273,5 +282,6 @@ async function GridData({
       viewerId={viewerId}
       canManage={canManage}
     />
+    </>
   );
 }

@@ -26,12 +26,11 @@ export type ReviewView = {
   mine: boolean;
 };
 
-/** Write or update this reviewer's review for a member + cycle (one per pair, upserted). */
-export function ReviewComposer({ members, cycles, mine, initialMemberId, initialCycleId }: { members: Option[]; cycles: Option[]; mine: ReviewView[]; initialMemberId?: string; initialCycleId?: string }) {
+/** Write or update this reviewer's running review for a member (the latest one is edited). */
+export function ReviewComposer({ members, mine, initialMemberId }: { members: Option[]; mine: ReviewView[]; initialMemberId?: string }) {
   const router = useRouter();
   const [memberId, setMemberId] = useState(initialMemberId ?? "");
-  const [cycleId, setCycleId] = useState(initialCycleId ?? cycles[0]?.id ?? "");
-  const existing = mine.find((review) => review.memberId === memberId && review.cycleId === cycleId);
+  const existing = mine.find((review) => review.memberId === memberId);
   const [isPending, startTransition] = useTransition();
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -60,26 +59,17 @@ export function ReviewComposer({ members, cycles, mine, initialMemberId, initial
           ))}
         </Select>
       </Field>
-      <Field label="সাইকেল" htmlFor="r-cycle">
-        <Select id="r-cycle" name="cycleId" required value={cycleId} onChange={(event) => setCycleId(event.target.value)}>
-          {cycles.map((cycle) => (
-            <option key={cycle.id} value={cycle.id}>
-              {cycle.label}
-            </option>
-          ))}
-        </Select>
-      </Field>
       <Field label={existing ? "আপনার রিভিউ (আপডেট করুন)" : "রিভিউ ও নসীহত"} htmlFor="r-comment" hint="সদস্যের আমলনামা দেখে উৎসাহ ও সংশোধনের পরামর্শ লিখুন।">
-        <Textarea key={`${memberId}:${cycleId}`} id="r-comment" name="comment" required minLength={3} maxLength={3000} defaultValue={existing?.comment ?? ""} className="min-h-36" />
+        <Textarea key={`${memberId}`} id="r-comment" name="comment" required minLength={3} maxLength={3000} defaultValue={existing?.comment ?? ""} className="min-h-36" />
       </Field>
       <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-hairline bg-surface-sunken p-3">
-        <input key={`v-${memberId}:${cycleId}`} type="checkbox" name="isVisibleToMember" defaultChecked={existing?.isVisibleToMember ?? true} className="mt-0.5 size-4" />
+        <input key={`v-${memberId}`} type="checkbox" name="isVisibleToMember" defaultChecked={existing?.isVisibleToMember ?? true} className="mt-0.5 size-4" />
         <span>
           <span className="block text-sm font-semibold text-foreground">সদস্যকে দেখানো হবে</span>
           <span className="block text-xs leading-5 text-muted-foreground">বন্ধ রাখলে এটি শুধু উস্তাদজির ব্যক্তিগত নোট হিসেবে থাকবে।</span>
         </span>
       </label>
-      <Button type="submit" className="w-full" disabled={isPending || !memberId || !cycleId}>
+      <Button type="submit" className="w-full" disabled={isPending || !memberId}>
         <Send className="size-4" /> {isPending ? "সংরক্ষণ হচ্ছে…" : existing ? "রিভিউ আপডেট করুন" : "রিভিউ সংরক্ষণ করুন"}
       </Button>
     </form>
@@ -95,7 +85,7 @@ export function ReviewCard({ review, canDelete }: { review: ReviewView; canDelet
         <div className="min-w-0">
           <h3 className="font-bold text-foreground">{review.memberName}</h3>
           <p className="text-xs text-muted-foreground">
-            {review.cycleTitle} • {review.reviewerName} • {new Date(review.updatedAt).toLocaleDateString("bn-BD", { day: "numeric", month: "short" })}
+            {review.reviewerName} • {new Date(review.updatedAt).toLocaleDateString("bn-BD", { day: "numeric", month: "short" })}
           </p>
         </div>
         <Badge variant={review.isVisibleToMember ? "soft" : "secondary"}>
@@ -106,7 +96,7 @@ export function ReviewCard({ review, canDelete }: { review: ReviewView; canDelet
       <p className="mt-3 whitespace-pre-wrap text-sm leading-7 text-foreground/90">{review.comment}</p>
       <div className="mt-3 flex gap-2 border-t border-hairline pt-3">
         {review.mine ? (
-          <Link href={`/dashboard/ustad/reviews?member=${review.memberId}&cycle=${review.cycleId}`} scroll className="inline-flex h-9 items-center rounded-lg bg-primary-soft px-3 text-[13px] font-semibold text-primary-soft-foreground">
+          <Link href={`/dashboard/ustad/reviews?member=${review.memberId}`} scroll className="inline-flex h-9 items-center rounded-lg bg-primary-soft px-3 text-[13px] font-semibold text-primary-soft-foreground">
             সম্পাদনা
           </Link>
         ) : null}

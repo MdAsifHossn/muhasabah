@@ -17,7 +17,7 @@ export default async function ReviewsPage() {
   const reviews = await prisma.ustadhReview.findMany({
     where: { memberId: session.user.id, isVisibleToMember: true },
     orderBy: { updatedAt: "desc" },
-    include: { cycle: { select: { title: true } }, reviewer: { select: { name: true, role: true } } },
+    include: { reviewer: { select: { name: true, role: true } } },
   });
 
   return (
@@ -31,7 +31,6 @@ export default async function ReviewsPage() {
             <Card key={review.id}>
               <CardContent>
                 <div className="flex items-center justify-between gap-3">
-                  <span className="rounded-full bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary-soft-foreground">{review.cycle.title}</span>
                   <span className="text-xs text-muted-foreground">{formatBanglaDate(review.updatedAt)}</span>
                 </div>
                 <p className="mt-3 whitespace-pre-wrap font-bangla-serif text-[16px] leading-8 text-foreground">{review.comment}</p>

@@ -1,4 +1,5 @@
-import { CalendarRange, LayoutGrid } from "lucide-react";
+import { addDays } from "date-fns";
+import { LayoutGrid } from "lucide-react";
 import Link from "next/link";
 
 import { toBn } from "@/components/amalnama/report-data";
@@ -7,7 +8,7 @@ import { PageHeader } from "@/components/design/page-header";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { loadMemberReport } from "@/lib/analytics";
-import { getActiveCycle } from "@/lib/cycles";
+import { SUMMARY_WINDOW_DAYS } from "@/lib/cycles";
 import { formatBanglaDate, getBangladeshToday, startOfBangladeshDay } from "@/lib/dates";
 import { requireUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -19,25 +20,21 @@ const weekdayBn: Record<string, string> = { SUNDAY: "রবি", MONDAY: "সো
 
 export default async function AmalnamaHistoryPage() {
   const session = await requireUser();
-  const cycle = await getActiveCycle();
-  if (!cycle) return <EmptyState icon={CalendarRange} title="কোনো সক্রিয় সাইকেল নেই" description="সাইকেল চালু হলে আপনার দিনভিত্তিক ইতিহাস এখানে দেখা যাবে।" />;
-
   const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { id: true, gender: true, joinedAt: true } });
   if (!user) return null;
   const today = startOfBangladeshDay(getBangladeshToday());
-  const end = cycle.endDate.getTime() < today.getTime() ? startOfBangladeshDay(cycle.endDate) : today;
-  const { report } = await loadMemberReport(user, cycle.startDate, end);
+  const { report } = await loadMemberReport(user, startOfBangladeshDay(addDays(today, -(SUMMARY_WINDOW_DAYS - 1))), today);
   const days = [...report.days].reverse();
 
   return (
     <div className="space-y-5">
       <PageHeader
-        eyebrow={cycle.title}
+        eyebrow="শেষ ৩০ দিন"
         title="দিনভিত্তিক ইতিহাস"
-        description="এই সাইকেলের প্রতিটি দিন — কত শতাংশ হয়েছে, কোন আমল মিস হয়েছে।"
+        description="শেষ ৩০ দিনের প্রতিটি দিন — কত শতাংশ হয়েছে, কোন আমল মিস হয়েছে।"
         actions={
           <Button asChild variant="outline">
-            <Link href="/dashboard/amalnama/grid?days=40">
+            <Link href="/dashboard/amalnama/grid?days=30">
               <LayoutGrid className="size-4" /> গ্রিড ভিউ
             </Link>
           </Button>
