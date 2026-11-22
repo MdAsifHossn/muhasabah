@@ -130,21 +130,24 @@ export async function deleteManagedUser(userId: string): Promise<UserActionResul
     if (!user) return { success: false, message: "ব্যবহারকারী পাওয়া যায়নি।" };
     if (isStaffRole(user.role) && user.isActive && (await wouldLeaveNoAdmin(user.id))) return { success: false, message: "শেষ সক্রিয় উস্তাদজিকে মুছে ফেলা যাবে না।" };
 
-    await prisma.$transaction(async (tx) => {
-      // Cycles and amal items they created stay — ownership moves to the acting Ustadhji.
-      await tx.cycle.updateMany({ where: { createdById: user.id }, data: { createdById: session.user.id } });
-      await tx.amalItem.updateMany({ where: { createdById: user.id }, data: { createdById: session.user.id } });
-      await tx.bookReadingLog.deleteMany({ where: { userId: user.id } });
-      await tx.book.deleteMany({ where: { userId: user.id } });
-      await tx.ustadhReview.deleteMany({ where: { OR: [{ memberId: user.id }, { reviewerId: user.id }] } });
-      await tx.amalComment.deleteMany({ where: { OR: [{ memberId: user.id }, { authorId: user.id }] } });
-      await tx.announcement.deleteMany({ where: { authorId: user.id } });
-      await tx.quranProgress.deleteMany({ where: { userId: user.id } });
-      await tx.dailyAmalEntry.deleteMany({ where: { userId: user.id } });
-      await tx.session.deleteMany({ where: { userId: user.id } });
-      await tx.account.deleteMany({ where: { userId: user.id } });
-      await tx.user.delete({ where: { id: user.id } });
-    });
+    // Run deletes sequentially outside a transaction to avoid MongoDB's 5-second
+    // interactive-transaction timeout when a user has many related records.
+    // Ownership of cycles/amal-items transfers to the acting Ustadhji first.
+    await prisma.cycle.updateMany({ where: { createdById: user.id }, data: { createdById: session.user.id } });
+    await prisma.amalItem.updateMany({ where: { createdById: user.id }, data: { createdById: session.user.id } });
+    // Delete the member's own message thread and any messages they sent.
+    await prisma.message.deleteMany({ where: { OR: [{ memberId: user.id }, { senderId: user.id }] } });
+    await prisma.bookReadingLog.deleteMany({ where: { userId: user.id } });
+    await prisma.book.deleteMany({ where: { userId: user.id } });
+    await prisma.ustadhReview.deleteMany({ where: { OR: [{ memberId: user.id }, { reviewerId: user.id }] } });
+    await prisma.amalComment.deleteMany({ where: { OR: [{ memberId: user.id }, { authorId: user.id }] } });
+    await prisma.announcement.deleteMany({ where: { authorId: user.id } });
+    await prisma.quranProgress.deleteMany({ where: { userId: user.id } });
+    await prisma.dailyAmalEntry.deleteMany({ where: { userId: user.id } });
+    await prisma.session.deleteMany({ where: { userId: user.id } });
+    await prisma.account.deleteMany({ where: { userId: user.id } });
+    await prisma.user.delete({ where: { id: user.id } });
+
     refreshUsers();
     return { success: true, message: `${user.name}-এর অ্যাকাউন্ট মুছে ফেলা হয়েছে।` };
   } catch (error) {
