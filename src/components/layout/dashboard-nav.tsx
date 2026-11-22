@@ -70,7 +70,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "উস্তাদজিকে বার্তা", href: "/dashboard/messages", icon: MessagesSquare, roles: ["MEMBER"] },
       { label: "নোটিশ", href: "/dashboard/notices", icon: Megaphone, roles: ["MEMBER"] },
       { label: "উস্তাদজির মতামত", href: "/dashboard/reviews", icon: MessageCircleHeart, roles: ["MEMBER"] },
-      { label: "সবার অবস্থান (লিডারবোর্ড)", href: "/dashboard/leaderboard", icon: Trophy },
+      { label: "সবার অবস্থান (লিডারবোর্ড)", href: "/dashboard/leaderboard", icon: Trophy, roles: ["MEMBER"] },
     ],
   },
   {
