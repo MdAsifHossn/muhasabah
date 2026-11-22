@@ -1,9 +1,10 @@
-import { Bookmark, ChevronLeft, ChevronRight, Library, Search, X } from "lucide-react";
+import { Bookmark, Library, Search, X } from "lucide-react";
 import type { Metadata } from "next";
 import Link from "next/link";
 
 import { BookCard } from "@/components/library/book-card";
 import { SavedList } from "@/components/library/saved-list";
+import { Pagination } from "@/components/ui/pagination";
 import { toBanglaDigits } from "@/lib/dates";
 import { getCatalogue, LIBRARY_SOURCE_URL, searchBooks, toSummary, type LibrarySort } from "@/lib/library";
 import { cn } from "@/lib/utils";
@@ -12,9 +13,10 @@ export const metadata: Metadata = { title: "কিতাবখানা", descri
 
 const PER_PAGE = 24;
 
-type Params = { q?: string; sort?: string; page?: string; view?: string };
+type Params = Record<string, string | string[] | undefined>;
+const first = (value: Params[string]) => (Array.isArray(value) ? value[0] : value) ?? "";
 
-function href(params: Params, patch: Partial<Params>) {
+function href(params: { q?: string; sort?: string; page?: string; view?: string }, patch: Record<string, string | undefined>) {
   const next = { ...params, ...patch };
   const search = new URLSearchParams();
   if (next.q) search.set("q", next.q);
@@ -27,17 +29,19 @@ function href(params: Params, patch: Partial<Params>) {
 
 export default async function LibraryPage({ searchParams }: { searchParams: Promise<Params> }) {
   const params = await searchParams;
-  const q = (params.q ?? "").trim().slice(0, 80);
-  const sort: LibrarySort = params.sort === "name" ? "name" : "new";
-  const saved = params.view === "saved";
+  const q = first(params.q).trim().slice(0, 80);
+  const sort: LibrarySort = first(params.sort) === "name" ? "name" : "new";
+  const saved = first(params.view) === "saved";
 
   // Errors fall through to ./error.tsx (friendly message + retry).
   const catalogue = await getCatalogue();
   const results = searchBooks(catalogue, q, sort);
   const pages = Math.max(1, Math.ceil(results.length / PER_PAGE));
-  const page = Math.min(pages, Math.max(1, Number.parseInt(params.page ?? "1", 10) || 1));
+  const rawPage = first(params.page);
+  const parsedPage = Number.parseInt(rawPage, 10);
+  const page = Math.min(pages, Math.max(1, Number.isNaN(parsedPage) ? 1 : parsedPage));
   const shown = results.slice((page - 1) * PER_PAGE, page * PER_PAGE).map(toSummary);
-  const base: Params = { q, sort, view: saved ? "saved" : undefined };
+  const base = { q, sort, view: saved ? "saved" : undefined };
 
   return (
     <div className="space-y-6">
@@ -123,21 +127,12 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
           )}
 
           {pages > 1 ? (
-            <nav aria-label="পৃষ্ঠা" className="flex items-center justify-center gap-2 pt-2">
-              {page > 1 ? (
-                <Link href={href(base, { page: String(page - 1) })} className="inline-flex h-11 items-center gap-1 rounded-xl border bg-card px-4 text-sm font-semibold shadow-xs hover:bg-accent">
-                  <ChevronLeft className="size-4" /> আগের
-                </Link>
-              ) : null}
-              <span className="px-3 text-sm text-muted-foreground">
-                পৃষ্ঠা {toBanglaDigits(page)} / {toBanglaDigits(pages)}
-              </span>
-              {page < pages ? (
-                <Link href={href(base, { page: String(page + 1) })} className="inline-flex h-11 items-center gap-1 rounded-xl border bg-card px-4 text-sm font-semibold shadow-xs hover:bg-accent">
-                  পরের <ChevronRight className="size-4" />
-                </Link>
-              ) : null}
-            </nav>
+            <Pagination
+              page={page}
+              total={pages}
+              pageHref={(p) => href(base, { page: String(p) })}
+              className="pt-2"
+            />
           ) : null}
         </>
       )}

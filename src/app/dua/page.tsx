@@ -3,6 +3,7 @@ import Form from "next/form";
 import Link from "next/link";
 import { BookOpen, Search } from "lucide-react";
 import { PageHeader } from "@/components/design/page-header";
+import { Pagination } from "@/components/ui/pagination";
 import { DUA_BOOKS, DUA_CATEGORIES, DUA_COUNT, DUA_SOURCE, searchDuaChapters } from "@/lib/dua-catalog";
 import { bnNum } from "@/lib/quran";
 
@@ -36,7 +37,13 @@ export default async function DuaCatalogPage({ searchParams }: { searchParams: P
     <p role="status" className="text-sm text-muted-foreground">{bnNum(filtered.length)}টি পরিচ্ছেদ{query ? ` · “${query}”` : ""}</p>
     <div className="grid gap-3 sm:grid-cols-2">{chapters.map((chapter) => <Link key={chapter.id} href={`/dua/${chapter.id}`} className="group flex items-start gap-3 rounded-2xl border border-hairline bg-surface p-4 shadow-card transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"><span className="grid size-10 shrink-0 place-items-center rounded-xl bg-primary-soft text-primary"><BookOpen className="size-5" /></span><div className="min-w-0"><p className="text-xs text-muted-foreground">{DUA_BOOKS.find((entry) => entry.id === chapter.bookId)?.title} · পরিচ্ছেদ {bnNum(chapter.number)}</p><h2 className="mt-1 text-base font-bold group-hover:text-primary">{chapter.title}</h2><p className="mt-2 text-xs font-semibold text-primary">{bnNum(chapter.duas.length)}টি এন্ট্রি · পড়ুন</p></div></Link>)}</div>
     {!chapters.length ? <p className="rounded-2xl border border-hairline p-6 text-center text-sm text-muted-foreground">কোনো দোয়া মেলেনি। অন্য শব্দ বা বিষয় দিয়ে খুঁজুন।</p> : null}
-    {pageCount > 1 ? <nav aria-label="পরিচ্ছেদের পৃষ্ঠা" className="flex items-center justify-center gap-4 text-sm">{page > 1 ? <Link href={href({ page: page - 1 })} className="rounded-xl border border-hairline bg-surface px-3 py-2">আগের পৃষ্ঠা</Link> : null}<span>{bnNum(page)} / {bnNum(pageCount)}</span>{page < pageCount ? <Link href={href({ page: page + 1 })} className="rounded-xl border border-hairline bg-surface px-3 py-2">পরের পৃষ্ঠা</Link> : null}</nav> : null}
+    {pageCount > 1 ? (
+      <Pagination
+        page={page}
+        total={pageCount}
+        pageHref={(p) => href({ page: p })}
+      />
+    ) : null}
     <p className="text-xs leading-relaxed text-muted-foreground">ডেটা: <a href={DUA_SOURCE.url} target="_blank" rel="noreferrer" className="text-primary underline">{DUA_SOURCE.name}</a> · সংরক্ষিত {DUA_SOURCE.retrievedAt}। পরিচ্ছেদ ও এন্ট্রির গণনা সংস্করণভেদে ভিন্ন হতে পারে। <a href="https://www.hadithbd.com/dua/" target="_blank" rel="noreferrer" className="text-primary underline">হাদিসবিডির সংগ্রহ</a></p>
   </div>;
 }
