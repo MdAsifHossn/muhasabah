@@ -5,6 +5,7 @@ import {
   ArrowLeft,
   Bookmark,
   BookmarkCheck,
+  BookOpenText,
   ChevronLeft,
   ChevronRight,
   Copy,
@@ -30,6 +31,7 @@ import { SettingsSheet } from "@/components/quran/settings-sheet";
 import { Sheet } from "@/components/quran/sheet";
 import { saveLastRead, useBookmarks, usePrefs } from "@/components/quran/storage";
 import { SurahHeader } from "@/components/quran/surah-header";
+import { TafsirSheet } from "@/components/quran/tafsir-sheet";
 import { readerThemeStyle } from "@/components/quran/themes";
 import { pxToFontSize, RECITERS, type Mode, type QuranPayload, type QuranScript, type ReaderAyah } from "@/components/quran/types";
 import { bnNum, shortBanglaName, stripBismillah, SURAH_LIST } from "@/lib/quran";
@@ -64,6 +66,7 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [jumpOpen, setJumpOpen] = useState(false);
   const [actionAyah, setActionAyah] = useState<ReaderAyah | null>(null);
+  const [tafsirAyah, setTafsirAyah] = useState<ReaderAyah | null>(null);
   const [scrollPercent, setScrollPercent] = useState(0);
 
   const audioRef = useRef<HTMLAudioElement | null>(null);
@@ -529,6 +532,7 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
                       bookmarked={isBookmarked(ayah)}
                       onPlay={() => playAyah(ayah)}
                       onBookmark={() => bookmark(ayah)}
+                      onTafsir={() => setTafsirAyah(ayah)}
                       onMore={() => setActionAyah(ayah)}
                     />
                   ))
@@ -628,6 +632,7 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
             <p dir="rtl" lang="ar" className="quran-text line-clamp-3 text-2xl">{actionAyah.arabic}</p>
             <p className="mt-2 line-clamp-4 font-bangla-serif text-sm leading-7 text-muted-foreground">{actionAyah.bangla}</p>
             <div className="mt-4 grid grid-cols-2 gap-2">
+              <ActionButton icon={BookOpenText} label="তাফসীর পড়ুন" onClick={() => { setTafsirAyah(actionAyah); setActionAyah(null); }} className="col-span-2 bg-primary-soft font-bold text-primary hover:bg-primary-soft/80" />
               <ActionButton icon={current !== null && ayahs[current]?.number === actionAyah.number && isPlaying ? Pause : Play} label="তিলাওয়াত শুনুন" onClick={() => { playAyah(actionAyah); setActionAyah(null); }} />
               <ActionButton icon={isBookmarked(actionAyah) ? BookmarkCheck : Bookmark} label={isBookmarked(actionAyah) ? "বুকমার্ক সরান" : "বুকমার্ক"} onClick={() => bookmark(actionAyah)} />
               <ActionButton icon={Copy} label="কপি করুন" onClick={() => { void copyAyah(actionAyah); setActionAyah(null); }} />
@@ -637,6 +642,8 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
           </div>
         ) : null}
       </Sheet>
+
+      <TafsirSheet ayah={tafsirAyah} onClose={() => setTafsirAyah(null)} />
     </div>
   );
 }
@@ -672,6 +679,7 @@ function AyahCard({
   bookmarked,
   onPlay,
   onBookmark,
+  onTafsir,
   onMore,
 }: {
   ayah: ReaderAyah;
@@ -683,6 +691,7 @@ function AyahCard({
   bookmarked: boolean;
   onPlay: () => void;
   onBookmark: () => void;
+  onTafsir: () => void;
   onMore: () => void;
 }) {
   return (
@@ -699,6 +708,16 @@ function AyahCard({
           {bnNum(ayah.surahNumber)}:{bnNum(ayah.numberInSurah)}
         </span>
         <span className="flex-1" />
+        <button
+          type="button"
+          onClick={onTafsir}
+          aria-label="তাফসীর পড়ুন"
+          title="তাফসীর পড়ুন"
+          className="mr-1 inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface-sunken/80 px-2.5 py-1 text-xs font-semibold text-muted-foreground transition hover:border-primary/40 hover:bg-primary-soft hover:text-primary active:scale-95"
+        >
+          <BookOpenText className="size-3.5" />
+          <span>তাফসীর</span>
+        </button>
         <button type="button" onClick={onPlay} aria-label={playing ? "বিরতি" : "এই আয়াত শুনুন"} className={cn("grid size-10 place-items-center rounded-full transition", playing ? "bg-primary text-on-primary" : "text-muted-foreground hover:bg-surface-sunken hover:text-primary")}>
           {playing ? <Pause className="size-[18px] fill-current" /> : <Play className="ml-0.5 size-[18px]" />}
         </button>

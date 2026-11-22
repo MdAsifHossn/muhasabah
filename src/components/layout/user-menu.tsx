@@ -1,10 +1,10 @@
 "use client";
 
-import { BookMarked, BookOpenCheck, CalendarDays, ChevronDown, ClipboardCheck, Eye, EyeOff, Globe, KeyRound, LayoutDashboard, Library, LogOut, MessagesSquare, Moon, Sun, UserRound, UsersRound } from "lucide-react";
+import { BookMarked, BookOpenCheck, CalendarDays, ChevronDown, ClipboardCheck, Eye, EyeOff, Globe, KeyRound, LayoutDashboard, Library, LogOut, MessagesSquare, Moon, ScrollText, Sparkles, Sun, UserRound, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { useEffect, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import {
@@ -42,10 +42,6 @@ export function UserMenu({
   const [hidden, setHidden] = useState(hideAmalnama);
   const [togglingPrivacy, startTransition] = useTransition();
   const isDark = resolvedTheme === "dark";
-
-  useEffect(() => {
-    setHidden(hideAmalnama);
-  }, [hideAmalnama]);
 
   function togglePrivacy() {
     const next = !hidden;
@@ -117,10 +113,22 @@ export function UserMenu({
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild className="h-10 rounded-lg">
+                <Link href="/names-of-allah">
+                  <Sparkles /> আল্লাহর ৯৯ নাম
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="h-10 rounded-lg">
+                <Link href="/prayer/duas">
+                  <ScrollText /> নামাজের দু&apos;আ
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild className="h-10 rounded-lg">
                 <Link href="/library">
                   <Library /> কিতাবখানা
                 </Link>
               </DropdownMenuItem>
+              <DropdownMenuItem asChild className="h-10 rounded-lg"><Link href="/dua"><ScrollText /> দোয়া ও যিকির</Link></DropdownMenuItem>
+              <DropdownMenuItem asChild className="h-10 rounded-lg"><Link href="/mahram"><UsersRound /> মাহরাম তালিকা</Link></DropdownMenuItem>
               <DropdownMenuItem asChild className="h-10 rounded-lg">
                 <Link href="/calendar">
                   <CalendarDays /> হিজরি ক্যালেন্ডার

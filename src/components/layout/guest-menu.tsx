@@ -1,6 +1,6 @@
 "use client";
 
-import { BookMarked, BookOpenCheck, CalendarDays, Library, Menu, Moon, Sun, UserPlus } from "lucide-react";
+import { BookMarked, BookOpen, BookOpenCheck, CalendarDays, Library, Menu, Moon, ScrollText, Sparkles, Sun, UserPlus, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { useTheme } from "next-themes";
 
@@ -36,10 +36,22 @@ export function GuestMenu() {
           </Link>
         </DropdownMenuItem>
         <DropdownMenuItem asChild className="h-10 rounded-lg">
+          <Link href="/names-of-allah">
+            <Sparkles /> আল্লাহর ৯৯ নাম
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="h-10 rounded-lg">
+          <Link href="/prayer/duas">
+            <ScrollText /> নামাজের দু&apos;আ
+          </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="h-10 rounded-lg">
           <Link href="/library">
             <Library /> কিতাবখানা
           </Link>
         </DropdownMenuItem>
+        <DropdownMenuItem asChild className="h-10 rounded-lg"><Link href="/dua"><BookOpen /> দোয়া ও যিকির</Link></DropdownMenuItem>
+        <DropdownMenuItem asChild className="h-10 rounded-lg"><Link href="/mahram"><UsersRound /> মাহরাম তালিকা</Link></DropdownMenuItem>
         <DropdownMenuItem asChild className="h-10 rounded-lg">
           <Link href="/calendar">
             <CalendarDays /> হিজরি ক্যালেন্ডার
