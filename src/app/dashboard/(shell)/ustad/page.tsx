@@ -1,6 +1,6 @@
 import { DailyEntryStatus, Gender, Role } from "@prisma/client";
 import { addDays } from "date-fns";
-import { AlertTriangle, CalendarCheck2, ClipboardList, Flame, Gauge, ListChecks, Megaphone, MessageCircleHeart, UsersRound } from "lucide-react";
+import { AlertTriangle, CalendarCheck2, ClipboardList, Flame, Gauge, ListChecks, Megaphone, MessageCircleHeart, Trophy, UsersRound } from "lucide-react";
 import Link from "next/link";
 
 import { EmptyState } from "@/components/design/empty-state";
@@ -153,9 +153,10 @@ export default async function UstadDashboardPage() {
         <StatTile label="মনোযোগ দরকার" value={attention.length.toLocaleString("bn-BD")} note="৩ দিন জমা নেই বা গড় ৪০%-এর নিচে" icon={AlertTriangle} tone="danger" />
       </div>
 
-      <nav aria-label="দ্রুত কাজ" className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+      <nav aria-label="দ্রুত কাজ" className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5">
         {[
           { href: "/dashboard/amalnama/grid?days=7", label: "সদস্যদের আমলনামা", icon: ClipboardList },
+          { href: "/dashboard/leaderboard", label: "লিডারবোর্ড", icon: Trophy },
           { href: "/dashboard/ustad/reviews", label: "রিভিউ লিখুন", icon: MessageCircleHeart },
           { href: "/dashboard/ustad/notices", label: "নোটিশ দিন", icon: Megaphone },
           { href: "/dashboard/amal-items", label: "আমল আইটেম", icon: ListChecks },

@@ -9,6 +9,7 @@ import { ThemeToggle } from "@/components/theme/theme-toggle";
 import { roleLabels } from "@/lib/constants";
 import { formatBanglaDate, formatHijriDate } from "@/lib/dates";
 import { isStaffRole, requireUser } from "@/lib/permissions";
+import { prisma } from "@/lib/prisma";
 
 function Avatar({ name, className = "size-9 text-sm" }: { name: string; className?: string }) {
   return (
@@ -23,6 +24,10 @@ export default async function ShellLayout({ children }: { children: React.ReactN
   const role = session.user.role as Role;
   const today = new Date();
   const roleLabel = roleLabels[role];
+  const userRecord = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { hideAmalnama: true },
+  });
 
   return (
     <div className="min-h-dvh bg-background">
@@ -66,7 +71,13 @@ export default async function ShellLayout({ children }: { children: React.ReactN
           <div className="flex items-center gap-2">
             <ShareButton />
             <ThemeToggle className="hidden sm:grid" />
-            <UserMenu name={session.user.name} email={session.user.email} roleLabel={roleLabel} isStaff={isStaffRole(role)} />
+            <UserMenu
+              name={session.user.name}
+              email={session.user.email}
+              roleLabel={roleLabel}
+              isStaff={isStaffRole(role)}
+              hideAmalnama={userRecord?.hideAmalnama ?? false}
+            />
           </div>
         </div>
       </header>

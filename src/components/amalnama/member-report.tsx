@@ -42,6 +42,7 @@ function Avatar({ name, female }: { name: string; female?: boolean }) {
 
 /** Privacy placeholder: the roster stays complete but no data is shown. */
 export function HiddenAmalnamaCard({ name, role }: { name: string; role: Role }) {
+  const isUstadh = role === "USTADH";
   return (
     <Card>
       <CardContent className="flex items-center gap-3">
@@ -51,11 +52,13 @@ export function HiddenAmalnamaCard({ name, role }: { name: string; role: Role })
           <p className="text-xs text-muted-foreground">{roleLabels[role]}</p>
         </div>
         <Badge variant="secondary">
-          <EyeOff className="size-3.5" /> আমলনামা গোপন
+          <EyeOff className="size-3.5" /> {isUstadh ? "ব্যক্তিগত আমলনামা" : "আমলনামা গোপন"}
         </Badge>
       </CardContent>
       <p className="border-t border-hairline px-4 py-3 text-xs leading-5 text-muted-foreground sm:px-6">
-        সদস্যটি প্রোফাইল থেকে আমলনামা গোপন রেখেছেন — উস্তাদজি কোনো তথ্য দেখতে পারবেন না।
+        {isUstadh
+          ? "উস্তাদজির আমলনামা ব্যক্তিগত — অন্য কারো কাছে এটি দৃশ্যমান নয়।"
+          : "সদস্যটি তার আমলনামা গোপন রেখেছেন — উস্তাদজি কোনো তথ্য দেখতে পারবেন না।"}
       </p>
     </Card>
   );

@@ -79,12 +79,17 @@ export default async function AmalnamaGridPage({
     );
 
   const isSelf = member.id === session.user.id;
+  const isUstadMember = member.role === Role.USTADH;
   const pickerMembers = isSupervisor
-    ? await prisma.user.findMany({ where: { isActive: true }, orderBy: [{ role: "asc" }, { name: "asc" }], select: { id: true, name: true, gender: true } })
+    ? await prisma.user.findMany({
+        where: { isActive: true, role: Role.MEMBER },
+        orderBy: { name: "asc" },
+        select: { id: true, name: true, gender: true },
+      })
     : [];
   const blockedOther =
     !isSupervisor && !!requestedId && requestedId !== session.user.id;
-  const hidden = !isSelf && member.hideAmalnama && !isSupervisor;
+  const hidden = !isSelf && (member.hideAmalnama || isUstadMember);
 
   return (
     <div className="space-y-5">

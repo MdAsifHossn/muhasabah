@@ -12,6 +12,7 @@ import { Button } from "@/components/ui/button";
 import { auth } from "@/lib/auth";
 import { roleLabels } from "@/lib/constants";
 import { isStaffRole } from "@/lib/permissions";
+import { prisma } from "@/lib/prisma";
 
 /**
  * Top bar for public pages (landing, calendar). Same account dropdown as the
@@ -20,6 +21,12 @@ import { isStaffRole } from "@/lib/permissions";
 export async function SiteHeader() {
   const session = await auth.api.getSession({ headers: await headers() });
   const user = session?.user?.isActive ? session.user : null;
+  const userRecord = user
+    ? await prisma.user.findUnique({
+        where: { id: user.id },
+        select: { hideAmalnama: true },
+      })
+    : null;
 
   return (
     <header className="sticky top-0 z-40 border-b bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl">
@@ -30,7 +37,14 @@ export async function SiteHeader() {
           <ThemeToggle className="hidden sm:grid" />
           <ShareButton />
           {user ? (
-            <UserMenu site name={user.name} email={user.email} roleLabel={roleLabels[user.role as Role]} isStaff={isStaffRole(user.role)} />
+            <UserMenu
+              site
+              name={user.name}
+              email={user.email}
+              roleLabel={roleLabels[user.role as Role]}
+              isStaff={isStaffRole(user.role)}
+              hideAmalnama={userRecord?.hideAmalnama ?? false}
+            />
           ) : (
             <>
               <GuestMenu />

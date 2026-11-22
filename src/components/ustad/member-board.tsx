@@ -91,7 +91,11 @@ export function MemberBoard({ members }: { members: BoardMember[] }) {
                 </span>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center gap-2">
-                    <Link href={`/dashboard/amalnama/grid?member=${member.id}&days=7`} className="truncate text-sm font-bold text-foreground hover:text-primary">{member.name}</Link>
+                    {member.hidden ? (
+                      <span className="truncate text-sm font-bold text-foreground">{member.name}</span>
+                    ) : (
+                      <Link href={`/dashboard/amalnama/grid?member=${member.id}&days=7`} className="truncate text-sm font-bold text-foreground hover:text-primary">{member.name}</Link>
+                    )}
                     {member.needsAttention ? <AlertTriangle className="size-3.5 shrink-0 text-warning" aria-label="মনোযোগ দরকার" /> : null}
                   </div>
                   {member.hidden ? (

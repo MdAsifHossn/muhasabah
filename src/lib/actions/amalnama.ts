@@ -55,16 +55,20 @@ export async function saveDailyAmalnama(formData: FormData) {
   if (!parsed.success) throw actionError(400, "জমা দেওয়া তথ্য সঠিক নয়।");
 
   const targetUserId = parsed.data.memberId ?? session.user.id;
-  if (targetUserId !== session.user.id && !isStaffRole(session.user.role)) throw actionError(403, "শুধু উস্তাদজি অন্য সদস্যের আমলনামা সম্পাদনা করতে পারবেন।");
+  const isSelf = targetUserId === session.user.id;
+  if (!isSelf && !isStaffRole(session.user.role)) throw actionError(403, "শুধু উস্তাদজি অন্য সদস্যের আমলনামা সম্পাদনা করতে পারবেন।");
   if (parsed.data.date && !isStaffRole(session.user.role)) throw actionError(403, "শুধু উস্তাদজি পুরনো দিনের আমলনামা সম্পাদনা করতে পারবেন।");
 
   const { date, weekday } = parsed.data.date ? resolveStaffEntryDay(parsed.data.date) : resolveEntryDay(parsed.data.day);
   const [viewer, allItems, existing] = await Promise.all([
-    prisma.user.findUnique({ where: { id: targetUserId }, select: { gender: true } }),
+    prisma.user.findUnique({ where: { id: targetUserId }, select: { gender: true, hideAmalnama: true, role: true } }),
     prisma.amalItem.findMany({ where: { isActive: true }, orderBy: { order: "asc" } }),
     findEntryForDay(targetUserId, date),
   ]);
   if (!viewer) throw actionError(404, "সদস্যটি পাওয়া যায়নি।");
+  if (!isSelf && (viewer.hideAmalnama || viewer.role === "USTADH")) {
+    throw actionError(403, "এই সদস্যের আমলনামা গোপন রয়েছে — সম্পাদনা করা যাবে না।");
+  }
   if (existing?.status === DailyEntryStatus.LOCKED && !isStaffRole(session.user.role)) throw actionError(403, "এই দিনের আমলনামা লক করা হয়েছে — আর পরিবর্তন করা যাবে না।");
 
   const isPeriodDay = existing?.isPeriodDay ?? false;
@@ -171,7 +175,7 @@ export async function addAmalComment(formData: FormData) {
 
   const member = await prisma.user.findUnique({ where: { id: parsed.data.memberId }, select: { id: true, hideAmalnama: true } });
   if (!member) throw actionError(404, "সদস্যটি পাওয়া যায়নি।");
-  if (member.hideAmalnama && !isStaffRole(session.user.role)) throw actionError(403, "সদস্যটি তার আমলনামা লুকিয়ে রেখেছেন — মন্তব্য রাখা যাচ্ছে না।");
+  if (member.hideAmalnama) throw actionError(403, "সদস্যটি তার আমলনামা লুকিয়ে রেখেছেন — মন্তব্য রাখা যাচ্ছে না।");
 
   const client = getAmalCommentClient();
   await client.amalComment.create({ data: { memberId: member.id, authorId: session.user.id, comment: parsed.data.comment } });

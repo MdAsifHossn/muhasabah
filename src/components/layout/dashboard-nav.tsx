@@ -70,7 +70,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { label: "উস্তাদজিকে বার্তা", href: "/dashboard/messages", icon: MessagesSquare, roles: ["MEMBER"] },
       { label: "নোটিশ", href: "/dashboard/notices", icon: Megaphone, roles: ["MEMBER"] },
       { label: "উস্তাদজির মতামত", href: "/dashboard/reviews", icon: MessageCircleHeart, roles: ["MEMBER"] },
-      { label: "সবার অবস্থান", href: "/dashboard/leaderboard", icon: Trophy, roles: ["MEMBER"] },
+      { label: "সবার অবস্থান (লিডারবোর্ড)", href: "/dashboard/leaderboard", icon: Trophy },
     ],
   },
   {
@@ -79,6 +79,7 @@ export const NAV_GROUPS: NavGroup[] = [
     items: [
       { label: "সারসংক্ষেপ", href: "/dashboard/admin", icon: ShieldCheck },
       { label: "সদস্যদের আজকের অবস্থা", href: "/dashboard/ustad", icon: UsersRound },
+      { label: "লিডারবোর্ড (সবার অবস্থান)", href: "/dashboard/leaderboard", icon: Trophy },
       { label: "সদস্যদের বার্তা", href: "/dashboard/ustad/messages", icon: Inbox },
       { label: "মতামত লিখুন", href: "/dashboard/ustad/reviews", icon: MessageCircleHeart },
       { label: "নোটিশ দিন", href: "/dashboard/ustad/notices", icon: Megaphone },

@@ -1,10 +1,11 @@
 "use client";
 
-import { BookMarked, BookOpenCheck, CalendarDays, ChevronDown, ClipboardCheck, Globe, KeyRound, LayoutDashboard, Library, LogOut, MessagesSquare, Moon, Sun, UserRound, UsersRound } from "lucide-react";
+import { BookMarked, BookOpenCheck, CalendarDays, ChevronDown, ClipboardCheck, Eye, EyeOff, Globe, KeyRound, LayoutDashboard, Library, LogOut, MessagesSquare, Moon, Sun, UserRound, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
-import { useState } from "react";
+import { useEffect, useState, useTransition } from "react";
+import { toast } from "sonner";
 
 import {
   DropdownMenu,
@@ -14,7 +15,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { setHideAmalnama } from "@/lib/actions/privacy";
 import { authClient } from "@/lib/auth-client";
+import { cn } from "@/lib/utils";
 
 /** Avatar button in the top bar → account menu (profile, password, messages, theme, logout). */
 export function UserMenu({
@@ -23,6 +26,7 @@ export function UserMenu({
   roleLabel,
   isStaff,
   site = false,
+  hideAmalnama = false,
 }: {
   name: string;
   email: string;
@@ -30,11 +34,33 @@ export function UserMenu({
   isStaff: boolean;
   /** On public pages (landing, calendar) also offer the way into the app and the reading pages. */
   site?: boolean;
+  hideAmalnama?: boolean;
 }) {
   const router = useRouter();
   const { resolvedTheme, setTheme } = useTheme();
   const [signingOut, setSigningOut] = useState(false);
+  const [hidden, setHidden] = useState(hideAmalnama);
+  const [togglingPrivacy, startTransition] = useTransition();
   const isDark = resolvedTheme === "dark";
+
+  useEffect(() => {
+    setHidden(hideAmalnama);
+  }, [hideAmalnama]);
+
+  function togglePrivacy() {
+    const next = !hidden;
+    setHidden(next);
+    startTransition(async () => {
+      try {
+        await setHideAmalnama(next);
+        toast.success(next ? "আমলনামা এখন গোপন রাখা হয়েছে।" : "আমলনামা আবার উস্তাদজির কাছে উন্মুক্ত করা হয়েছে।");
+        router.refresh();
+      } catch {
+        setHidden(!next);
+        toast.error("প্রাইভেসি পরিবর্তন করা যায়নি।");
+      }
+    });
+  }
 
   async function signOut() {
     setSigningOut(true);
@@ -113,6 +139,32 @@ export function UserMenu({
           <Link href="/dashboard/profile#password">
             <KeyRound /> পাসওয়ার্ড পরিবর্তন
           </Link>
+        </DropdownMenuItem>
+        <DropdownMenuItem
+          className="h-10 justify-between rounded-lg cursor-pointer"
+          disabled={togglingPrivacy}
+          onSelect={(event) => {
+            event.preventDefault();
+            togglePrivacy();
+          }}
+        >
+          <span className="flex items-center gap-2">
+            {hidden ? <EyeOff className="size-4 text-warning" /> : <Eye className="size-4" />}
+            <span className="text-sm">আমলনামা গোপন</span>
+          </span>
+          <span
+            className={cn(
+              "relative inline-flex h-5 w-9 shrink-0 items-center rounded-full transition-colors",
+              hidden ? "bg-warning" : "bg-hairline-strong"
+            )}
+          >
+            <span
+              className={cn(
+                "inline-block size-3.5 rounded-full bg-white shadow transition-transform",
+                hidden ? "translate-x-4" : "translate-x-0.5"
+              )}
+            />
+          </span>
         </DropdownMenuItem>
         <DropdownMenuItem asChild className="h-10 rounded-lg">
           <Link href={isStaff ? "/dashboard/ustad/messages" : "/dashboard/messages"}>

@@ -1,7 +1,7 @@
+import { Role } from "@prisma/client";
 import { addDays } from "date-fns";
 import { Crown, Flame, Trophy } from "lucide-react";
 import Link from "next/link";
-import { redirect } from "next/navigation";
 
 import { toBn } from "@/components/amalnama/report-data";
 import { EmptyState } from "@/components/design/empty-state";
@@ -9,7 +9,7 @@ import { PageHeader } from "@/components/design/page-header";
 import { Card } from "@/components/ui/card";
 import { SUMMARY_WINDOW_DAYS } from "@/lib/cycles";
 import { getBangladeshToday, startOfBangladeshDay } from "@/lib/dates";
-import { isStaffRole, requireUser } from "@/lib/permissions";
+import { requireUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 import { calculateLeaderboard } from "@/lib/scoring";
 import { loadPrayerStreaks } from "@/lib/streaks";
@@ -31,16 +31,15 @@ function RankBadge({ rank }: { rank: number }) {
 
 export default async function LeaderboardPage({ searchParams }: { searchParams: Promise<{ tab?: string }> }) {
   const session = await requireUser();
-  if (isStaffRole(session.user.role)) redirect("/dashboard/ustad");
   const tab: Tab = (await searchParams).tab === "streak" ? "streak" : "overall";
 
   // Rolling window: the last 30 Bangladesh days.
   const today = startOfBangladeshDay(getBangladeshToday());
   const from = startOfBangladeshDay(addDays(today, -(SUMMARY_WINDOW_DAYS - 1)));
 
-  // Members who hid their Amalnama never appear; only name + a single number are shown.
+  // Members who hid their Amalnama never appear; only ordinary members appear (never USTADH).
   const users = await prisma.user.findMany({
-    where: { isActive: true, hideAmalnama: false, role: "MEMBER" },
+    where: { isActive: true, hideAmalnama: false, role: Role.MEMBER },
     select: {
       id: true,
       name: true,

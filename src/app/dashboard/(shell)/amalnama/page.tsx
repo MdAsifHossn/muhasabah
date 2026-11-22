@@ -3,15 +3,17 @@ import { CalendarOff, LayoutGrid } from "lucide-react";
 import Link from "next/link";
 
 import { DailyForm, type DailyFormItem } from "@/components/amalnama/daily-form";
+import { HiddenAmalnamaCard } from "@/components/amalnama/member-report";
 import { PerfectDayCelebration } from "@/components/amalnama/perfect-day-celebration";
 import { PeriodToggle } from "@/components/amalnama/period-toggle";
 import { EmptyState } from "@/components/design/empty-state";
 import { applicableItems, isNaflFastingItem, naflFastingReasonFor } from "@/lib/amal-rules";
 import { categoryLabels } from "@/lib/constants";
-import { findEntryForDay } from "@/lib/cycles";
+import { findEntryForDay, getStorageCycle } from "@/lib/cycles";
 import { formatBanglaDate, formatHijriDate, getBangladeshToday, getBangladeshWeekday, startOfBangladeshDay, toBanglaDigits } from "@/lib/dates";
 import { isStaffRole, requireUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
+import { Role } from "@prisma/client";
 import { cn } from "@/lib/utils";
 
 export const metadata = { title: "আজকের আমলনামা" };
@@ -42,11 +44,30 @@ export default async function AmalnamaPage({ searchParams }: { searchParams: Pro
   const isFriday = weekday === "FRIDAY";
 
   const [viewer, allItems, entry] = await Promise.all([
-    prisma.user.findUnique({ where: { id: targetUserId }, select: { id: true, name: true, gender: true, joinedAt: true } }),
+    prisma.user.findUnique({
+      where: { id: targetUserId },
+      select: {
+        id: true,
+        name: true,
+        gender: true,
+        joinedAt: true,
+        hideAmalnama: true,
+        role: true,
+      },
+    }),
     prisma.amalItem.findMany({ where: { isActive: true }, orderBy: { order: "asc" } }),
     inFuture ? null : findEntryForDay(targetUserId, date),
   ]);
   if (!viewer) return <EmptyState title="সদস্যটি পাওয়া যায়নি" description="এই সদস্যের আমলনামা আর খুঁজে পাওয়া যাচ্ছে না।" />;
+
+  const isSelf = viewer.id === session.user.id;
+  if (!isSelf && (viewer.hideAmalnama || viewer.role === Role.USTADH)) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-4 pb-6 lg:pb-8">
+        <HiddenAmalnamaCard name={viewer.name} role={viewer.role} />
+      </div>
+    );
+  }
   const gender = viewer?.gender ?? "OTHER";
   const isFemale = gender === "FEMALE";
   const isPeriodDay = entry?.isPeriodDay ?? false;
