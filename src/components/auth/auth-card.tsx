@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 import { SegmentIndicator } from "@/components/ui/segment-indicator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authClient } from "@/lib/auth-client";
+import { clearPrivateCaches } from "@/lib/clear-private-caches";
 
 type Mode = "login" | "register";
 
@@ -81,7 +82,9 @@ export function AuthCard({ initialMode = "login" }: { initialMode?: Mode }) {
   const [gender, setGender] = useState("");
   const [genderTouched, setGenderTouched] = useState(false);
 
-  function goNext() {
+  async function goNext() {
+    // A fresh sign-in: drop any previous member's pages saved for offline use on this device.
+    await clearPrivateCaches();
     const next = searchParams.get("next");
     router.push(
       next?.startsWith("/dashboard") || next?.startsWith("/quran")

@@ -1,6 +1,26 @@
 "use client";
 
-import { useEffect, type ReactNode } from "react";
+import { usePathname, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, type ReactNode } from "react";
+
+/**
+ * Every page the member opens — including through in-app (client-side) links,
+ * whose HTML the worker never sees — is saved for offline use. The worker skips
+ * pages saved in the last 30 minutes, so this costs at most one extra request.
+ */
+function OfflinePageSaver() {
+  const pathname = usePathname();
+  const search = useSearchParams()?.toString() ?? "";
+  useEffect(() => {
+    const worker = typeof navigator !== "undefined" ? navigator.serviceWorker?.controller : null;
+    if (!worker || !navigator.onLine) return;
+    const timer = window.setTimeout(() => {
+      worker.postMessage({ type: "PRECACHE_PAGE", url: `${pathname}${search ? `?${search}` : ""}` });
+    }, 1500); // after the page has rendered, off the critical path
+    return () => window.clearTimeout(timer);
+  }, [pathname, search]);
+  return null;
+}
 
 /** Namespaced events this provider dispatches on `window`. */
 export const INSTALL_PROMPT_EVENT = "muhasabah:installprompt";
@@ -131,5 +151,13 @@ export function PwaProvider({ children }: { children: ReactNode }) {
     };
   }, []);
 
-  return children;
+  return (
+    <>
+      {children}
+      {/* useSearchParams needs a Suspense boundary so it never forces dynamic rendering. */}
+      <Suspense fallback={null}>
+        <OfflinePageSaver />
+      </Suspense>
+    </>
+  );
 }

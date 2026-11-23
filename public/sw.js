@@ -9,15 +9,17 @@
  *   to QURAN_CACHE_MAX entries there too.
  */
 
-const VERSION = "v9";
+const VERSION = "v10";
 /** On a dev server chunk URLs are NOT content-hashed, so caching them serves stale CSS/JS. */
 const IS_DEV_HOST = ["localhost", "127.0.0.1", "[::1]"].includes(self.location.hostname);
 const PAGE_CACHE = `muhasabah-pages-${VERSION}`;
 const ASSET_CACHE = `muhasabah-assets-${VERSION}`;
 const RUNTIME_CACHE = `muhasabah-runtime-${VERSION}`;
+/** Signed-in (/dashboard) pages — wiped by the app on sign-out and on every sign-in. */
+const PRIVATE_CACHE = `muhasabah-private-${VERSION}`;
 // Pinned: the offline Quran download must survive app-shell version bumps.
 const QURAN_CACHE = "muhasabah-quran-v2";
-const CURRENT_CACHES = [PAGE_CACHE, ASSET_CACHE, RUNTIME_CACHE, QURAN_CACHE];
+const CURRENT_CACHES = [PAGE_CACHE, ASSET_CACHE, RUNTIME_CACHE, PRIVATE_CACHE, QURAN_CACHE];
 const CACHE_PREFIX = "muhasabah-";
 
 /** Only the Quran reader's API GETs are cached for offline reading. */
@@ -77,18 +79,51 @@ self.addEventListener("message", (event) => {
 
   // A page can ask the worker to pin its own HTML so the route stays reachable
   // offline even when it was reached through a client-side (RSC) navigation.
+  // Signed-in pages go to the PRIVATE cache (wiped on sign-out / sign-in).
   if (data && data.type === "PRECACHE_PAGE" && typeof data.url === "string") {
     const url = data.url;
     const done = (async () => {
-      if (!url.startsWith("/")) return;
-      const cache = await caches.open(PAGE_CACHE);
-      if (url.startsWith("/dashboard") || url.startsWith("/login") || (await cache.match(url))) return;
+      if (!url.startsWith("/") || url.startsWith("//") || isNeverCached(url)) return;
+      const cache = await caches.open(isPrivatePath(url) ? PRIVATE_CACHE : PAGE_CACHE);
+      if (isFresh(await cache.match(url))) return;
       const response = await fetch(url, { credentials: "same-origin" });
-      if (canCache(response)) await cache.put(url, response.clone());
+      if (canCache(response)) await cache.put(url, stamp(response));
     })().catch(() => {});
     if (typeof event.waitUntil === "function") event.waitUntil(done);
   }
+
+  // Sign-out / a different sign-in: forget the previous member's pages.
+  if (data && data.type === "CLEAR_PRIVATE") {
+    const done = caches.delete(PRIVATE_CACHE).catch(() => {});
+    if (typeof event.waitUntil === "function") event.waitUntil(done);
+  }
 });
+
+/** Member pages (cached privately, cleared on sign-out). */
+function isPrivatePath(path) {
+  return path === "/dashboard" || path.startsWith("/dashboard/") || path.startsWith("/dashboard?");
+}
+
+/** Never stored at all: the login screen and auth endpoints. */
+function isNeverCached(path) {
+  return path.startsWith("/login") || path.startsWith("/api/");
+}
+
+/** A saved page younger than this is not fetched again by PRECACHE_PAGE. */
+const PRECACHE_FRESH_MS = 30 * 60 * 1000;
+
+/** Copy of a response carrying the time it was saved (`x-sw-saved`). */
+function stamp(response) {
+  const headers = new Headers(response.headers);
+  headers.set("x-sw-saved", String(Date.now()));
+  return new Response(response.clone().body, { status: response.status, statusText: response.statusText, headers });
+}
+
+function isFresh(cached) {
+  if (!cached) return false;
+  const saved = Number(cached.headers.get("x-sw-saved"));
+  return saved > 0 && Date.now() - saved < PRECACHE_FRESH_MS;
+}
 
 function isStaticAsset(url) {
   return (
@@ -144,15 +179,21 @@ async function networkFirst(request, cacheName) {
     // this is what makes a visited dashboard route reachable offline.
     if (canCache(response)) {
       try {
-        await cache.put(request, response.clone());
+        await cache.put(request, stamp(response));
       } catch {
         /* a failed cache write must never break the response */
       }
     }
     return response;
   } catch {
-    const cached = await cache.match(request);
+    // Exact URL first, then the same page with any query (e.g. ?days=7 vs ?days=30).
+    const cached = (await cache.match(request)) || (await cache.match(request, { ignoreSearch: true }));
     if (cached) return cached;
+    // A member page never opened before: the saved dashboard home beats the landing page.
+    if (cacheName === PRIVATE_CACHE && request.mode === "navigate") {
+      const home = await cache.match("/dashboard");
+      if (home) return home;
+    }
     const shell = await caches.match("/");
     if (shell && request.mode === "navigate") return shell;
     return Response.error();
@@ -258,13 +299,13 @@ self.addEventListener("fetch", (event) => {
   // Never intercept build output or RSC payloads on a dev host.
   if (IS_DEV_HOST && url.origin === self.location.origin && !isQuranApi(url)) return;
 
-  // Signed-in areas are never stored: a shared device must not show the previous user's pages.
-  const isPrivate = url.origin === self.location.origin && (url.pathname.startsWith("/dashboard") || url.pathname.startsWith("/login"));
-
-  // Pages: network-first so updates are never stale (public pages only are kept for offline).
+  // Pages: network-first so updates are never stale; the last copy is the offline fallback.
+  // Signed-in pages live in a separate PRIVATE cache that the app wipes on sign-out and on
+  // every sign-in, so a shared phone never shows the previous member's pages.
   if (request.mode === "navigate") {
-    if (isPrivate) return;
-    event.respondWith(networkFirst(request, PAGE_CACHE));
+    if (url.origin === self.location.origin && isNeverCached(url.pathname)) return;
+    const isPrivate = url.origin === self.location.origin && isPrivatePath(url.pathname);
+    event.respondWith(networkFirst(request, isPrivate ? PRIVATE_CACHE : PAGE_CACHE));
     return;
   }
 
