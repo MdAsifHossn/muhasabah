@@ -254,7 +254,7 @@ export function ChatThread({
                 <Fragment key={message.id}>
                   {newDay ? (
                     <li className="sticky top-0 z-10 my-3 flex justify-center">
-                      <span className="rounded-full border bg-card/90 px-3 py-1 text-[11px] font-semibold text-muted-foreground shadow-xs backdrop-blur">
+                      <span className="rounded-lg border bg-card/90 px-3 py-1 text-[11px] font-semibold text-muted-foreground shadow-xs backdrop-blur">
                         {chatDayLabel(message.createdAt)}
                       </span>
                     </li>

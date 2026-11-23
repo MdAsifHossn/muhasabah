@@ -102,7 +102,7 @@ const DETAILS: [transliteration: string, reflection: string][] = [
   ["As-Sabur", "আল্লাহর দেওয়া অবকাশকে তাওবা ও সংশোধনের সুযোগ হিসেবে নিই।"],
 ];
 
-type Evidence = { label: string; url: string; kind: "name" | "attribute" };
+type Evidence = { label: string; kind: "name" | "attribute" };
 const QURAN: Record<number, [verse: string, kind?: "attribute"]> = {
   1: ["59/22"], 2: ["59/22"], 3: ["59/23"], 4: ["59/23"], 5: ["59/23"], 6: ["59/23"], 7: ["59/23"], 8: ["59/23"], 9: ["59/23"], 10: ["59/23"],
   11: ["59/24"], 12: ["59/24"], 13: ["59/24"], 14: ["20/82"], 15: ["13/16"], 16: ["3/8"], 17: ["51/58"], 18: ["34/26"], 19: ["34/26"],
@@ -124,6 +124,6 @@ export function getNameDetails(id: number): { transliteration: string; reflectio
   const verse = QURAN[id];
   return {
     transliteration: detail[0], reflection: detail[1],
-    evidence: verse ? { label: `আল-কুরআন ${verse[0].replace("/", ":")}`, url: `https://quran.com/${verse[0]}`, kind: verse[1] || "name" } : null,
+    evidence: verse ? { label: `আল-কুরআন ${verse[0].replace("/", ":")}`, kind: verse[1] || "name" } : null,
   };
 }

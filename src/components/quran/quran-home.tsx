@@ -1,5 +1,6 @@
 "use client";
 
+import { SegmentIndicator } from "@/components/ui/segment-indicator";
 import { ArrowLeft, Bookmark, BookOpen, ChevronRight, Heart, Search, Settings2, Sparkles, WifiOff, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
@@ -190,7 +191,8 @@ export function QuranHome({ isLoggedIn }: { isLoggedIn: boolean }) {
         </div>
 
         {/* ── Tabs ── */}
-        <div role="tablist" aria-label="তালিকা" className="mt-5 grid grid-cols-3 gap-1 rounded-xl border border-hairline bg-surface-sunken p-1">
+        <div role="tablist" aria-label="তালিকা" className="relative mt-5 grid grid-cols-3 rounded-xl border border-hairline bg-surface-sunken p-1">
+          <SegmentIndicator count={3} index={["surah", "juz", "saved"].indexOf(tab)} />
           {(
             [
               ["surah", "সূরা"],
@@ -205,8 +207,8 @@ export function QuranHome({ isLoggedIn }: { isLoggedIn: boolean }) {
               aria-selected={tab === value}
               onClick={() => setTab(value)}
               className={cn(
-                "h-10 rounded-lg text-sm font-semibold transition",
-                tab === value ? "bg-surface text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                "relative z-10 h-10 rounded-lg text-sm font-semibold transition-colors duration-300",
+                tab === value ? "text-on-active" : "text-muted-foreground hover:text-foreground",
               )}
             >
               {label}

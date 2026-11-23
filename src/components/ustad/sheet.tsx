@@ -38,13 +38,13 @@ export function Segmented<T extends string>({
             aria-selected={active}
             onClick={() => onChange(option.value)}
             className={cn(
-              "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-[13px] font-semibold transition",
-              active ? "border-transparent bg-primary text-on-primary shadow-sm" : "border-hairline bg-surface text-muted-foreground hover:text-foreground",
+              "inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg border px-3.5 text-[13px] font-semibold transition",
+              active ? "border-transparent bg-active text-on-active shadow-sm" : "border-hairline bg-surface text-muted-foreground hover:text-foreground",
             )}
           >
             {option.label}
             {typeof option.count === "number" ? (
-              <span className={cn("rounded-full px-1.5 text-[11px] tabular-nums", active ? "bg-white/20" : "bg-surface-sunken")}>{option.count}</span>
+              <span className={cn("rounded-lg px-1.5 text-[11px] tabular-nums", active ? "bg-white/20" : "bg-surface-sunken")}>{option.count}</span>
             ) : null}
           </button>
         );

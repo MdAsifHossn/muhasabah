@@ -110,7 +110,7 @@ export default async function ProgressPage() {
               {topMissed.map((row) => (
                 <li key={row.title} className="flex items-center justify-between gap-3 rounded-xl bg-surface-sunken px-3 py-2.5 text-sm">
                   <span className="min-w-0 truncate text-foreground">{row.title}</span>
-                  <span className="shrink-0 rounded-full bg-danger-soft px-2 py-0.5 text-xs font-bold text-danger">{toBn(row.count)} দিন</span>
+                  <span className="shrink-0 rounded-lg bg-danger-soft px-2 py-0.5 text-xs font-bold text-danger">{toBn(row.count)} দিন</span>
                 </li>
               ))}
             </ul>

@@ -16,11 +16,8 @@ export const TOTAL_SURAHS = 114;
 /** localStorage manifest of surah numbers that are verified present in cache. */
 const MANIFEST_KEY = "muhasabah.offline-surahs.v1";
 /** Must match `QURAN_CACHE` in `public/sw.js`. */
-const QURAN_CACHE_PREFIX = "muhasabah-quran-";
-const PAGE_CACHE_PREFIX = "muhasabah-pages-";
+const QURAN_CACHE_NAME = "muhasabah-quran-v2";
 const APP_CACHE_PREFIX = "muhasabah-";
-/** Must match `VERSION` in `public/sw.js` — only used when no worker cache exists yet. */
-const SW_VERSION_FALLBACK = "v1";
 
 const QURAN_API_PATTERN = /^\/api\/quran\/(?:surah|juz)\/\d+$/;
 
@@ -133,14 +130,9 @@ export async function isSurahCached(surah: number): Promise<boolean> {
  * (Cache Storage is shared, so the worker picks the entry up later).
  */
 async function quranCacheName(): Promise<string | null> {
-  const names = await caches.keys();
-  const existing = names.find((name) => name.startsWith(QURAN_CACHE_PREFIX));
-  if (existing) return existing;
-  const pages = names.find((name) => name.startsWith(PAGE_CACHE_PREFIX));
-  if (pages) return `${QURAN_CACHE_PREFIX}${pages.slice(PAGE_CACHE_PREFIX.length)}`;
-  // Nothing has ever been cached (e.g. `next dev` without NEXT_PUBLIC_ENABLE_SW=1):
-  // create the exact name the worker uses so the entry is not orphaned.
-  return `${QURAN_CACHE_PREFIX}${SW_VERSION_FALLBACK}`;
+  // The worker pins this exact name (QURAN_CACHE) and deletes every other muhasabah-* cache on
+  // activation, so writing anywhere else would orphan the download.
+  return QURAN_CACHE_NAME;
 }
 
 /* ── downloading ─────────────────────────────────────────────────────── */

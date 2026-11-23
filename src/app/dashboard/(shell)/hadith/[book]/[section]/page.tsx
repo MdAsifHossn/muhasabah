@@ -7,8 +7,8 @@ import { HadithBreadcrumb } from "@/components/hadith/breadcrumb";
 import { fetchHadithSection } from "@/components/hadith/hadith-source";
 import { HadithCard, ReaderToolbar, ReadingTracker } from "@/components/hadith/reader";
 import { EmptyState } from "@/components/design/empty-state";
+import { Pagination } from "@/components/ui/pagination";
 import { bn, getBook, getSection, getSections, PAGE_SIZE, sectionTitle } from "@/lib/hadith";
-import { cn } from "@/lib/utils";
 
 type Props = {
   params: Promise<{ book: string; section: string }>;
@@ -35,7 +35,7 @@ export default async function HadithSectionPage({ params, searchParams }: Props)
   const pages = Math.max(1, Math.ceil(hadiths.length / PAGE_SIZE));
   // ?h=245 opens the page that contains hadith 245; otherwise ?p=N.
   const targetIndex = query.h ? hadiths.findIndex((hadith) => hadith.number === Number(query.h)) : -1;
-  const requested = targetIndex >= 0 ? Math.floor(targetIndex / PAGE_SIZE) + 1 : Number(query.p) || 1;
+  const requested = targetIndex >= 0 ? Math.floor(targetIndex / PAGE_SIZE) + 1 : Math.trunc(Number(query.p)) || 1;
   const page = Math.min(Math.max(1, requested), pages);
   const visible = hadiths.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
@@ -77,7 +77,7 @@ export default async function HadithSectionPage({ params, searchParams }: Props)
         </div>
       )}
 
-      {pages > 1 ? <Pagination base={base} page={page} pages={pages} /> : null}
+      {pages > 1 ? <Pagination page={page} total={pages} pageHref={(n) => `${base}?p=${n}`} /> : null}
 
       <nav aria-label="কিতাব নেভিগেশন" className="grid grid-cols-2 gap-3 pt-2">
         {prev ? (
@@ -104,36 +104,5 @@ export default async function HadithSectionPage({ params, searchParams }: Props)
 
       <ReadingTracker book={book.id} section={section.number} page={page} />
     </div>
-  );
-}
-
-function Pagination({ base, page, pages }: { base: string; page: number; pages: number }) {
-  const numbers = Array.from({ length: pages }, (_, index) => index + 1).filter((n) => n === 1 || n === pages || Math.abs(n - page) <= 1);
-  const linkClass = "grid h-10 min-w-10 place-items-center rounded-xl px-3 text-sm font-semibold transition";
-  return (
-    <nav aria-label="পৃষ্ঠা" className="flex items-center justify-center gap-1.5">
-      {page > 1 ? (
-        <Link href={`${base}?p=${page - 1}`} aria-label="আগের পৃষ্ঠা" className={cn(linkClass, "border border-hairline bg-surface text-muted-foreground")}>
-          <ChevronLeft className="size-4" />
-        </Link>
-      ) : null}
-      {numbers.map((n, index) => (
-        <span key={n} className="flex items-center gap-1.5">
-          {index > 0 && n - numbers[index - 1] > 1 ? <span className="text-subtle-foreground">…</span> : null}
-          <Link
-            href={`${base}?p=${n}`}
-            aria-current={n === page ? "page" : undefined}
-            className={cn(linkClass, n === page ? "bg-primary text-on-primary" : "border border-hairline bg-surface text-foreground hover:bg-surface-sunken")}
-          >
-            {bn(n)}
-          </Link>
-        </span>
-      ))}
-      {page < pages ? (
-        <Link href={`${base}?p=${page + 1}`} aria-label="পরের পৃষ্ঠা" className={cn(linkClass, "border border-hairline bg-surface text-muted-foreground")}>
-          <ChevronRight className="size-4" />
-        </Link>
-      ) : null}
-    </nav>
   );
 }

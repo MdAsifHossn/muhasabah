@@ -73,9 +73,9 @@ export default function HadithLibraryPage() {
                     <span className="mt-0.5 block text-xs text-muted-foreground">{book.compilerBn}</span>
                     <span className="mt-2 line-clamp-2 block text-sm leading-6 text-muted-foreground">{book.description}</span>
                     <span className="mt-3 flex flex-wrap items-center gap-2 text-xs font-semibold">
-                      <span className="rounded-full bg-surface-sunken px-2.5 py-0.5 text-foreground">{bn(getBookTotal(book.id))} হাদীস</span>
-                      <span className="rounded-full bg-surface-sunken px-2.5 py-0.5 text-foreground">{bn(getSections(book.id).length)} কিতাব</span>
-                      {book.language === "en" ? <span className="rounded-full bg-info-soft px-2.5 py-0.5 text-info">ইংরেজি অনুবাদ</span> : null}
+                      <span className="rounded-lg bg-surface-sunken px-2.5 py-0.5 text-foreground">{bn(getBookTotal(book.id))} হাদীস</span>
+                      <span className="rounded-lg bg-surface-sunken px-2.5 py-0.5 text-foreground">{bn(getSections(book.id).length)} কিতাব</span>
+                      {book.language === "en" ? <span className="rounded-lg bg-info-soft px-2.5 py-0.5 text-info">ইংরেজি অনুবাদ</span> : null}
                       <ChevronRight className="ml-auto size-4 text-subtle-foreground transition group-hover:translate-x-0.5 group-hover:text-primary" />
                     </span>
                   </span>

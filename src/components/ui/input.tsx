@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 /** shadcn/ui field look: 44px, 16px text on phones (no iOS zoom), ring on focus. */
 export const fieldClass =
-  "w-full min-w-0 rounded-xl border border-input bg-card px-3.5 text-base text-foreground shadow-xs transition-[color,box-shadow] outline-none placeholder:text-subtle-foreground selection:bg-primary selection:text-primary-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 md:text-sm dark:bg-input/20";
+  "w-full min-w-0 field-3d rounded-xl px-3.5 text-base text-foreground outline-none placeholder:text-subtle-foreground selection:bg-primary selection:text-primary-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25 disabled:cursor-not-allowed disabled:opacity-50 aria-invalid:border-destructive aria-invalid:ring-destructive/20 md:text-sm";
 
 function Input({ className, type, ...props }: React.ComponentProps<"input">) {
   return <input type={type} data-slot="input" className={cn(fieldClass, "h-11 py-2 file:border-0 file:bg-transparent file:text-sm file:font-medium", className)} {...props} />;

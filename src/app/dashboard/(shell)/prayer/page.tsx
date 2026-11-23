@@ -3,6 +3,7 @@ import Link from "next/link";
 import { ArrowRight, ScrollText } from "lucide-react";
 
 import { PageHeader } from "@/components/design/page-header";
+import { PrayerLocationButton } from "@/components/prayer/prayer-location-picker";
 import { PrayerTimeline } from "@/components/prayer/prayer-timeline";
 import { ReminderSettingsCard } from "@/components/prayer/reminder-settings";
 import { formatBanglaDate, formatHijriDate } from "@/lib/dates";
@@ -50,6 +51,10 @@ export default async function PrayerPage() {
         <ArrowRight className="size-4 text-muted-foreground group-hover:text-primary transition-colors shrink-0" />
       </Link>
 
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-hairline bg-surface px-4 py-3 text-sm">
+        <span className="text-muted-foreground">সময় যে জায়গার জন্য দেখাচ্ছে</span>
+        <PrayerLocationButton className="h-9 max-w-[16rem] px-3 text-sm" />
+      </div>
       <PrayerTimeline minutes={timings.minutes} />
       <ReminderSettingsCard />
       {timings.source === "fallback" ? <p className="text-xs text-muted-foreground">লাইভ সময় পাওয়া যায়নি — আনুমানিক সময় দেখানো হচ্ছে।</p> : null}

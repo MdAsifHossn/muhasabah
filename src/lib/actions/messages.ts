@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { actionError } from "@/lib/action-error";
 import { canAccessThread, getMessageDb, getThreadMessages, markThreadRead, type ChatMessage } from "@/lib/messages";
+import { notifyNewMessage } from "@/lib/notifications";
 import { isStaffRole, requireUser } from "@/lib/permissions";
 
 const prisma = new Proxy({} as ReturnType<typeof getMessageDb>, { get: (_target, key) => Reflect.get(getMessageDb(), key) });
@@ -42,6 +43,7 @@ export async function sendMessage(input: { memberId?: string | null; body: strin
   const created = await prisma.message.create({
     data: { memberId, senderId: viewer.id, body, readByMember: !fromStaff, readByStaff: fromStaff || isStaffRole(viewer.role) },
   });
+  await notifyNewMessage({ memberId, senderId: viewer.id, senderName: session.user.name, fromStaff, body });
   refresh();
   return {
     id: created.id,
@@ -69,7 +71,7 @@ async function requireOwnMessage(id: string, allowAdmin: boolean) {
 }
 
 export async function editMessage(input: { id: string; body: string }) {
-  const message = await requireOwnMessage(input.id, true);
+  const message = await requireOwnMessage(input.id, false);
   const body = parseBody(input.body);
   await prisma.message.update({ where: { id: message.id }, data: { body, editedAt: new Date() } });
   refresh();

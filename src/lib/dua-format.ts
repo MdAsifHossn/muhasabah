@@ -8,5 +8,5 @@ export function formatCatalogDua(dua: CatalogDua, chapterTitle: string) {
     segment.note,
     segment.reference && `সূত্র: ${segment.reference}`,
   ].filter(Boolean).join("\n\n"));
-  return `${chapterTitle}\n${dua.title}\n\n${parts.join("\n\n")}\n\nসংকলন: ThelightHub / Hisnul Muslim Dua API\nhttps://dua-api.hisnul.workers.dev/api/duas/${dua.id}`;
+  return `${chapterTitle}\n${dua.title}\n\n${parts.join("\n\n")}\n\nসংকলন: মুহাসাবাহ — হিসনুল মুসলিম ও কুরআনের দোয়া`;
 }

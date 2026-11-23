@@ -57,7 +57,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
   return (
     <div className="space-y-5">
       {/* ── Today ── */}
-      <section className="hero-surface overflow-hidden rounded-[1.75rem] p-5 sm:p-8">
+      <section className="hero-surface overflow-hidden rounded-2xl p-5 sm:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div>
             <p className="flex items-center gap-2 text-sm font-medium text-on-hero-muted">
@@ -81,7 +81,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
               <p className="mt-0.5 text-sm text-on-hero-muted">
                 {bn(next.h.d)} {HIJRI_MONTHS_BN[next.h.m - 1]} • {formatGregorian(next.g)}
               </p>
-              <p className="mt-3 inline-flex rounded-full bg-[#f4f1ea] px-3 py-1 text-sm font-bold text-[#0b3b40]">{daysLeftLabel(next.daysLeft)}</p>
+              <p className="mt-3 inline-flex rounded-lg bg-[#f4f1ea] px-3 py-1 text-sm font-bold text-[#0b3b40]">{daysLeftLabel(next.daysLeft)}</p>
             </div>
           ) : null}
         </div>
@@ -166,7 +166,7 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
                       {HIJRI_MONTHS_BN[event.h.m - 1]} • {formatGregorian(event.g)}
                     </span>
                   </span>
-                  <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold", event.daysLeft <= 7 ? "bg-gold-soft text-gold-foreground" : "bg-muted text-muted-foreground")}>
+                  <span className={cn("shrink-0 rounded-lg px-2 py-0.5 text-[11px] font-semibold", event.daysLeft <= 7 ? "bg-gold-soft text-gold-foreground" : "bg-muted text-muted-foreground")}>
                     {daysLeftLabel(event.daysLeft)}
                   </span>
                 </li>

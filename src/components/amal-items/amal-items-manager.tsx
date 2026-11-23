@@ -174,7 +174,7 @@ export function AmalItemsManager({
           <section key={category} className="space-y-2">
             <h2 className="flex items-center gap-2 px-1 text-sm font-bold text-foreground">
               {categoryLabels[category]}
-              <span className="rounded-full bg-surface-sunken px-2 text-xs font-semibold text-muted-foreground">{list.length.toLocaleString("bn-BD")}</span>
+              <span className="rounded-lg bg-surface-sunken px-2 text-xs font-semibold text-muted-foreground">{list.length.toLocaleString("bn-BD")}</span>
             </h2>
             <ul className="grid gap-2 sm:grid-cols-2 xl:grid-cols-3">
               {list.map((item) => {

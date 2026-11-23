@@ -12,17 +12,26 @@ const TAFSIR_NAMES: Record<AllowedTafsirId, string> = {
   381: "তাফসীর ফাতহুল মাজীদ",
 };
 
+/** Tafsir text is rendered as HTML: keep a small formatting allowlist and drop everything executable. */
+function sanitizeTafsirHtml(html: string) {
+  return html
+    .replace(/<(script|style|iframe|object|embed|link|meta)\b[\s\S]*?(<\/\1>|$)/gi, "")
+    .replace(/<\/?(?!\/?(?:p|br|b|strong|i|em|u|h[1-6]|ul|ol|li|span|div|blockquote|sup|sub)\b)[a-z][^>]*>/gi, "")
+    .replace(/<([a-z][a-z0-9]*)\b[^>]*>/gi, "<$1>");
+}
+
 export async function GET(request: NextRequest) {
   const { searchParams } = new URL(request.url);
   const surah = Number(searchParams.get("surah"));
   const ayah = Number(searchParams.get("ayah"));
+  const MAX_AYAH = 286; // longest surah (al-Baqarah)
   const requestedId = Number(searchParams.get("id") || "166");
 
   if (!Number.isInteger(surah) || surah < 1 || surah > 114) {
     return NextResponse.json({ error: "সঠিক সূরা নম্বর দিন (১–১১৪)" }, { status: 400 });
   }
 
-  if (!Number.isInteger(ayah) || ayah < 1) {
+  if (!Number.isInteger(ayah) || ayah < 1 || ayah > MAX_AYAH) {
     return NextResponse.json({ error: "সঠিক আয়াত নম্বর দিন" }, { status: 400 });
   }
 
@@ -35,6 +44,7 @@ export async function GET(request: NextRequest) {
     const response = await fetch(upstreamUrl, {
       next: { revalidate: 604800 },
       headers: { Accept: "application/json" },
+      signal: AbortSignal.timeout(10000),
     });
 
     if (!response.ok) {
@@ -49,7 +59,7 @@ export async function GET(request: NextRequest) {
       };
     };
 
-    const text = data.tafsir?.text?.trim() || "";
+    const text = sanitizeTafsirHtml(data.tafsir?.text?.trim() || "");
 
     return NextResponse.json(
       {

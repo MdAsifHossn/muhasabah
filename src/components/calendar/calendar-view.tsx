@@ -72,7 +72,7 @@ function DayCell({ day, todayIso, large, onSelect }: { day: CalendarDay; todayIs
         "relative flex flex-col items-center rounded-xl border border-transparent transition active:scale-95",
         large ? "h-[4.5rem] justify-start gap-0.5 pt-2 sm:h-24 sm:items-start sm:px-2.5" : "h-[3.25rem] justify-center gap-[3px]",
         isToday
-          ? "bg-primary text-primary-foreground shadow-md"
+          ? "bg-active text-on-active shadow-md"
           : major
             ? EVENT_TONES[major].soft
             : day.h.m === 9
@@ -204,7 +204,7 @@ export function YearCalendar({ months, todayIso, year }: { months: CalendarMonth
                   <span dir="rtl" className="arabic-text text-base leading-none text-gold-foreground">
                     {HIJRI_MONTHS_AR[month.month - 1]}
                   </span>
-                  {isCurrent ? <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">চলতি মাস</span> : null}
+                  {isCurrent ? <span className="rounded-lg bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">চলতি মাস</span> : null}
                 </div>
               </header>
               <MonthGrid month={month} todayIso={todayIso} onSelect={setSelected} />

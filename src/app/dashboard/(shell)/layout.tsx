@@ -2,6 +2,7 @@ import { Role } from "@prisma/client";
 
 import { Brand } from "@/components/brand";
 import { DashboardNav, MobileBottomNav } from "@/components/layout/dashboard-nav";
+import { NotificationBell } from "@/components/layout/notification-bell";
 import { ShareButton } from "@/components/layout/share-button";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -61,14 +62,15 @@ export default async function ShellLayout({ children }: { children: React.ReactN
       {/* ── Top bar (mobile + desktop) ── */}
       <header className="sticky top-0 z-30 border-b border-hairline bg-background/85 pt-[env(safe-area-inset-top)] backdrop-blur-xl lg:ml-64">
         <div className="flex h-14 items-center justify-between gap-3 px-3 sm:px-6 lg:h-16 lg:px-8">
-          <div className="lg:hidden">
-            <Brand href="/dashboard" />
+          <div className="min-w-0 lg:hidden">
+            <Brand href="/dashboard" hideTaglineOnMobile />
           </div>
           <div className="hidden items-center gap-2 text-xs font-semibold lg:flex">
-            <span className="rounded-full bg-primary-soft px-3 py-1 text-primary-soft-foreground">{formatHijriDate(today)}</span>
+            <span className="rounded-lg bg-primary-soft px-3 py-1 text-primary-soft-foreground">{formatHijriDate(today)}</span>
             <span className="text-muted-foreground">{formatBanglaDate(today)}</span>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
+            <NotificationBell />
             <ShareButton />
             <ThemeToggle className="hidden sm:grid" />
             <UserMenu

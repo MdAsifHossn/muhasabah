@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
 import { actionError } from "@/lib/action-error";
+import { notifyNewNotice } from "@/lib/notifications";
 import { isStaffRole, requireUstadhOrAdmin } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
 
@@ -29,7 +30,8 @@ export async function createNotice(formData: FormData) {
     pinned: formData.get("pinned") === "on",
   });
   if (!parsed.success) throw actionError(400, parsed.error.issues[0]?.message ?? "নোটিশের তথ্য সঠিক নয়।");
-  await prisma.announcement.create({ data: { ...parsed.data, authorId: session.user.id } });
+  const created = await prisma.announcement.create({ data: { ...parsed.data, authorId: session.user.id } });
+  await notifyNewNotice({ noticeId: created.id, authorId: session.user.id, title: parsed.data.title, audience: parsed.data.audience });
   refresh();
 }
 

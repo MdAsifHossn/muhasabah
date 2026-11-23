@@ -174,7 +174,7 @@ export function PrayerReminder() {
                 <Icon className="size-12 motion-safe:animate-pulse sm:size-14" strokeWidth={1.5} />
               </span>
 
-              <p className={cn("mt-6 inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold", forbidden ? "bg-amber-500/15 text-amber-200" : "bg-white/10 text-on-hero-muted")}>
+              <p className={cn("mt-6 inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-xs font-semibold", forbidden ? "bg-amber-500/15 text-amber-200" : "bg-white/10 text-on-hero-muted")}>
                 <AlarmClock className="size-3.5" />
                 {forbidden ? "নামাজের নিষিদ্ধ সময়" : "নামাজের সময়"}
               </p>

@@ -13,10 +13,10 @@ export type MahramRelation = {
 };
 
 export const MAHRAM_SOURCES = [
-  { id: "nisa", label: "সূরা আন-নিসা ৪:২২–২৩", url: "https://quran.com/4/22-23" },
-  { id: "nur", label: "সূরা আন-নূর ২৪:৩১", url: "https://quran.com/24/31" },
-  { id: "milk", label: "সহীহ বুখারী ২৬৪৫ — দুধের সম্পর্ক", url: "https://sunnah.com/bukhari:2645" },
-  { id: "inlaws", label: "সহীহ বুখারী ৫২৩২ — স্বামীর আত্মীয়", url: "https://sunnah.com/bukhari:5232" },
+  { id: "nisa", label: "সূরা আন-নিসা ৪:২২–২৩" },
+  { id: "nur", label: "সূরা আন-নূর ২৪:৩১" },
+  { id: "milk", label: "সহীহ বুখারী ২৬৪৫ — দুধের সম্পর্ক" },
+  { id: "inlaws", label: "সহীহ বুখারী ৫২৩২ — স্বামীর আত্মীয়" },
 ];
 
 type Row = [name: string, status: MahramStatus, category: MahramRelation["category"], note?: string, source?: string];

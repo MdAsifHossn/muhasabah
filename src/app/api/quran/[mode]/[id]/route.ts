@@ -29,7 +29,7 @@ type IndoPakVerse = { verse_key: string; text_indopak_nastaleeq?: string };
  */
 async function loadIndoPak(mode: string, id: number): Promise<Map<string, string>> {
   const param = mode === "surah" ? "chapter_number" : "juz_number";
-  const response = await fetch(`https://api.quran.com/api/v4/quran/verses/indopak_nastaleeq?${param}=${id}`, { next: { revalidate: 604800 } });
+  const response = await fetch(`https://api.quran.com/api/v4/quran/verses/indopak_nastaleeq?${param}=${id}`, { next: { revalidate: 604800 }, signal: AbortSignal.timeout(10000) });
   if (!response.ok) throw new Error(`Upstream ${response.status}`);
   const json = (await response.json()) as { verses?: IndoPakVerse[] };
   const map = new Map<string, string>();
@@ -52,7 +52,7 @@ const reciters = [
 type Reciter = (typeof reciters)[number];
 
 async function load(mode: string, id: number, edition: string): Promise<QuranData> {
-  const response = await fetch(`https://api.alquran.cloud/v1/${mode}/${id}/${edition}`, { next: { revalidate: 86400 } });
+  const response = await fetch(`https://api.alquran.cloud/v1/${mode}/${id}/${edition}`, { next: { revalidate: 86400 }, signal: AbortSignal.timeout(10000) });
   if (!response.ok) throw new Error(`Upstream ${response.status}`);
   const json = (await response.json()) as QuranResponse;
   if (!json.data?.ayahs) throw new Error("Invalid Quran response");

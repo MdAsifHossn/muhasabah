@@ -105,9 +105,9 @@ export function GridRangeChips({ active, memberId }: { active: GridRangeKey; mem
           href={`/dashboard/amalnama/grid?days=${option.key}${memberId ? `&member=${memberId}` : ""}`}
           aria-current={active === option.key ? "true" : undefined}
           className={cn(
-            "inline-flex h-10 shrink-0 items-center rounded-full border px-4 text-sm font-semibold transition-colors",
+            "inline-flex h-10 shrink-0 items-center rounded-lg border px-4 text-sm font-semibold transition-colors",
             active === option.key
-              ? "border-primary bg-primary text-on-primary shadow-sm"
+              ? "border-active bg-active text-on-active shadow-sm"
               : "border-hairline-strong bg-surface text-muted-foreground hover:border-primary hover:text-primary",
           )}
         >
@@ -245,7 +245,7 @@ export function GridView({
               {summary.topMissed.map((row) => (
                 <li key={row.titleBn} className="flex min-w-0 max-w-full items-center justify-between gap-2 text-sm text-foreground">
                   <span className="min-w-0 flex-1 truncate">{row.titleBn}</span>
-                  <span className="max-w-[42%] shrink-0 truncate rounded-full bg-danger-soft px-2 py-0.5 text-xs font-bold text-danger">{toBn(row.count)} দিন</span>
+                  <span className="max-w-[42%] shrink-0 truncate rounded-lg bg-danger-soft px-2 py-0.5 text-xs font-bold text-danger">{toBn(row.count)} দিন</span>
                 </li>
               ))}
             </ul>
@@ -313,7 +313,7 @@ export function GridView({
                 ))}
                 <td className="min-w-12 border-b border-l-2 border-hairline bg-surface px-2 text-center align-middle">
                   {row.missedCount > 0 ? (
-                    <span className="inline-flex rounded-full bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger">{toBn(row.missedCount)}</span>
+                    <span className="inline-flex rounded-lg bg-danger-soft px-2 py-0.5 text-[11px] font-bold text-danger">{toBn(row.missedCount)}</span>
                   ) : row.doneCount > 0 ? (
                     <span className="text-xs font-bold text-success">✓</span>
                   ) : (

@@ -31,9 +31,9 @@ export function RangeFilter({ active, params }: { active: RangeKey; params?: Rec
             href={`/dashboard/amalnama/list?${query.toString()}`}
             aria-current={active === option.key ? "true" : undefined}
             className={cn(
-              "inline-flex h-10 shrink-0 items-center rounded-full border px-4 text-sm font-semibold transition-colors",
+              "inline-flex h-10 shrink-0 items-center rounded-lg border px-4 text-sm font-semibold transition-colors",
               active === option.key
-                ? "border-primary bg-primary text-on-primary shadow-sm"
+                ? "border-active bg-active text-on-active shadow-sm"
                 : "border-hairline-strong bg-surface text-muted-foreground hover:border-primary hover:text-primary",
             )}
           >

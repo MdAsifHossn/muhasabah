@@ -595,7 +595,7 @@ export function QuranReader({ mode, id, initialSurah, initialAyah, isLoggedIn }:
               type="button"
               aria-label={`গতি ${prefs.speed}x — বদলাতে চাপুন`}
               onClick={() => setPrefs({ speed: SPEED_CYCLE[(SPEED_CYCLE.indexOf(prefs.speed) + 1) % SPEED_CYCLE.length] ?? 1 })}
-              className="hidden h-10 min-w-11 place-items-center rounded-full px-2 text-xs font-bold text-muted-foreground hover:bg-surface-sunken sm:grid"
+              className="hidden h-10 min-w-11 place-items-center rounded-lg px-2 text-xs font-bold text-muted-foreground hover:bg-surface-sunken sm:grid"
             >
               {bnNum(prefs.speed)}x
             </button>
@@ -704,7 +704,7 @@ function AyahCard({
       )}
     >
       <div className="flex items-center gap-1">
-        <span className="rounded-full bg-primary-soft px-2.5 py-1 text-xs font-bold text-primary-soft-foreground">
+        <span className="rounded-lg bg-primary-soft px-2.5 py-1 text-xs font-bold text-primary-soft-foreground">
           {bnNum(ayah.surahNumber)}:{bnNum(ayah.numberInSurah)}
         </span>
         <span className="flex-1" />
@@ -713,7 +713,7 @@ function AyahCard({
           onClick={onTafsir}
           aria-label="তাফসীর পড়ুন"
           title="তাফসীর পড়ুন"
-          className="mr-1 inline-flex items-center gap-1.5 rounded-full border border-hairline bg-surface-sunken/80 px-2.5 py-1 text-xs font-semibold text-muted-foreground transition hover:border-primary/40 hover:bg-primary-soft hover:text-primary active:scale-95"
+          className="mr-1 inline-flex items-center gap-1.5 rounded-lg border border-hairline bg-surface-sunken/80 px-2.5 py-1 text-xs font-semibold text-muted-foreground transition hover:border-primary/40 hover:bg-primary-soft hover:text-primary active:scale-95"
         >
           <BookOpenText className="size-3.5" />
           <span>তাফসীর</span>
@@ -780,7 +780,7 @@ function JumpSheet({
               type="button"
               onClick={() => setTarget(item.surah)}
               className={cn(
-                "rounded-full border px-3 py-1.5 text-sm font-semibold",
+                "rounded-lg border px-3 py-1.5 text-sm font-semibold",
                 item.surah === group?.surah ? "border-primary bg-primary-soft text-primary-soft-foreground" : "border-hairline text-muted-foreground",
               )}
             >

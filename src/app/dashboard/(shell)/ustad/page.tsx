@@ -194,7 +194,7 @@ export default async function UstadDashboardPage() {
                     <Link href={`/dashboard/amalnama/grid?member=${member.id}&days=7`} className="min-w-0 flex-1 truncate text-sm font-semibold text-foreground hover:text-primary">
                       {member.name}
                     </Link>
-                    <span className="shrink-0 rounded-full bg-gold-soft px-2 py-0.5 text-xs font-bold text-gold-foreground">{member.streak!.current.toLocaleString("bn-BD")} দিন</span>
+                    <span className="shrink-0 rounded-lg bg-gold-soft px-2 py-0.5 text-xs font-bold text-gold-foreground">{member.streak!.current.toLocaleString("bn-BD")} দিন</span>
                   </li>
                 ))}
               </ol>

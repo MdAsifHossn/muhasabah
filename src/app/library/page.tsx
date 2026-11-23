@@ -46,7 +46,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
   return (
     <div className="space-y-6">
       {/* ── Hero ── */}
-      <section className="hero-surface relative overflow-hidden rounded-[1.5rem] px-5 py-7 sm:px-8 sm:py-9">
+      <section className="hero-surface relative overflow-hidden rounded-2xl px-5 py-7 sm:px-8 sm:py-9">
         <p className="flex items-center gap-2 text-xs font-bold tracking-wide text-on-hero-muted">
           <Library className="size-4" /> বাংলা ইসলামি পাঠাগার
         </p>
@@ -91,7 +91,7 @@ export default async function LibraryPage({ searchParams }: { searchParams: Prom
               <Link
                 key={value}
                 href={href(base, { sort: value, page: "1" })}
-                className={cn("rounded-lg px-3 py-1.5 font-semibold transition", sort === value ? "bg-primary-soft text-primary-soft-foreground" : "text-muted-foreground hover:text-foreground")}
+                className={cn("rounded-lg px-3 py-1.5 font-semibold transition", sort === value ? "bg-active text-on-active shadow-sm" : "text-muted-foreground hover:text-foreground")}
               >
                 {value === "new" ? "নতুন" : "নাম"}
               </Link>

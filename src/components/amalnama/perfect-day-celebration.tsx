@@ -35,7 +35,7 @@ export function PerfectDayCelebration() {
   if (!open) return null;
   return (
     <div role="dialog" aria-modal="true" aria-labelledby="perfect-day-title" className="fixed inset-0 z-[60] grid place-items-center bg-black/55 p-4 backdrop-blur-sm" onClick={() => setOpen(false)}>
-      <div className="celebrate-pop hero-surface relative w-full max-w-sm overflow-hidden rounded-[1.75rem] px-6 pb-6 pt-8 text-center shadow-2xl" onClick={(event) => event.stopPropagation()}>
+      <div className="celebrate-pop hero-surface relative w-full max-w-sm overflow-hidden rounded-2xl px-6 pb-6 pt-8 text-center shadow-2xl" onClick={(event) => event.stopPropagation()}>
         <button type="button" onClick={() => setOpen(false)} aria-label="বন্ধ করুন" className="absolute right-3 top-3 grid size-9 place-items-center rounded-full text-on-hero-muted hover:bg-white/10">
           <X className="size-5" />
         </button>

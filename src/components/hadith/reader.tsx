@@ -28,7 +28,7 @@ export function ReaderToolbar({ language }: { language: "bn" | "en" }) {
           aria-pressed={prefs.showArabic}
           className={cn(
             "inline-flex h-9 items-center gap-1.5 rounded-lg border px-3 text-[13px] font-semibold transition",
-            prefs.showArabic ? "border-transparent bg-primary-soft text-primary-soft-foreground" : "border-hairline bg-surface text-muted-foreground",
+            prefs.showArabic ? "border-transparent bg-active text-on-active" : "border-hairline bg-surface text-muted-foreground",
           )}
         >
           <Languages className="size-4" /> আরবি {prefs.showArabic ? "চালু" : "বন্ধ"}
@@ -123,7 +123,7 @@ export function HadithCard({ hadith, book, section, language }: { hadith: Hadith
         <button
           type="button"
           onClick={() => hadith.grades.length && setShowGrades((value) => !value)}
-          className={cn("ml-auto inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-bold", gradeClass[grade.tone])}
+          className={cn("ml-auto inline-flex items-center gap-1 rounded-lg px-2.5 py-0.5 text-xs font-bold", gradeClass[grade.tone])}
           aria-expanded={hadith.grades.length ? showGrades : undefined}
         >
           {grade.label}

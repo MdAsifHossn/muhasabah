@@ -44,7 +44,7 @@ function SurahHeader({
       <div className="flex items-center justify-center gap-3 text-foreground">
         <span className="h-px w-6 bg-primary/30" />
         <span className="text-sm font-bold">{surahName}</span>
-        <span className="rounded-full bg-surface px-2 py-0.5 text-[11px] font-bold text-primary-soft-foreground">
+        <span className="rounded-lg bg-surface px-2 py-0.5 text-[11px] font-bold text-primary-soft-foreground">
           {toBnDigits(ayahCountInSurah)} আয়াত
         </span>
         <span className="h-px w-6 bg-primary/30" />
@@ -279,7 +279,7 @@ export function GuidanceCarousel({
 
             {/* Audio & Badge */}
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-              <span className="rounded-full bg-gold-soft px-3 py-1 text-[11px] font-bold text-gold-foreground">
+              <span className="rounded-lg bg-gold-soft px-3 py-1 text-[11px] font-bold text-gold-foreground">
                 আল-কুরআন
               </span>
               {page ? (
@@ -395,7 +395,7 @@ export function GuidanceCarousel({
 
             {/* Narrator & Badge */}
             <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-              <span className="rounded-full bg-info-soft px-3 py-1 text-[11px] font-bold text-info">
+              <span className="rounded-lg bg-info-soft px-3 py-1 text-[11px] font-bold text-info">
                 {hadith?.grade || "সহীহ হাদীস"}
               </span>
               {hadith?.narrator ? (

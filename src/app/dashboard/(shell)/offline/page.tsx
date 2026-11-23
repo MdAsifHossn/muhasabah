@@ -404,7 +404,7 @@ export default function OfflineQuranPage() {
                   অফলাইন রিডার
                   <span
                     className={cn(
-                      "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold normal-case tracking-normal",
+                      "inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-bold normal-case tracking-normal",
                       online ? "bg-primary-soft text-primary" : "bg-warning-soft text-warning",
                     )}
                   >
@@ -412,7 +412,7 @@ export default function OfflineQuranPage() {
                     {online ? "অনলাইন" : "অফলাইন"}
                   </span>
                   {read.cacheState ? (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-surface-sunken px-2 py-0.5 text-[11px] font-bold normal-case tracking-normal text-muted-foreground">
+                    <span className="inline-flex items-center gap-1 rounded-lg bg-surface-sunken px-2 py-0.5 text-[11px] font-bold normal-case tracking-normal text-muted-foreground">
                       {read.cacheState === "hit"
                         ? "ক্যাশ থেকে"
                         : read.cacheState === "miss"
@@ -561,7 +561,7 @@ export default function OfflineQuranPage() {
                     {isSaved ? (
                       <span
                         className={cn(
-                          "inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[11px] font-bold",
+                          "inline-flex shrink-0 items-center gap-1 rounded-lg px-2 py-1 text-[11px] font-bold",
                           active ? "bg-teal-800 text-white" : "bg-primary-soft text-primary",
                         )}
                       >

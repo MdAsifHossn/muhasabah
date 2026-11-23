@@ -61,7 +61,7 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
         </section>
 
         {/* ── Form card ── */}
-        <section className="w-full rounded-[1.5rem] border bg-card p-5 text-card-foreground shadow-xl sm:p-7">
+        <section className="dark auth-card w-full rounded-2xl p-5 text-foreground sm:p-7">
           <div className="mb-6">
             <h2 className="text-2xl font-bold">আসসালামু আলাইকুম</h2>
             <p className="mt-1 text-[15px] text-muted-foreground">আপনার অ্যাকাউন্টে প্রবেশ করুন</p>

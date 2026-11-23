@@ -40,7 +40,7 @@ export function PeriodToggle({ isPeriod, day, disabled, memberId }: { isPeriod: 
         </label>
         <p className="mt-0.5 text-xs leading-5 text-muted-foreground">চালু করলে নামাজ ও তিলাওয়াতের আমল {day === "yesterday" ? "গতকালের" : "আজকের"} হিসাবে ধরা হবে না।</p>
         <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-subtle-foreground">
-          <Lock className="size-3" /> কারণটি গোপন থাকবে
+          <Lock className="size-3" /> শুধু আপনি ও উস্তাদজি এটি দেখতে পারবেন
         </p>
       </div>
       {isPending ? <Loader2 className="size-4 animate-spin text-muted-foreground" /> : null}

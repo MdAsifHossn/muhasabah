@@ -164,10 +164,12 @@ export function buildReport({
 
 /** Consecutive days with an entry, ending today — today may still be pending. */
 export function currentStreak(days: Pick<ReportDay, "entry">[]) {
+  // A bare draft does not count; a ওজর day (auto-created draft) does.
+  const counts = (entry: ReportEntry | null) => Boolean(entry && (entry.status !== "DRAFT" || entry.isPeriodDay));
   let index = days.length - 1;
-  if (index >= 0 && !days[index].entry) index -= 1;
+  if (index >= 0 && !counts(days[index].entry)) index -= 1;
   let streak = 0;
-  while (index >= 0 && days[index].entry) {
+  while (index >= 0 && counts(days[index].entry)) {
     streak += 1;
     index -= 1;
   }

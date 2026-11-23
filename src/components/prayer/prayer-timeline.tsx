@@ -4,6 +4,8 @@ import { Moon, ShieldAlert, Sun, Sunrise, Sunset, UtensilsCrossed } from "lucide
 import { useEffect, useState } from "react";
 
 import { clockBn, dhakaNowMinutes, durationBn, FORBIDDEN_NOTE, getForbiddenWindows, getWaqtWindows } from "@/lib/forbidden-times";
+import { isDhaka } from "@/lib/prayer-location";
+import { useLocationTimings, usePrayerLocation } from "@/lib/use-prayer-location";
 import type { PrayerTiming } from "@/lib/prayer-times";
 import { cn } from "@/lib/utils";
 
@@ -25,7 +27,10 @@ function buildRows(m: PrayerTiming["minutes"]): Row[] {
 }
 
 /** Whole day at a glance: waqts, sunrise, forbidden windows, sehri/iftar, with "now" and the next event. */
-export function PrayerTimeline({ minutes }: { minutes: PrayerTiming["minutes"] }) {
+export function PrayerTimeline({ minutes: initialMinutes }: { minutes: PrayerTiming["minutes"] }) {
+  const { timings } = useLocationTimings();
+  const location = usePrayerLocation();
+  const minutes = timings?.minutes ?? (isDhaka(location) ? initialMinutes : null);
   const [now, setNow] = useState<number | null>(null);
 
   useEffect(() => {
@@ -33,8 +38,9 @@ export function PrayerTimeline({ minutes }: { minutes: PrayerTiming["minutes"] }
     update();
     const interval = window.setInterval(update, 20000);
     return () => window.clearInterval(interval);
-  }, []);
+  }, [location.tz]);
 
+  if (!minutes) return <p role="status" className="surface rounded-card p-6 text-center text-sm text-muted-foreground">{location.name} এর সময় লোড হচ্ছে…</p>;
   const rows = buildRows(minutes);
   // After the last event of the day, the next one is tomorrow's Fajr.
   const upcoming = now === null ? null : rows.find((row) => row.start > now) ?? null;

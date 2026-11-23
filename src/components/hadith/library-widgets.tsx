@@ -159,7 +159,7 @@ export function SectionList({ bookId, sections }: { bookId: string; sections: Ha
                   </span>
                 </span>
                 {section.nameAr ? <span className="arabic-text hidden shrink-0 text-base text-muted-foreground sm:block">{section.nameAr}</span> : null}
-                {current ? <span className="shrink-0 rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-bold text-primary">চলমান</span> : null}
+                {current ? <span className="shrink-0 rounded-lg bg-primary-soft px-2 py-0.5 text-[11px] font-bold text-primary">চলমান</span> : null}
               </Link>
             </li>
           );

@@ -23,7 +23,7 @@ type AhmedHadith = {
 type AhmedBook = { hadiths?: AhmedHadith[] };
 
 async function getJson<T>(url: string, cache = true): Promise<T> {
-  const response = await fetch(url, cache ? { next: { revalidate: WEEK } } : { cache: "no-store" });
+  const response = await fetch(url, cache ? { next: { revalidate: WEEK }, signal: AbortSignal.timeout(20000) } : { cache: "no-store", signal: AbortSignal.timeout(20000) });
   if (!response.ok) throw new Error(`Hadith source ${response.status}: ${url}`);
   return (await response.json()) as T;
 }

@@ -9,7 +9,7 @@
  *   to QURAN_CACHE_MAX entries there too.
  */
 
-const VERSION = "v7";
+const VERSION = "v8";
 /** On a dev server chunk URLs are NOT content-hashed, so caching them serves stale CSS/JS. */
 const IS_DEV_HOST = ["localhost", "127.0.0.1", "[::1]"].includes(self.location.hostname);
 const PAGE_CACHE = `muhasabah-pages-${VERSION}`;
@@ -82,7 +82,7 @@ self.addEventListener("message", (event) => {
     const done = (async () => {
       if (!url.startsWith("/")) return;
       const cache = await caches.open(PAGE_CACHE);
-      if (await cache.match(url)) return;
+      if (url.startsWith("/dashboard") || url.startsWith("/login") || (await cache.match(url))) return;
       const response = await fetch(url, { credentials: "same-origin" });
       if (canCache(response)) await cache.put(url, response.clone());
     })().catch(() => {});
@@ -103,6 +103,8 @@ function isStaticAsset(url) {
 function canCache(response) {
   if (!response) return false;
   if (response.status === 206) return false;
+  // A followed redirect (e.g. "/" -> /login) must never be replayed to a navigation.
+  if (response.redirected) return false;
   // Opaque = cross-origin no-cors (Google Fonts stylesheet) — cacheable, just
   // not inspectable.
   if (response.type === "opaque") return true;
@@ -256,8 +258,12 @@ self.addEventListener("fetch", (event) => {
   // Never intercept build output or RSC payloads on a dev host.
   if (IS_DEV_HOST && url.origin === self.location.origin && !isQuranApi(url)) return;
 
-  // Pages: network-first so updates are never stale.
+  // Signed-in areas are never stored: a shared device must not show the previous user's pages.
+  const isPrivate = url.origin === self.location.origin && (url.pathname.startsWith("/dashboard") || url.pathname.startsWith("/login"));
+
+  // Pages: network-first so updates are never stale (public pages only are kept for offline).
   if (request.mode === "navigate") {
+    if (isPrivate) return;
     event.respondWith(networkFirst(request, PAGE_CACHE));
     return;
   }
@@ -280,6 +286,5 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Anything else same-origin (API, RSC payloads): network-first + fallback.
-  event.respondWith(networkFirst(request, RUNTIME_CACHE));
+  // Anything else same-origin (auth/progress APIs, RSC payloads) goes straight to the network, uncached.
 });

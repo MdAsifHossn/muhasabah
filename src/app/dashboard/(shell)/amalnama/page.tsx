@@ -9,7 +9,7 @@ import { PeriodToggle } from "@/components/amalnama/period-toggle";
 import { EmptyState } from "@/components/design/empty-state";
 import { applicableItems, isNaflFastingItem, naflFastingReasonFor } from "@/lib/amal-rules";
 import { categoryLabels } from "@/lib/constants";
-import { findEntryForDay, getStorageCycle } from "@/lib/cycles";
+import { findEntryForDay } from "@/lib/cycles";
 import { formatBanglaDate, formatHijriDate, getBangladeshToday, getBangladeshWeekday, startOfBangladeshDay, toBanglaDigits } from "@/lib/dates";
 import { isStaffRole, requireUser } from "@/lib/permissions";
 import { prisma } from "@/lib/prisma";
@@ -128,7 +128,7 @@ export default async function AmalnamaPage({ searchParams }: { searchParams: Pro
               aria-selected={active}
               className={cn(
                 "grid h-10 place-items-center rounded-xl text-sm font-semibold transition",
-                active ? "bg-card text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+                active ? "bg-active text-on-active shadow-sm" : "text-muted-foreground hover:text-foreground",
               )}
             >
               {label}

@@ -97,7 +97,7 @@ export default async function LibraryBookPage({ params }: { params: Promise<{ id
                     href={file.url}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
+                    className="inline-flex items-center gap-1.5 rounded-lg bg-muted px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-foreground"
                   >
                     <FileText className="size-3.5" /> {file.ext} {file.size ? `• ${toBanglaDigits(file.size)}` : ""}
                   </a>

@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 
 import { auth } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 /**
  * Two active roles:
@@ -15,7 +16,15 @@ import { auth } from "@/lib/auth";
  * be migrated safely. It is never granted access or offered in the UI.
  */
 /** One session lookup per request, shared by the layout and the page. */
-const getSession = cache(async () => auth.api.getSession({ headers: await headers() }));
+const getSession = cache(async () => {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user) return session;
+  // The signed session cookie is cached for minutes — re-read role / isActive so a
+  // deactivation or demotion applies immediately.
+  const fresh = await prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true, isActive: true } });
+  if (!fresh) return null;
+  return { ...session, user: { ...session.user, role: fresh.role, isActive: fresh.isActive } };
+});
 
 export async function requireUser() {
   const session = await getSession();

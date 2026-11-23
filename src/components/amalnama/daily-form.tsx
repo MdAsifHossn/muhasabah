@@ -12,11 +12,11 @@ import {
   Leaf,
   Library,
   Loader2,
-  Minus,
   Moon,
   MoonStar,
   PenLine,
-  Plus,
+  Pencil,
+  Target,
   Save,
   Send,
   ShieldCheck,
@@ -95,11 +95,6 @@ const WAQTS: Array<{ label: string; icon: LucideIcon; match: RegExp }> = [
 ];
 const waqtOf = (title: string) => WAQTS.find((waqt) => waqt.match.test(title)) ?? null;
 
-function stepFor(item: DailyFormItem) {
-  if (item.inputType === "MINUTES") return 5;
-  if ((item.targetValue ?? 0) >= 100) return 10;
-  return 1;
-}
 
 const isDone = (item: DailyFormItem, value: Value | undefined) => calculateAmalItemScore(item, value ?? null) >= item.points;
 
@@ -256,16 +251,16 @@ export function DailyForm({
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap gap-1.5">
               {meta.isFriday ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-[#f4f1ea] px-2.5 py-0.5 text-[11px] font-bold text-[#0b3b40]">
+                <span className="inline-flex items-center gap-1 rounded-lg bg-[#f4f1ea] px-2.5 py-0.5 text-[11px] font-bold text-[#0b3b40]">
                   <Sparkles className="size-3" /> জুমার দিন
                 </span>
               ) : null}
               {status === "SUBMITTED" ? (
-                <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2.5 py-0.5 text-[11px] font-semibold text-on-hero">
+                <span className="inline-flex items-center gap-1 rounded-lg bg-white/15 px-2.5 py-0.5 text-[11px] font-semibold text-on-hero">
                   <CheckCheck className="size-3" /> জমা হয়েছে
                 </span>
               ) : null}
-              {meta.isExcused ? <span className="rounded-full bg-white/10 px-2.5 py-0.5 text-[11px] font-medium text-on-hero-muted">ওজরের দিন</span> : null}
+              {meta.isExcused ? <span className="rounded-lg bg-white/10 px-2.5 py-0.5 text-[11px] font-medium text-on-hero-muted">ওজরের দিন</span> : null}
             </div>
             <h1 className="mt-2 text-[1.45rem] font-bold leading-tight sm:text-2xl">{meta.title}</h1>
             <p className="mt-1 text-[13px] leading-5 text-on-hero-muted">
@@ -355,7 +350,7 @@ export function DailyForm({
                 </div>
               </div>
               {complete ? (
-                <span className={cn("inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold", style.tile)}>
+                <span className={cn("inline-flex items-center gap-1 rounded-lg px-2.5 py-1 text-xs font-bold", style.tile)}>
                   <CheckCheck className="size-3.5" /> সম্পন্ন
                 </span>
               ) : (
@@ -477,10 +472,10 @@ function AmalRow({
         </span>
         <span className="min-w-0 flex-1">
           <span className={cn("block text-[15px] leading-6 transition-colors", checked ? "font-medium text-foreground" : "text-foreground/85")}>{item.titleBn}</span>
-          {item.dayLabel ? <span className="mt-0.5 inline-flex items-center rounded-full bg-gold-soft px-2 py-0.5 text-[10px] font-bold text-gold-foreground">আজকের বিশেষ আমল • শুধু {item.dayLabel}</span> : null}
+          {item.dayLabel ? <span className="mt-0.5 inline-flex items-center rounded-lg bg-gold-soft px-2 py-0.5 text-[10px] font-bold text-gold-foreground">আজকের বিশেষ আমল • শুধু {item.dayLabel}</span> : null}
           {item.description ? <span className="block text-xs leading-5 text-muted-foreground">{item.description}</span> : null}
         </span>
-        <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums", checked ? accent.tile : "text-subtle-foreground")}>
+        <span className={cn("shrink-0 rounded-lg px-2 py-0.5 text-[11px] font-semibold tabular-nums", checked ? accent.tile : "text-subtle-foreground")}>
           +{toBn(item.points)}
         </span>
       </button>
@@ -497,7 +492,6 @@ function AmalRow({
   }
 
   const numeric = typeof value === "number" ? value : Number(value) || 0;
-  const step = stepFor(item);
   const target = item.targetValue ?? 0;
   const reached = target > 0 && numeric >= target;
   const ratio = target > 0 ? Math.min(1, numeric / target) : numeric > 0 ? 1 : 0;
@@ -505,62 +499,43 @@ function AmalRow({
     <div className="px-4 py-3.5 sm:px-5">
       <div className="flex items-start justify-between gap-3">
         <p className="min-w-0 text-[15px] font-medium leading-6">{item.titleBn}</p>
-        <span className={cn("shrink-0 rounded-full px-2 py-0.5 text-[11px] font-semibold tabular-nums", reached ? accent.tile : "text-subtle-foreground")}>
+        <span className={cn("shrink-0 rounded-lg px-2 py-0.5 text-[11px] font-semibold tabular-nums", reached ? accent.tile : "text-subtle-foreground")}>
           +{toBn(item.points)}
         </span>
       </div>
-      <div className="mt-3 flex items-center gap-2">
-        <button
-          type="button"
-          aria-label="কমান"
-          disabled={disabled || numeric <= 0}
-          onClick={() => onChange(Math.max(0, numeric - step))}
-          className="grid size-12 shrink-0 place-items-center rounded-2xl border bg-card text-foreground transition active:scale-90 disabled:opacity-35"
-        >
-          <Minus className="size-5" />
-        </button>
-        <label className="flex h-12 min-w-0 flex-1 items-baseline justify-center gap-1.5 rounded-2xl bg-muted px-3 pt-2.5">
+      <div className="mt-3 flex flex-wrap items-stretch gap-2">
+        <label className="field-3d flex h-12 min-w-0 flex-1 basis-44 cursor-text items-center gap-2.5 rounded-lg px-3 focus-within:border-active focus-within:ring-[3px] focus-within:ring-active/25">
+          <Pencil aria-hidden className="size-4 shrink-0 text-subtle-foreground" />
           <input
             type="number"
             inputMode="numeric"
             min={0}
             value={numeric === 0 ? "" : numeric}
-            placeholder="0"
+            placeholder="সংখ্যা লিখুন"
             disabled={disabled}
             onChange={(event) => onChange(Math.max(0, Number(event.target.value) || 0))}
-            aria-label={item.titleBn}
-            className="w-16 min-w-0 bg-transparent text-right text-xl font-bold tabular-nums text-foreground outline-none placeholder:text-subtle-foreground [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
+            aria-label={`${item.titleBn} — সংখ্যা লিখুন`}
+            className="min-w-0 flex-1 bg-transparent text-lg font-bold tabular-nums text-foreground outline-none placeholder:text-sm placeholder:font-normal placeholder:text-subtle-foreground [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none"
           />
-          <span className="text-sm text-muted-foreground">
-            {target > 0 ? `/ ${toBn(target)} ` : ""}
-            {item.unit}
-          </span>
+          <span className="shrink-0 text-sm text-muted-foreground">{item.unit}</span>
         </label>
-        <button
-          type="button"
-          aria-label="বাড়ান"
-          disabled={disabled}
-          onClick={() => onChange(numeric + step)}
-          className={cn("grid size-12 shrink-0 place-items-center rounded-2xl text-white shadow-sm transition active:scale-90 disabled:opacity-35", accent.bar)}
-        >
-          <Plus className="size-5" />
-        </button>
+        {target > 0 ? (
+          <button
+            type="button"
+            disabled={disabled || reached}
+            onClick={() => onChange(target)}
+            className={cn("inline-flex h-12 shrink-0 items-center gap-1.5 rounded-lg px-4 text-sm font-semibold shadow-sm transition active:scale-95 disabled:shadow-none", reached ? cn("bg-transparent ring-1 ring-current", accent.text) : cn("text-white hover:brightness-110", accent.bar))}
+          >
+            {reached ? <CheckCheck className="size-4" /> : <Target className="size-4" />}
+            {reached ? "লক্ষ্য পূরণ" : `লক্ষ্য ${toBn(target)}`}
+          </button>
+        ) : null}
       </div>
       <div className="mt-3 flex items-center gap-3">
         <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-muted">
           <div className={cn("h-full rounded-full transition-[width] duration-500", accent.bar)} style={{ width: `${ratio * 100}%` }} />
         </div>
-        {target > 0 ? (
-          reached ? (
-            <span className={cn("inline-flex items-center gap-1 text-xs font-semibold", accent.text)}>
-              <CheckCheck className="size-3.5" /> লক্ষ্য পূরণ
-            </span>
-          ) : (
-            <button type="button" disabled={disabled} onClick={() => onChange(target)} className={cn("text-xs font-semibold underline-offset-4 hover:underline", accent.text)}>
-              লক্ষ্য পূরণ
-            </button>
-          )
-        ) : null}
+        {target > 0 ? <span className="shrink-0 text-xs tabular-nums text-muted-foreground">{toBn(numeric)} / {toBn(target)} {item.unit}</span> : null}
       </div>
     </div>
   );

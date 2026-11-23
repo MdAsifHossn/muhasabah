@@ -10,7 +10,7 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-primary text-primary-foreground shadow-sm hover:bg-primary-hover",
+        default: "bg-active text-on-active shadow-sm hover:brightness-110",
         destructive: "bg-destructive text-white shadow-sm hover:bg-destructive/90",
         danger: "bg-destructive text-white shadow-sm hover:bg-destructive/90",
         outline: "border border-input bg-card text-foreground shadow-xs hover:bg-accent hover:text-accent-foreground",
@@ -19,6 +19,7 @@ const buttonVariants = cva(
         soft: "bg-primary-soft text-primary-soft-foreground hover:bg-primary-soft/70",
         gold: "bg-marble-300 text-marble-950 shadow-sm hover:bg-marble-200",
         "danger-soft": "bg-danger-soft text-danger hover:bg-danger-soft/70",
+        cta: "bg-linear-to-b from-[#f8dc86] to-[#e3ac3c] text-[#3a2704] shadow-[0_8px_22px_-8px_rgb(227_172_60/0.75)] hover:brightness-105",
         hero: "bg-white/12 text-on-hero ring-1 ring-white/25 backdrop-blur hover:bg-white/20",
         link: "text-primary underline-offset-4 hover:underline",
       },

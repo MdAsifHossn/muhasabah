@@ -12,8 +12,8 @@ export function SurahHeader({ surah, continuedFrom, script = "indopak" }: { sura
       className="hero-surface relative scroll-mt-24 overflow-hidden rounded-card px-5 pb-6 pt-5 text-center shadow-raised sm:px-8"
     >
       <div className="flex items-center justify-between text-[11px] font-semibold text-on-hero-muted">
-        <span className="rounded-full bg-white/10 px-2.5 py-1">সূরা {bnNum(surah.number)}</span>
-        <span className="rounded-full bg-white/10 px-2.5 py-1">
+        <span className="rounded-lg bg-white/10 px-2.5 py-1">সূরা {bnNum(surah.number)}</span>
+        <span className="rounded-lg bg-white/10 px-2.5 py-1">
           {surah.revelationType === "Meccan" ? "মাক্কী" : "মাদানী"} • {bnNum(surah.numberOfAyahs)} আয়াত
         </span>
       </div>

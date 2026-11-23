@@ -1,15 +1,20 @@
 import {
+  AlarmClock,
   ArrowRight,
   BarChart3,
   BookMarked,
+  BookOpen,
   BookOpenCheck,
   CalendarDays,
-  Flame,
-  Library,
-  NotebookPen,
   ClipboardCheck,
-  MoonStar,
+  LayoutGrid,
+  Library,
+  MessagesSquare,
+  ScrollText,
+  Sparkles,
   UsersRound,
+  WifiOff,
+  type LucideIcon,
 } from "lucide-react";
 import { headers } from "next/headers";
 import Link from "next/link";
@@ -29,77 +34,56 @@ import {
 import { getDailyGuidance } from "@/lib/islamic-content";
 import { getTodayFastingInfo } from "@/lib/prayer-times";
 
-const features = [
-  {
-    icon: ClipboardCheck,
-    title: "দৈনিক আমলনামা",
-    text: "প্রতিদিনের আমলের হিসাব",
-    tone: "bg-cat-salah/12 text-cat-salah",
-  },
-  {
-    icon: MoonStar,
-    title: "ভাই ও বোনদের আলাদা",
-    text: "যার যার উপযোগী আমল",
-    tone: "bg-cat-character/12 text-cat-character",
-  },
-  {
-    icon: BookOpenCheck,
-    title: "আল-কুরআন",
-    text: "অর্থ ও তিলাওয়াতসহ",
-    tone: "bg-cat-quran/12 text-cat-quran",
-  },
-  {
-    icon: BookMarked,
-    title: "হাদীস",
-    text: "প্রসিদ্ধ গ্রন্থসমূহ",
-    tone: "bg-cat-dhikr/12 text-cat-dhikr",
-  },
-  {
-    icon: UsersRound,
-    title: "উস্তাদজির তত্ত্বাবধান",
-    text: "পরামর্শ ও পর্যালোচনা",
-    tone: "bg-cat-jumuah/14 text-cat-jumuah",
-  },
-  {
-    icon: BarChart3,
-    title: "অগ্রগতি",
-    text: "দিনভিত্তিক গ্রিড ও রিপোর্ট",
-    tone: "bg-cat-sunnah/12 text-cat-sunnah",
-  },
-];
+const TILE_TONES: Record<string, { card: string; icon: string }> = {
+  "text-cat-salah": { card: "from-cat-salah/14 hover:border-cat-salah/50", icon: "bg-cat-salah/15 text-cat-salah ring-cat-salah/25" },
+  "text-cat-discipline": { card: "from-cat-discipline/14 hover:border-cat-discipline/50", icon: "bg-cat-discipline/15 text-cat-discipline ring-cat-discipline/25" },
+  "text-cat-sunnah": { card: "from-cat-sunnah/14 hover:border-cat-sunnah/50", icon: "bg-cat-sunnah/15 text-cat-sunnah ring-cat-sunnah/25" },
+  "text-cat-service": { card: "from-cat-service/14 hover:border-cat-service/50", icon: "bg-cat-service/15 text-cat-service ring-cat-service/25" },
+  "text-cat-character": { card: "from-cat-character/14 hover:border-cat-character/50", icon: "bg-cat-character/15 text-cat-character ring-cat-character/25" },
+  "text-cat-quran": { card: "from-cat-quran/14 hover:border-cat-quran/50", icon: "bg-cat-quran/15 text-cat-quran ring-cat-quran/25" },
+  "text-cat-dhikr": { card: "from-cat-dhikr/14 hover:border-cat-dhikr/50", icon: "bg-cat-dhikr/15 text-cat-dhikr ring-cat-dhikr/25" },
+  "text-cat-reading": { card: "from-cat-reading/14 hover:border-cat-reading/50", icon: "bg-cat-reading/15 text-cat-reading ring-cat-reading/25" },
+  "text-warning": { card: "from-warning/14 hover:border-warning/50", icon: "bg-warning/15 text-warning ring-warning/25" },
+  "text-info": { card: "from-info/14 hover:border-info/50", icon: "bg-info/15 text-info ring-info/25" },
+};
 
-const steps = [
-  {
-    icon: NotebookPen,
-    title: "প্রতিদিন আমলনামা লিখুন",
-    text: "নামাজ, কুরআন, যিকির, আখলাক — দিনের শেষে দুই মিনিটে নিজের হিসাব।",
-  },
-  {
-    icon: Flame,
-    title: "ধারাবাহিকতা গড়ুন",
-    text: "পাঁচ ওয়াক্তে তাকবীরে উলা টানা কত দিন — আপনার সেরা আমল হিসেবে চোখের সামনে।",
-  },
-  {
-    icon: UsersRound,
-    title: "উস্তাদজির পরামর্শ নিন",
-    text: "উস্তাদজি আমলনামা দেখে উৎসাহ ও সংশোধনের নসীহত দেন।",
-  },
-];
+type QuickItem = { href: string; icon: LucideIcon; title: string; text: string; tone: string };
+type QuickGroup = { title: string; items: QuickItem[] };
 
-/** Gold rule with an ৮-কোণা তারা in the middle. */
-function Ornament({ className = "" }: { className?: string }) {
-  return (
-    <div className={`flex items-center justify-center gap-3 text-gold ${className}`} aria-hidden>
-      <span className="h-px w-16 bg-gradient-to-r from-transparent to-current sm:w-28" />
-      <svg viewBox="0 0 24 24" className="size-5">
-        <g fill="currentColor" fillOpacity="0.15" stroke="currentColor" strokeWidth="1.4" strokeLinejoin="round">
-          <rect x="6" y="6" width="12" height="12" rx="0.6" />
-          <rect x="6" y="6" width="12" height="12" rx="0.6" transform="rotate(45 12 12)" />
-        </g>
-      </svg>
-      <span className="h-px w-16 bg-gradient-to-l from-transparent to-current sm:w-28" />
-    </div>
-  );
+/** Every feature of the site as one tap-able card. `needsLogin` routes sit behind the sign-in wall. */
+function buildQuickGroups(signedIn: boolean, hijri: string): QuickGroup[] {
+  const gated = (path: string) => (signedIn ? path : `/login?next=${path}`);
+  return [
+    {
+      title: "প্রতিদিনের আমল",
+      items: [
+        { href: gated("/dashboard/amalnama"), icon: ClipboardCheck, title: "আজকের আমল", text: "দিনের হিসাব লিখুন", tone: "bg-cat-salah/14 text-cat-salah" },
+        { href: gated("/dashboard/amalnama/grid"), icon: LayoutGrid, title: "আমলের খাতা", text: "দিনভিত্তিক গ্রিড", tone: "bg-cat-discipline/14 text-cat-discipline" },
+        { href: gated("/dashboard/progress"), icon: BarChart3, title: "আমার উন্নতি", text: "ধারাবাহিকতা ও রিপোর্ট", tone: "bg-cat-sunnah/14 text-cat-sunnah" },
+        { href: gated("/dashboard/prayer"), icon: AlarmClock, title: "নামাজের সময়", text: "ওয়াক্ত ও রিমাইন্ডার", tone: "bg-cat-service/14 text-cat-service" },
+        { href: gated("/dashboard/messages"), icon: MessagesSquare, title: "উস্তাদজি", text: "বার্তা, নোটিশ ও মতামত", tone: "bg-cat-character/14 text-cat-character" },
+      ],
+    },
+    {
+      title: "কুরআন ও হাদীস",
+      items: [
+        { href: "/quran", icon: BookOpenCheck, title: "আল-কুরআন", text: "অর্থ ও তিলাওয়াতসহ", tone: "bg-cat-quran/14 text-cat-quran" },
+        { href: gated("/dashboard/hadith"), icon: BookMarked, title: "হাদীস", text: "বুখারী, মুসলিমসহ প্রসিদ্ধ গ্রন্থ", tone: "bg-cat-dhikr/14 text-cat-dhikr" },
+        { href: gated("/dashboard/offline"), icon: WifiOff, title: "নেট ছাড়া কুরআন", text: "অফলাইনে পড়ুন", tone: "bg-cat-reading/14 text-cat-reading" },
+        { href: "/library", icon: Library, title: "কিতাবখানা", text: "৫৬০+ বাংলা ইসলামি বই", tone: "bg-warning/14 text-warning" },
+      ],
+    },
+    {
+      title: "দোয়া, জ্ঞান ও সময়",
+      items: [
+        { href: "/names-of-allah", icon: Sparkles, title: "আল্লাহর ৯৯ নাম", text: "অর্থ ও তাৎপর্যসহ", tone: "bg-warning/14 text-warning" },
+        { href: "/prayer/duas", icon: ScrollText, title: "নামাজের দু'আ", text: "তাকবীর থেকে সালাম", tone: "bg-cat-salah/14 text-cat-salah" },
+        { href: "/dua", icon: BookOpen, title: "দোয়া ও যিকির", text: "হিসনুল মুসলিম ও কুরআনের দোয়া", tone: "bg-cat-dhikr/14 text-cat-dhikr" },
+        { href: "/mahram", icon: UsersRound, title: "মাহরাম তালিকা", text: "পুরুষ ও নারীর জন্য", tone: "bg-cat-character/14 text-cat-character" },
+        { href: "/calendar", icon: CalendarDays, title: "ক্যালেন্ডার", text: hijri, tone: "bg-info/14 text-info" },
+      ],
+    },
+  ];
 }
 
 export default async function HomePage({
@@ -121,12 +105,10 @@ export default async function HomePage({
   ]);
   const today = new Date();
   const appHref = session ? "/dashboard" : "/login";
-  const hadithHref = session
-    ? "/dashboard/hadith"
-    : "/login?next=/dashboard/hadith";
+  const quickGroups = buildQuickGroups(Boolean(session), formatHijriDate(today));
 
   return (
-    <main className="min-h-dvh overflow-x-clip bg-background text-foreground">
+    <main className="landing-canvas min-h-dvh overflow-x-clip text-foreground">
       <SiteHeader />
 
       {/* ── Hero ── */}
@@ -136,17 +118,17 @@ export default async function HomePage({
         <div className="pointer-events-none absolute inset-x-0 bottom-0 h-28 bg-gradient-to-b from-transparent to-background sm:h-40" aria-hidden />
         <div className="relative mx-auto grid max-w-6xl grid-cols-1 gap-5 px-3 pb-10 pt-6 sm:px-6 sm:pb-16 sm:pt-10 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,.9fr)] lg:items-center lg:gap-10 lg:pb-14 lg:pt-14 [&>*]:min-w-0">
           <div className="text-center lg:text-left">
-            <p dir="rtl" className="quran-text text-xl text-marble-200 sm:text-2xl lg:text-left">
+            <p dir="rtl" className="quran-text mb-3 text-xl text-marble-200 sm:mb-4 sm:text-2xl lg:mb-6 lg:text-left lg:text-3xl">
               بِسْمِ ٱللَّهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ
             </p>
-            <h1 className="mt-1 text-[1.75rem] font-bold leading-[1.25] sm:text-5xl">
+            <h1 className="mt-1 text-[1.75rem] font-bold leading-[1.25] sm:text-5xl lg:text-[3.5rem] lg:leading-[1.2]">
               হিসাব দিনের আগে <span className="text-gradient-gold sm:block">নিজের হিসাব নিন</span>
             </h1>
-            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-on-hero-muted sm:text-lg sm:leading-7 lg:mx-0">
+            <p className="mx-auto mt-3 max-w-md text-sm leading-6 text-on-hero-muted sm:text-lg sm:leading-7 lg:mx-0 lg:mt-5 lg:max-w-lg lg:text-xl lg:leading-8">
               প্রতিদিনের আমলনামা, তাকবীরে উলার ধারাবাহিকতা, আল-কুরআন ও হাদীস — উস্তাদজির তত্ত্বাবধানে।
             </p>
-            <div className="mx-auto mt-5 flex max-w-md gap-2 sm:gap-3 lg:mx-0">
-              <Button asChild size="lg" className="min-w-0 flex-[1.4] gap-1.5 rounded-[10px] bg-[#f4f1ea] px-3 text-[#0b3b40] hover:bg-[#e9e4d8] sm:flex-none sm:px-6">
+            <div className="mx-auto mt-5 flex max-w-md gap-2 sm:gap-3 lg:mx-0 lg:mt-8">
+              <Button asChild size="lg" variant="cta" className="min-w-0 flex-[1.4] gap-1.5 rounded-[10px] px-3 sm:flex-none sm:px-6">
                 <Link href={session ? "/dashboard/amalnama" : "/login"}>
                   {session ? "আজকের আমলনামা" : "প্রবেশ করুন"}
                   <ArrowRight className="size-4" />
@@ -168,58 +150,28 @@ export default async function HomePage({
         </div>
       </section>
 
-      {/* ── Quick access (public) ── */}
-      <section className="mx-auto max-w-6xl px-3 pt-4 sm:px-6 sm:pt-6">
-        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-          {[
-            {
-              href: "/quran",
-              icon: BookOpenCheck,
-              title: "আল-কুরআন",
-              text: "অর্থ ও তিলাওয়াতসহ পড়ুন",
-              tone: "bg-cat-quran/12 text-cat-quran",
-            },
-            {
-              href: hadithHref,
-              icon: BookMarked,
-              title: "হাদীস",
-              text: "বুখারী, মুসলিমসহ প্রসিদ্ধ গ্রন্থ",
-              tone: "bg-cat-dhikr/12 text-cat-dhikr",
-            },
-            {
-              href: "/library",
-              icon: Library,
-              title: "কিতাবখানা",
-              text: "৫৬০+ বাংলা ইসলামি বই",
-              tone: "bg-cat-reading/12 text-cat-reading",
-            },
-            {
-              href: "/calendar",
-              icon: CalendarDays,
-              title: "হিজরি ক্যালেন্ডার",
-              text: formatHijriDate(today),
-              tone: "bg-cat-jumuah/14 text-cat-jumuah",
-            },
-          ].map((item) => (
-            <Link
-              key={item.title}
-              href={item.href}
-              className="surface group flex items-center gap-4 rounded-card p-4 transition hover:-translate-y-0.5 hover:shadow-md"
-            >
-              <span
-                className={`grid size-12 shrink-0 place-items-center rounded-2xl ${item.tone}`}
+      {/* ── Shortcuts: every feature one tap away ── */}
+      <section id="features" aria-label="দ্রুত প্রবেশ" className="mx-auto max-w-6xl px-3 pt-6 sm:px-6 sm:pt-10">
+        <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 sm:gap-3 lg:grid-cols-4">
+          {quickGroups.flatMap((group) => group.items).map((item) => {
+            const tile = TILE_TONES[item.tone.split(" ").find((c) => c.startsWith("text-")) ?? ""] ?? TILE_TONES["text-cat-salah"];
+            return (
+              <Link
+                key={item.title}
+                href={item.href}
+                className={`group relative flex items-center gap-3 overflow-hidden rounded-xl border border-hairline bg-linear-to-br via-card to-card p-3 pr-2.5 shadow-card transition duration-200 hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:p-3.5 ${tile.card}`}
               >
-                <item.icon className="size-6" />
-              </span>
-              <span className="min-w-0 flex-1">
-                <span className="block font-semibold">{item.title}</span>
-                <span className="block truncate text-sm text-muted-foreground">
-                  {item.text}
+                <span className={`grid size-9 shrink-0 place-items-center rounded-lg ring-1 sm:size-10 ${tile.icon}`}>
+                  <item.icon className="size-[18px] sm:size-5" />
                 </span>
-              </span>
-              <ArrowRight className="size-5 shrink-0 text-subtle-foreground transition group-hover:translate-x-0.5 group-hover:text-primary" />
-            </Link>
-          ))}
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[13px] font-bold leading-tight text-foreground sm:text-sm">{item.title}</span>
+                  <span className="mt-0.5 block truncate text-[11px] text-muted-foreground sm:text-xs">{item.text}</span>
+                </span>
+                <ArrowRight className="size-3.5 shrink-0 text-subtle-foreground opacity-0 transition group-hover:translate-x-0.5 group-hover:opacity-100 max-sm:hidden" />
+              </Link>
+            );
+          })}
         </div>
       </section>
 
@@ -234,60 +186,9 @@ export default async function HomePage({
         />
       </section>
 
-      {/* ── How it works ── */}
-      <section className="mx-auto max-w-6xl px-3 pt-12 sm:px-6 sm:pt-20">
-        <Ornament />
-        <h2 className="mt-3 text-center text-2xl font-bold sm:text-3xl">যেভাবে মুহাসাবাহ সাহায্য করে</h2>
-        <p className="mx-auto mt-2 max-w-xl text-center text-sm leading-6 text-muted-foreground sm:text-base">
-          উমর (রা.)-এর নসীহত মনে রেখে — প্রতিদিন নিজের আমলের হিসাব নেওয়ার একটি সহজ অভ্যাস।
-        </p>
-        <ol className="mt-8 grid gap-3 sm:grid-cols-3 sm:gap-4">
-          {steps.map((step, index) => (
-            <li key={step.title} className="surface relative overflow-hidden rounded-card p-5">
-              <span className="absolute -top-4 right-2 text-7xl font-extrabold text-primary/[0.07]" aria-hidden>
-                {["১", "২", "৩"][index]}
-              </span>
-              <span className={index === 1 ? "streak-surface grid size-12 place-items-center rounded-2xl text-white" : "grid size-12 place-items-center rounded-2xl bg-primary-soft text-primary"}>
-                <step.icon className="size-6" />
-              </span>
-              <h3 className="mt-4 text-lg font-bold">{step.title}</h3>
-              <p className="mt-1 text-sm leading-6 text-muted-foreground">{step.text}</p>
-            </li>
-          ))}
-        </ol>
-      </section>
-
-      {/* ── Features ── */}
-      <section className="mx-auto max-w-6xl px-3 py-12 sm:px-6 sm:py-20">
-        <Ornament />
-        <h2 className="mt-3 text-center text-2xl font-bold sm:text-3xl">
-          এক জায়গায় দ্বীনি রুটিন
-        </h2>
-        <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-3 lg:gap-4">
-          {features.map((feature) => (
-            <div
-              key={feature.title}
-              className="surface rounded-card p-4 sm:p-5"
-            >
-              <span
-                className={`grid size-11 place-items-center rounded-xl ${feature.tone}`}
-              >
-                <feature.icon className="size-5" />
-              </span>
-              <h3 className="mt-3 text-[15px] font-semibold leading-snug sm:text-lg">
-                {feature.title}
-              </h3>
-              <p className="mt-1 text-[13px] leading-5 text-muted-foreground sm:text-sm">
-                {feature.text}
-              </p>
-            </div>
-          ))}
-        </div>
-      </section>
-
       {/* ── CTA ── */}
       <section className="mx-auto max-w-6xl px-3 py-12 sm:px-6 sm:py-20">
-        <div className="hero-surface flex flex-col items-start gap-5 rounded-[1.75rem] p-6 sm:flex-row sm:items-center sm:justify-between sm:p-10">
+        <div className="hero-surface flex flex-col items-start gap-5 rounded-2xl p-6 sm:flex-row sm:items-center sm:justify-between sm:p-10">
           <div>
             <h2 className="text-2xl font-bold sm:text-3xl">
               প্রতিদিন একটু একটু করে
@@ -299,7 +200,8 @@ export default async function HomePage({
           <Button
             asChild
             size="lg"
-            className="w-full bg-[#f4f1ea] text-[#0b3b40] hover:bg-[#e9e4d8] sm:w-auto"
+            variant="cta"
+            className="w-full sm:w-auto"
           >
             <Link href={appHref}>
               {session ? "ড্যাশবোর্ড" : "প্রবেশ / নিবন্ধন"}{" "}

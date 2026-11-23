@@ -79,7 +79,7 @@ export function UserMenu({
         <DropdownMenuLabel className="px-2.5 py-2">
           <span className="block truncate text-sm font-semibold">{name}</span>
           <span className="block truncate text-xs font-normal text-muted-foreground">{email}</span>
-          <span className="mt-1.5 inline-flex rounded-full bg-primary-soft px-2 py-0.5 text-[11px] font-semibold text-primary-soft-foreground">{roleLabel}</span>
+          <span className="mt-1.5 inline-flex rounded-lg bg-primary-soft px-2 py-0.5 text-[11px] font-semibold text-primary-soft-foreground">{roleLabel}</span>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         {!site ? (

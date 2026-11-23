@@ -2,7 +2,7 @@
 export default function LibraryLoading() {
   return (
     <div aria-busy="true" aria-label="লোড হচ্ছে" className="space-y-6">
-      <div className="hero-surface h-52 animate-pulse rounded-[1.5rem] opacity-80" />
+      <div className="hero-surface h-52 animate-pulse rounded-2xl opacity-80" />
       <div className="h-11 w-56 animate-pulse rounded-xl bg-muted" />
       <ul className="grid grid-cols-2 gap-x-4 gap-y-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
         {Array.from({ length: 10 }, (_, index) => (

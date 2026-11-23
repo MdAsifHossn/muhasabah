@@ -1,3 +1,4 @@
+import { getPrayerTimeZone } from "@/lib/prayer-location";
 import type { PrayerTiming } from "@/lib/prayer-times";
 
 /**
@@ -93,7 +94,7 @@ export const bnDigits = (value: string | number) => String(value).replace(/\d/g,
 
 /** Minutes since local midnight in Bangladesh time. */
 export function dhakaNowMinutes(date = new Date()): number {
-  const parts = new Intl.DateTimeFormat("en-US", { timeZone: "Asia/Dhaka", hour: "numeric", minute: "numeric", hour12: false }).formatToParts(date);
+  const parts = new Intl.DateTimeFormat("en-US", { timeZone: getPrayerTimeZone(), hour: "numeric", minute: "numeric", hour12: false }).formatToParts(date);
   const hour = Number(parts.find((part) => part.type === "hour")?.value ?? 0) % 24;
   const minute = Number(parts.find((part) => part.type === "minute")?.value ?? 0);
   return hour * 60 + minute;
@@ -101,7 +102,7 @@ export function dhakaNowMinutes(date = new Date()): number {
 
 /** `YYYY-MM-DD` of today in Bangladesh (for per-day storage keys). */
 export function dhakaDateKey(date = new Date()): string {
-  return new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Dhaka" }).format(date);
+  return new Intl.DateTimeFormat("en-CA", { timeZone: getPrayerTimeZone() }).format(date);
 }
 
 /** 12-hour clock in Bangla digits, e.g. "১১:৪২". With `period`, adds সকাল/দুপুর/বিকাল/সন্ধ্যা/রাত. */

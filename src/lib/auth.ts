@@ -44,8 +44,14 @@ export const auth = betterAuth({
         before: async (user) => ({ data: { ...user, gender: sanitizeGender(user.gender) } }),
       },
       update: {
-        before: async (user) =>
-          "gender" in user ? { data: { ...user, gender: sanitizeGender(user.gender) } } : undefined,
+        // Gender decides which amals are scored: it is set at sign-up, then changed only by
+        // server actions (setOwnGender / admin). Self-service profile updates may never touch it.
+        before: async (user) => {
+          if (!("gender" in user)) return undefined;
+          const rest = { ...user } as Record<string, unknown>;
+          delete rest.gender;
+          return { data: rest };
+        },
       },
     },
   },

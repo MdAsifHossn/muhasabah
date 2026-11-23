@@ -34,7 +34,7 @@ export function ResponsiveSheet({
         <DialogPrimitive.Overlay className="fixed inset-0 z-50 bg-black/50 backdrop-blur-[2px] data-[state=open]:animate-fade" />
         <DialogPrimitive.Content
           className={cn(
-            "fixed inset-x-0 bottom-0 z-50 flex max-h-[90dvh] flex-col rounded-t-[1.75rem] border bg-popover text-popover-foreground shadow-xl outline-none data-[state=open]:animate-rise",
+            "fixed inset-x-0 bottom-0 z-50 flex max-h-[90dvh] flex-col rounded-t-2xl border bg-popover text-popover-foreground shadow-xl outline-none data-[state=open]:animate-rise",
             "sm:inset-x-auto sm:bottom-auto sm:left-1/2 sm:top-1/2 sm:max-h-[85dvh] sm:w-full sm:max-w-lg sm:-translate-x-1/2 sm:-translate-y-1/2 sm:rounded-2xl",
             className,
           )}

@@ -86,30 +86,33 @@ export function timingsToMinutes(t: Record<string, string>): PrayerTiming["minut
   };
 }
 
+/** AlAdhan timings → the app's PrayerTiming (12-hour strings + minutes). */
+export function timingFromAladhan(t: Record<string, string>, district: string): PrayerTiming {
+  const mins = timingsToMinutes(t);
+  return {
+    district,
+    fajr: formatMinutesTo12h(mins.fajr),
+    sunrise: formatMinutesTo12h(mins.sunrise),
+    ishraq: formatMinutesTo12h(mins.ishraq),
+    dhuhr: formatMinutesTo12h(mins.dhuhr),
+    asr: formatMinutesTo12h(mins.asr),
+    maghrib: formatMinutesTo12h(mins.maghrib),
+    isha: formatMinutesTo12h(mins.isha),
+    sahariEnd: formatMinutesTo12h(mins.sahariEnd),
+    iftar: formatMinutesTo12h(mins.iftar),
+    source: "live",
+    minutes: mins,
+  };
+}
+
+/** Dhaka timings for server-rendered pages; other places load through /api/prayer-times. */
 export async function getTodayFastingInfo(): Promise<PrayerTiming> {
   try {
     const response = await fetch(ALADHAN_DHAKA_URL, { next: { revalidate: 3600 }, signal: AbortSignal.timeout(8000) });
     if (!response.ok) return fallback;
-    const json = await response.json() as AlAdhanResponse;
+    const json = (await response.json()) as AlAdhanResponse;
     const t = json.data?.timings;
-    if (!t) return fallback;
-
-    const mins = timingsToMinutes(t);
-
-    return {
-      district: "ঢাকা",
-      fajr: formatMinutesTo12h(mins.fajr),
-      sunrise: formatMinutesTo12h(mins.sunrise),
-      ishraq: formatMinutesTo12h(mins.ishraq),
-      dhuhr: formatMinutesTo12h(mins.dhuhr),
-      asr: formatMinutesTo12h(mins.asr),
-      maghrib: formatMinutesTo12h(mins.maghrib),
-      isha: formatMinutesTo12h(mins.isha),
-      sahariEnd: formatMinutesTo12h(mins.sahariEnd),
-      iftar: formatMinutesTo12h(mins.iftar),
-      source: "live",
-      minutes: mins,
-    };
+    return t ? timingFromAladhan(t, "ঢাকা") : fallback;
   } catch {
     return fallback;
   }

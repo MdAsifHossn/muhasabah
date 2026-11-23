@@ -1,134 +1,90 @@
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 
 import { toBanglaDigits } from "@/lib/dates";
 import { cn } from "@/lib/utils";
 
-/** Build the page numbers to show: always first, last, current ±2, with "…" gaps. */
+/** Page numbers to show: first, last, current ±1, with "…" gaps. */
 function buildPages(current: number, total: number): Array<number | "gap"> {
-  if (total <= 7) {
-    return Array.from({ length: total }, (_, i) => i + 1);
-  }
-  const set = new Set<number>();
-  set.add(1);
-  set.add(total);
-  for (let d = -2; d <= 2; d++) {
-    const p = current + d;
-    if (p >= 1 && p <= total) set.add(p);
-  }
-  const sorted = Array.from(set).sort((a, b) => a - b);
+  if (total <= 5) return Array.from({ length: total }, (_, i) => i + 1);
+  const set = new Set<number>([1, total, current - 1, current, current + 1]);
+  const sorted = Array.from(set).filter((p) => p >= 1 && p <= total).sort((a, b) => a - b);
   const result: Array<number | "gap"> = [];
-  for (let i = 0; i < sorted.length; i++) {
-    result.push(sorted[i]);
-    if (i < sorted.length - 1 && sorted[i + 1] - sorted[i] > 1) {
-      result.push("gap");
-    }
-  }
+  sorted.forEach((p, i) => {
+    if (i > 0 && p - sorted[i - 1] > 1) result.push("gap");
+    result.push(p);
+  });
   return result;
 }
 
-/** Professional pagination bar with first/prev/page-numbers/next/last. */
+const cell = "flex h-11 items-center justify-center gap-1.5 text-sm font-semibold transition-colors";
+
+/**
+ * Compact segmented pager: [‹ আগের] [১ … ৪ ৫ ৬ … ১০] [পরের ›].
+ * On phones the number strip collapses into a single "৫ / ১০" indicator.
+ */
 export function Pagination({
   page,
   total,
   pageHref,
+  summary,
   className,
 }: {
   page: number;
   total: number;
   /** Given a target page number, returns the href string. */
   pageHref: (p: number) => string;
+  /** Optional line shown under the pager, e.g. "১৯–৩৬ / ১২০টি". */
+  summary?: string;
   className?: string;
 }) {
   if (total <= 1) return null;
-
   const pages = buildPages(page, total);
+  const hasPrev = page > 1;
+  const hasNext = page < total;
 
-  const btn =
-    "inline-flex h-10 min-w-10 items-center justify-center gap-1 rounded-xl border border-hairline bg-surface px-2.5 text-sm font-semibold shadow-xs transition";
-  const btnActive = "bg-primary text-on-primary border-primary shadow-sm";
-  const btnMuted =
-    "text-muted-foreground hover:bg-surface-sunken hover:text-foreground";
-  const btnDisabled =
-    "pointer-events-none opacity-35 text-muted-foreground";
+  const step = (enabled: boolean, target: number, label: string, children: React.ReactNode, extra: string) =>
+    enabled ? (
+      <Link href={pageHref(target)} aria-label={label} rel={target < page ? "prev" : "next"} className={cn(cell, "px-3.5 text-foreground hover:bg-primary-soft hover:text-primary sm:px-4", extra)}>
+        {children}
+      </Link>
+    ) : (
+      <span aria-hidden="true" className={cn(cell, "px-3.5 text-subtle-foreground opacity-50 sm:px-4", extra)}>
+        {children}
+      </span>
+    );
 
   return (
-    <nav
-      aria-label="পৃষ্ঠা"
-      className={cn("flex flex-wrap items-center justify-center gap-1.5", className)}
-    >
-      {/* First */}
-      <Link
-        href={page > 1 ? pageHref(1) : "#"}
-        aria-label="প্রথম পৃষ্ঠা"
-        aria-disabled={page <= 1}
-        tabIndex={page <= 1 ? -1 : 0}
-        className={cn(btn, page <= 1 ? btnDisabled : btnMuted)}
-      >
-        <ChevronsLeft className="size-4" />
-      </Link>
+    <nav aria-label="পৃষ্ঠা পরিবর্তন" className={cn("flex flex-col items-center gap-2", className)}>
+      <div className="inline-flex max-w-full items-stretch divide-x divide-hairline overflow-hidden rounded-2xl border border-hairline bg-surface shadow-card">
+        {step(hasPrev, page - 1, "আগের পৃষ্ঠা", <><ChevronLeft className="size-4" /><span>আগের</span></>, "")}
 
-      {/* Prev */}
-      <Link
-        href={page > 1 ? pageHref(page - 1) : "#"}
-        aria-label="আগের পৃষ্ঠা"
-        aria-disabled={page <= 1}
-        tabIndex={page <= 1 ? -1 : 0}
-        className={cn(btn, page <= 1 ? btnDisabled : btnMuted)}
-      >
-        <ChevronLeft className="size-4" />
-        <span className="hidden sm:inline">আগের</span>
-      </Link>
+        <span className="flex h-11 items-center px-4 text-sm font-semibold tabular-nums text-foreground sm:hidden" aria-current="page">
+          {toBanglaDigits(page)} <span className="px-1.5 text-subtle-foreground">/</span> {toBanglaDigits(total)}
+        </span>
 
-      {/* Page numbers */}
-      {pages.map((p, i) =>
-        p === "gap" ? (
-          <span
-            key={`gap-${i}`}
-            className="flex h-10 w-6 items-end justify-center pb-1.5 text-sm text-muted-foreground"
-          >
-            …
-          </span>
-        ) : (
-          <Link
-            key={p}
-            href={pageHref(p)}
-            aria-label={`পৃষ্ঠা ${toBanglaDigits(p)}`}
-            aria-current={p === page ? "page" : undefined}
-            className={cn(btn, p === page ? btnActive : btnMuted)}
-          >
-            {toBanglaDigits(p)}
-          </Link>
-        ),
-      )}
+        <ol className="hidden items-stretch divide-x divide-hairline sm:flex">
+          {pages.map((p, i) =>
+            p === "gap" ? (
+              <li key={`gap-${i}`} aria-hidden="true" className={cn(cell, "w-9 text-subtle-foreground")}>…</li>
+            ) : (
+              <li key={p} className="flex">
+                <Link
+                  href={pageHref(p)}
+                  aria-label={`পৃষ্ঠা ${toBanglaDigits(p)}`}
+                  aria-current={p === page ? "page" : undefined}
+                  className={cn(cell, "min-w-11 px-2 tabular-nums", p === page ? "bg-active text-on-active" : "text-muted-foreground hover:bg-primary-soft hover:text-primary")}
+                >
+                  {toBanglaDigits(p)}
+                </Link>
+              </li>
+            ),
+          )}
+        </ol>
 
-      {/* Next */}
-      <Link
-        href={page < total ? pageHref(page + 1) : "#"}
-        aria-label="পরের পৃষ্ঠা"
-        aria-disabled={page >= total}
-        tabIndex={page >= total ? -1 : 0}
-        className={cn(btn, page >= total ? btnDisabled : btnMuted)}
-      >
-        <span className="hidden sm:inline">পরের</span>
-        <ChevronRight className="size-4" />
-      </Link>
-
-      {/* Last */}
-      <Link
-        href={page < total ? pageHref(total) : "#"}
-        aria-label="শেষ পৃষ্ঠা"
-        aria-disabled={page >= total}
-        tabIndex={page >= total ? -1 : 0}
-        className={cn(btn, page >= total ? btnDisabled : btnMuted)}
-      >
-        <ChevronsRight className="size-4" />
-      </Link>
+        {step(hasNext, page + 1, "পরের পৃষ্ঠা", <><span>পরের</span><ChevronRight className="size-4" /></>, "")}
+      </div>
+      {summary ? <p className="text-xs text-muted-foreground">{summary}</p> : null}
     </nav>
   );
 }

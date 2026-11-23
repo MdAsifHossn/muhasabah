@@ -38,14 +38,14 @@ export function BrandMark({ className }: { className?: string }) {
   );
 }
 
-export function Brand({ className, compact = false, href = "/" }: { className?: string; compact?: boolean; href?: string }) {
+export function Brand({ className, compact = false, href = "/", hideTaglineOnMobile = false }: { className?: string; compact?: boolean; href?: string; hideTaglineOnMobile?: boolean }) {
   return (
     <Link href={href} className={cn("inline-flex items-center gap-2.5", className)} aria-label="মুহাসাবাহ — হোম">
       <BrandMark />
       {!compact ? (
         <span className="min-w-0">
           <span className="block truncate text-[17px] font-bold leading-none text-foreground">মুহাসাবাহ</span>
-          <span className="mt-1 block text-[10px] font-semibold tracking-[0.2em] text-muted-foreground">আমল • কুরআন • হাদীস</span>
+          <span className={cn("mt-1 text-[10px] font-semibold tracking-[0.2em] text-muted-foreground", hideTaglineOnMobile ? "hidden sm:block" : "block")}>আমল • কুরআন • হাদীস</span>
         </span>
       ) : null}
     </Link>

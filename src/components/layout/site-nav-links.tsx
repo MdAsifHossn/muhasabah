@@ -17,7 +17,7 @@ export function SiteNavLinks({ signedIn }: { signedIn: boolean }) {
     { label: "দোয়া ও যিকির", href: "/dua" },
   ];
   const moreLinks = [
-    { label: "নামাজের ১৪ ধাপ", href: "/prayer/duas" },
+    { label: "নামাজের দু'আ", href: "/prayer/duas" },
     { label: "মাহরাম তালিকা", href: "/mahram" },
     { label: "কিতাবখানা", href: "/library" },
     { label: "হিজরি ক্যালেন্ডার", href: "/calendar" },

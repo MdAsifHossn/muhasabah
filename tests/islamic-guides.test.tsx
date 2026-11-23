@@ -5,7 +5,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { NamesOfAllahViewer } from "../src/components/islamic/names-of-allah-viewer";
 import { SalatDuasViewer } from "../src/components/prayer/salat-duas-viewer";
 import { ASMAUL_HUSNA } from "../src/lib/asmaul-husna";
-import { SALAT_DUAS } from "../src/lib/salat-duas";
+import { SALAT_DUAS, SALAT_STAGES } from "../src/lib/salat-duas";
 import NamesRedirect from "../src/app/dashboard/(shell)/names-of-allah/page";
 import DuasRedirect from "../src/app/dashboard/(shell)/prayer/duas/page";
 import { getNameDetails } from "../src/lib/asmaul-husna-details";
@@ -27,8 +27,10 @@ test("99 names have unique, consecutive IDs and complete display fields", () => 
   }
 });
 
-test("prayer guide has 14 ordered, complete steps with reference labels", () => {
-  assert.deepEqual(SALAT_DUAS.map((dua) => dua.step), Array.from({ length: 14 }, (_, i) => i + 1));
+test("prayer guide has many ordered, complete steps with reference labels", () => {
+  assert.ok(SALAT_DUAS.length >= 35);
+  assert.deepEqual(SALAT_DUAS.map((dua) => dua.step), Array.from({ length: SALAT_DUAS.length }, (_, i) => i + 1));
+  assert.ok(SALAT_DUAS.every((dua) => (SALAT_STAGES as readonly string[]).includes(dua.stage)));
   for (const dua of SALAT_DUAS) {
     for (const field of [dua.title, dua.stage, dua.location, dua.arabic, dua.meaning, dua.reference]) {
       assert.ok(field.trim());
@@ -41,8 +43,8 @@ test("names render as compact keyboard-operable cards with theme-colored Arabic"
   assert.equal((html.match(/<button[^>]*class="group relative/g) ?? []).length, 99);
   assert.ok(!html.includes("min-h-[10rem]"));
   assert.ok(!html.includes("min-h-[12rem]"));
-  assert.equal((html.match(/grid-cols-\[minmax\(0,1fr\)_minmax\(0,0.85fr\)\]/g) ?? []).length, 99);
-  assert.equal((html.match(/quran-text block break-words[^\"]*text-primary/g) ?? []).length, 99);
+  assert.equal((html.match(/quran-text break-words[^"]*text-(cat-|warning|info|success)/g) ?? []).length, 99);
+  assert.ok(!/href="https?:/.test(html), "names page must not link to other sites");
 });
 
 test("each name has pronunciation, an original study prompt, and valid reference metadata", () => {
@@ -51,7 +53,8 @@ test("each name has pronunciation, an original study prompt, and valid reference
     assert.ok(details.transliteration.trim());
     assert.ok(details.reflection.trim());
     if (details.evidence) {
-      assert.match(details.evidence.url, /^https:\/\/quran\.com\/\d+\/\d+$/);
+      assert.match(details.evidence.label, /^আল-কুরআন \d+:\d+$/);
+      assert.ok(!("url" in details.evidence));
       assert.ok(["name", "attribute"].includes(details.evidence.kind));
     }
   }
@@ -59,18 +62,15 @@ test("each name has pronunciation, an original study prompt, and valid reference
   assert.throws(() => getNameDetails(100), RangeError);
 });
 
-test("all prayer panels start collapsed and retain Arabic, meanings and print content", () => {
+test("prayer duas render as cards grouped by stage and keep the full guide printable", () => {
   const html = renderToStaticMarkup(<SalatDuasViewer />);
-  assert.equal((html.match(/aria-expanded="false"/g) ?? []).length, 14);
-  assert.ok(!html.includes("বাংলা অর্থ:"));
   assert.match(html, /<h2[^>]*>নামাজ<\/h2>/);
+  assert.equal((html.match(/<button[^>]*class="group relative/g) ?? []).length, SALAT_DUAS.length);
   for (const dua of SALAT_DUAS) {
-    assert.ok(html.includes(`aria-controls="dua-content-${dua.step}"`));
-    assert.ok(html.includes(`id="dua-content-${dua.step}"`));
     assert.ok(html.includes(dua.arabic));
     assert.ok(html.includes(dua.meaning.replaceAll("'", "&#x27;")));
   }
-  assert.match(html, /\.dua-content\s*\{\s*display: block !important;/);
+  assert.match(html, /\.print-only\s*\{\s*display: block !important;/);
 });
 
 test("legacy page components redirect to the public guides", () => {
@@ -126,18 +126,15 @@ test("copy includes every segment, pronunciation, original notes and reference l
       if (value) assert.ok(text.includes(value));
     }
   }
-  assert.ok(text.includes(`/api/duas/${dua.id}`));
+  assert.ok(!/https?:\/\//.test(text), "copied text must not reference other sites");
 });
 
-test("chapter markup connects every accordion and keeps collapsed text printable", () => {
+test("chapter markup shows every dua in full without external links", () => {
   const chapter = DUA_CHAPTERS[0];
   const html = renderToStaticMarkup(<DuaChapterViewer chapter={chapter} />);
-  assert.equal((html.match(/aria-expanded="true"/g) ?? []).length, 1);
-  assert.equal((html.match(/aria-expanded="false"/g) ?? []).length, chapter.duas.length - 1);
-  for (const dua of chapter.duas) {
-    assert.ok(html.includes(`aria-controls="catalog-dua-${dua.id}"`));
-    assert.ok(html.includes(`id="catalog-dua-${dua.id}"`));
-  }
+  assert.equal((html.match(/class="catalog-dua /g) ?? []).length, chapter.duas.length);
+  for (const dua of chapter.duas) assert.ok(html.includes(dua.title.replaceAll("'", "&#x27;")));
+  assert.ok(!/href="https?:/.test(html));
   assert.match(html, /\.catalog-dua-content\s*\{\s*display:block!important/);
 });
 
@@ -166,4 +163,6 @@ test("mahram filters distinguish spouses, conditional step-relations, cousins an
   const html = renderToStaticMarkup(<MahramsViewer />);
   assert.ok(html.includes("শর্তসাপেক্ষ"));
   assert.ok(html.includes("স্থায়ীভাবে নিষিদ্ধ"));
+  assert.ok(!/href="https?:/.test(html), "mahram page must not link to other sites");
+  assert.ok(!html.includes("hadithbd"));
 });

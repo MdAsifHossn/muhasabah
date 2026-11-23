@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useSyncExternalStore } from "react";
 
 import { dhakaDateKey } from "@/lib/forbidden-times";
-import { ALADHAN_DHAKA_URL, fallbackMinutes, timingsToMinutes, type PrayerTiming } from "@/lib/prayer-times";
+import { useLocationTimings } from "@/lib/use-prayer-location";
+import { fallbackMinutes, type PrayerTiming } from "@/lib/prayer-times";
 
 /**
  * Per-device prayer-reminder state (localStorage, every access guarded):
@@ -24,7 +25,6 @@ export type ReminderSettings = {
 export const DEFAULT_SETTINGS: ReminderSettings = { waqt: true, forbidden: true, notify: false };
 
 const SETTINGS_KEY = "prayer.reminder.settings.v1";
-const TIMES_KEY = "prayer.times.v1";
 const EVENT = "prayer-reminder-storage";
 
 function safeRead<T>(key: string): T | null {
@@ -79,45 +79,11 @@ export function useReminderSettings(): [ReminderSettings, (patch: Partial<Remind
 
 /* ── today's prayer minutes ─────────────────────────────────────────── */
 
-type CachedTimes = { date: string; minutes: PrayerTiming["minutes"] };
 
-/** Today's Dhaka prayer minutes: cached per day, refreshed from AlAdhan, fallback when offline. */
+/** Today's prayer minutes for the chosen location (Dhaka by default); falls back to rough Dhaka times while loading. */
 export function usePrayerMinutes(initial?: PrayerTiming["minutes"]): PrayerTiming["minutes"] {
-  const [minutes, setMinutes] = useState<PrayerTiming["minutes"]>(initial ?? fallbackMinutes);
-
-  useEffect(() => {
-    const today = dhakaDateKey();
-    const cached = safeRead<CachedTimes>(TIMES_KEY);
-    let active = true;
-    if (cached?.date === today) {
-      // Defer so the first render matches the server markup.
-      queueMicrotask(() => active && setMinutes(cached.minutes));
-      return () => {
-        active = false;
-      };
-    }
-    if (initial) {
-      safeWrite(TIMES_KEY, { date: today, minutes: initial } satisfies CachedTimes);
-      return () => {
-        active = false;
-      };
-    }
-    fetch(ALADHAN_DHAKA_URL)
-      .then((response) => (response.ok ? response.json() : null))
-      .then((json: { data?: { timings?: Record<string, string> } } | null) => {
-        const timings = json?.data?.timings;
-        if (!active || !timings) return;
-        const next = timingsToMinutes(timings);
-        safeWrite(TIMES_KEY, { date: today, minutes: next } satisfies CachedTimes);
-        setMinutes(next);
-      })
-      .catch(() => undefined);
-    return () => {
-      active = false;
-    };
-  }, [initial]);
-
-  return minutes;
+  const { timings } = useLocationTimings();
+  return timings?.minutes ?? initial ?? fallbackMinutes;
 }
 
 /* ── per-day event state ────────────────────────────────────────────── */

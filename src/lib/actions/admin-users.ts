@@ -18,7 +18,7 @@ const password = z.string().min(8, "পাসওয়ার্ড কমপক�
 const baseUserSchema = z.object({
   name: z.string().trim().min(2, "নাম কমপক্ষে ২ অক্ষরের হতে হবে।").max(100),
   email: z.string().trim().toLowerCase().email("সঠিক ইমেইল দিন।").max(160),
-  role: z.enum(Role),
+  role: z.enum([Role.MEMBER, Role.USTADH]),
   gender: assignableGender,
   isActive: z.boolean(),
 });

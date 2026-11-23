@@ -10,7 +10,9 @@ import { actionError } from "@/lib/action-error";
 import { applicableItems } from "@/lib/amal-rules";
 import { findEntryForDay, getStorageCycle } from "@/lib/cycles";
 import { bangladeshDateKey, getBangladeshToday, getBangladeshWeekday, startOfBangladeshDay } from "@/lib/dates";
+import { notifyStreakMilestone } from "@/lib/notifications";
 import { isStaffRole, requireUser } from "@/lib/permissions";
+import { loadPrayerStreak } from "@/lib/streaks";
 import { prisma } from "@/lib/prisma";
 import { calculateAmalItemScore, calculateCompletionPercentage, calculateDailyMaximum } from "@/lib/scoring";
 
@@ -38,7 +40,9 @@ function resolveEntryDay(day: "today" | "yesterday") {
 }
 
 function resolveStaffEntryDay(value: string) {
-  const date = startOfBangladeshDay(new Date(`${value}T00:00:00+06:00`));
+  const parsed = new Date(`${value}T00:00:00+06:00`);
+  if (Number.isNaN(parsed.getTime()) || bangladeshDateKey(parsed) !== value) throw actionError(400, "তারিখটি সঠিক নয়।");
+  const date = startOfBangladeshDay(parsed);
   if (date.getTime() > startOfBangladeshDay(getBangladeshToday()).getTime()) throw actionError(400, "ভবিষ্যতের দিনের আমলনামা লেখা যাবে না।");
   return { date, weekday: getBangladeshWeekday(date) };
 }
@@ -61,7 +65,7 @@ export async function saveDailyAmalnama(formData: FormData) {
 
   const { date, weekday } = parsed.data.date ? resolveStaffEntryDay(parsed.data.date) : resolveEntryDay(parsed.data.day);
   const [viewer, allItems, existing] = await Promise.all([
-    prisma.user.findUnique({ where: { id: targetUserId }, select: { gender: true, hideAmalnama: true, role: true } }),
+    prisma.user.findUnique({ where: { id: targetUserId }, select: { gender: true, hideAmalnama: true, role: true, joinedAt: true } }),
     prisma.amalItem.findMany({ where: { isActive: true }, orderBy: { order: "asc" } }),
     findEntryForDay(targetUserId, date),
   ]);
@@ -80,7 +84,7 @@ export async function saveDailyAmalnama(formData: FormData) {
         ? raw === "on" || raw === "true"
         : item.inputType === AmalInputType.TEXT
           ? String(raw ?? "").trim()
-          : Math.max(0, Number(raw ?? 0) || 0);
+          : Math.min(100000, Math.max(0, Number.isFinite(Number(raw ?? 0)) ? Number(raw ?? 0) : 0));
     const score = calculateAmalItemScore(item, value);
     return {
       amalItemId: item.id,
@@ -98,7 +102,7 @@ export async function saveDailyAmalnama(formData: FormData) {
   const maxPossibleScore = calculateDailyMaximum(items);
   const requestedStatus = parsed.data.intent === "submit" ? DailyEntryStatus.SUBMITTED : DailyEntryStatus.DRAFT;
   // A submitted day stays submitted when the member later saves a correction as draft.
-  const status = existing?.status === DailyEntryStatus.SUBMITTED ? DailyEntryStatus.SUBMITTED : requestedStatus;
+  const status = existing?.status === DailyEntryStatus.SUBMITTED || existing?.status === DailyEntryStatus.LOCKED ? existing.status : requestedStatus;
   const completionPercentage = calculateCompletionPercentage(totalScore, maxPossibleScore);
   const submittedAt = status === DailyEntryStatus.SUBMITTED ? (existing?.submittedAt ?? new Date()) : null;
 
@@ -107,6 +111,17 @@ export async function saveDailyAmalnama(formData: FormData) {
   else {
     const cycle = await getStorageCycle(session.user.id);
     await prisma.dailyAmalEntry.create({ data: { userId: targetUserId, cycleId: cycle.id, date, isPeriodDay: false, ...data } });
+  }
+
+  // Tell Ustadhji when a member's takbir-e-ula / awwal-waqt streak reaches 40, 80, 120 … days.
+  // (Saving or skipping the amalnama itself never notifies anyone.)
+  if (isSelf && viewer.role === "MEMBER" && !viewer.hideAmalnama) {
+    try {
+      const streak = await loadPrayerStreak({ id: targetUserId, gender: viewer.gender, joinedAt: viewer.joinedAt });
+      if (streak) await notifyStreakMilestone({ memberId: targetUserId, memberName: session.user.name, streak: streak.current, label: streak.label });
+    } catch (error) {
+      console.error("streak milestone check failed", error);
+    }
   }
 
   revalidateAmalnama();
@@ -125,7 +140,8 @@ export async function setPeriodDayForMember(day: "today" | "yesterday" = "today"
   const session = await requireUser();
   const targetUserId = memberId ?? session.user.id;
   if (targetUserId !== session.user.id && !isStaffRole(session.user.role)) throw actionError(403, "শুধু উস্তাদজি অন্য সদস্যের এই হিসাব পরিবর্তন করতে পারবেন।");
-  const viewer = await prisma.user.findUnique({ where: { id: targetUserId }, select: { gender: true } });
+  const viewer = await prisma.user.findUnique({ where: { id: targetUserId }, select: { gender: true, hideAmalnama: true, role: true } });
+  if (viewer && targetUserId !== session.user.id && (viewer.hideAmalnama || viewer.role === "USTADH")) throw actionError(403, "এই সদস্যের আমলনামা গোপন রয়েছে — পরিবর্তন করা যাবে না।");
   if (viewer?.gender !== Gender.FEMALE) throw actionError(403, "এই সেটিং শুধুমাত্র নারী সদস্যদের জন্য প্রযোজ্য।");
 
   const { date, weekday } = resolveEntryDay(day === "yesterday" ? "yesterday" : "today");
@@ -158,8 +174,9 @@ export async function deleteDailyAmalnama(entryId: string) {
   const session = await requireUser();
   if (!isStaffRole(session.user.role)) throw actionError(403, "শুধু উস্তাদজি আমলনামা মুছতে পারবেন।");
   if (!/^[a-f\d]{24}$/i.test(entryId)) throw actionError(400, "এন্ট্রি ID সঠিক নয়।");
-  const entry = await prisma.dailyAmalEntry.findUnique({ where: { id: entryId }, select: { id: true } });
+  const entry = await prisma.dailyAmalEntry.findUnique({ where: { id: entryId }, select: { id: true, userId: true, user: { select: { hideAmalnama: true } } } });
   if (!entry) throw actionError(404, "এই দিনের আমলনামা পাওয়া যায়নি।");
+  if (entry.userId !== session.user.id && entry.user?.hideAmalnama) throw actionError(403, "এই সদস্যের আমলনামা গোপন রয়েছে।");
   await prisma.dailyAmalEntry.delete({ where: { id: entry.id } });
   revalidateAmalnama();
 }

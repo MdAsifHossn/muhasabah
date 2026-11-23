@@ -104,7 +104,7 @@ export function InboxList({ threads, members, selectedMemberId, compact = false 
                 <span className="flex shrink-0 flex-col items-end gap-1.5">
                   <span className={cn("text-xs", thread.unread ? "font-semibold text-primary" : "text-subtle-foreground")}>{inboxStamp(thread.lastAt)}</span>
                   {thread.unread ? (
-                    <span className="grid min-w-6 place-items-center rounded-full bg-primary px-1.5 text-xs font-bold leading-6 text-primary-foreground">{toBn(thread.unread)}</span>
+                    <span className="grid min-w-6 place-items-center rounded-lg bg-primary px-1.5 text-xs font-bold leading-6 text-primary-foreground">{toBn(thread.unread)}</span>
                   ) : (
                     <span className="h-6" />
                   )}

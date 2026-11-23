@@ -30,12 +30,43 @@ const CATEGORIES = [
   "পবিত্রতা ও মহিমা",
 ] as const;
 
-const CATEGORY_ACCENTS: Record<AsmaulHusna["category"], string> = {
-  "রহমত ও ক্ষমা": "border-l-primary/60",
-  "সার্বভৌমত্ব ও ক্ষমতা": "border-l-gold/60",
-  "জ্ঞান ও প্রজ্ঞা": "border-l-info/60",
-  "সৃষ্টি ও রিযিক": "border-l-success/60",
-  "পবিত্রতা ও মহিমা": "border-l-cat-dhikr/60",
+type Tone = { card: string; medal: string; text: string; chip: string; ring: string };
+const CATEGORY_TONES: Record<AsmaulHusna["category"], Tone> = {
+  "রহমত ও ক্ষমা": {
+    card: "from-cat-salah/20 via-surface to-surface hover:border-cat-salah/60",
+    medal: "bg-cat-salah text-white",
+    text: "text-cat-salah",
+    chip: "bg-cat-salah/12 text-cat-salah",
+    ring: "from-cat-salah/40",
+  },
+  "সার্বভৌমত্ব ও ক্ষমতা": {
+    card: "from-warning/25 via-surface to-surface hover:border-warning/60",
+    medal: "bg-warning text-white",
+    text: "text-warning",
+    chip: "bg-warning/14 text-warning",
+    ring: "from-warning/45",
+  },
+  "জ্ঞান ও প্রজ্ঞা": {
+    card: "from-info/22 via-surface to-surface hover:border-info/60",
+    medal: "bg-info text-white",
+    text: "text-info",
+    chip: "bg-info/14 text-info",
+    ring: "from-info/45",
+  },
+  "সৃষ্টি ও রিযিক": {
+    card: "from-success/22 via-surface to-surface hover:border-success/60",
+    medal: "bg-success text-white",
+    text: "text-success",
+    chip: "bg-success/14 text-success",
+    ring: "from-success/45",
+  },
+  "পবিত্রতা ও মহিমা": {
+    card: "from-cat-dhikr/22 via-surface to-surface hover:border-cat-dhikr/60",
+    medal: "bg-cat-dhikr text-white",
+    text: "text-cat-dhikr",
+    chip: "bg-cat-dhikr/14 text-cat-dhikr",
+    ring: "from-cat-dhikr/45",
+  },
 };
 
 export function NamesOfAllahViewer() {
@@ -56,7 +87,7 @@ export function NamesOfAllahViewer() {
 
   async function copyName(item: AsmaulHusna) {
     const details = getNameDetails(item.id);
-    const text = `${item.arabic}\nউচ্চারণ: ${item.bangla} (${details.transliteration})\nঅর্থ: ${item.meaning}\n\nব্যাখ্যা: ${item.explanation}\n\nভাবনা: ${details.reflection}${details.evidence ? `\nসূত্র: ${details.evidence.label} (${details.evidence.url})` : ""}`;
+    const text = `${item.arabic}\nউচ্চারণ: ${item.bangla} (${details.transliteration})\nঅর্থ: ${item.meaning}\n\nব্যাখ্যা: ${item.explanation}\n\nভাবনা: ${details.reflection}${details.evidence ? `\nসূত্র: ${details.evidence.label}` : ""}`;
     try {
       await navigator.clipboard.writeText(text);
       toast.success("নাম ও অর্থ কপি করা হয়েছে");
@@ -85,7 +116,8 @@ export function NamesOfAllahViewer() {
           <span dir="rtl" lang="ar" className="quran-text text-5xl leading-normal text-primary sm:text-6xl">الله</span>
           <div className="min-w-0 border-l border-primary/15 pl-4">
             <p className="text-sm font-semibold text-primary">সুন্দরতম নামগুলো আল্লাহরই</p>
-            <p className="mt-1 text-sm leading-relaxed text-muted-foreground">তাঁকে এসব নামেই ডাকুন। <a href="https://quran.com/7/180" target="_blank" rel="noreferrer" className="underline underline-offset-4">সূরা আল-আ‘রাফ ৭:১৮০</a></p>
+            <p dir="rtl" lang="ar" className="quran-text mt-1 text-lg leading-loose text-foreground">وَلِلَّهِ الْأَسْمَاءُ الْحُسْنَىٰ فَادْعُوهُ بِهَا</p>
+            <p className="text-sm leading-relaxed text-muted-foreground">আল্লাহর জন্যই রয়েছে সুন্দরতম নামসমূহ; তোমরা সেই নামেই তাঁকে ডাকো। — সূরা আল-আ‘রাফ ৭:১৮০</p>
           </div>
         </div>
       </div>
@@ -124,7 +156,7 @@ export function NamesOfAllahViewer() {
                 className={cn(
                   "shrink-0 rounded-xl px-3 py-1.5 text-xs font-semibold transition",
                   active
-                    ? "bg-primary text-on-primary shadow-sm"
+                    ? "bg-active text-on-active shadow-sm"
                     : "bg-surface-sunken text-muted-foreground hover:bg-surface-sunken/80 hover:text-foreground",
                 )}
               >
@@ -144,31 +176,37 @@ export function NamesOfAllahViewer() {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-3 lg:grid-cols-3">
-          {filtered.map((item) => (
-            <button
-              key={item.id}
-              type="button"
-              onClick={() => setActiveName(item)}
-              className={cn(
-                "group relative grid w-full grid-cols-[minmax(0,1fr)_minmax(0,0.85fr)] items-center gap-3 overflow-hidden rounded-2xl border border-l-[3px] border-hairline bg-linear-to-br from-surface via-surface to-primary-soft/40 px-3 py-3 text-left shadow-card transition-colors hover:border-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary sm:px-4 sm:py-4",
-                CATEGORY_ACCENTS[item.category],
-              )}
-            >
-              <span className="min-w-0">
-                <span className="mb-1 block text-xs font-semibold tabular-nums text-gold">{bnNum(item.id).padStart(2, "০")} · আসমাউল হুসনা</span>
-                <span className="block text-sm font-bold text-foreground sm:text-base">
-                  {item.bangla}
+          {filtered.map((item) => {
+            const tone = CATEGORY_TONES[item.category];
+            const info = getNameDetails(item.id);
+            return (
+              <button
+                key={item.id}
+                type="button"
+                onClick={() => setActiveName(item)}
+                className={cn(
+                  "group relative flex w-full flex-col overflow-hidden rounded-3xl border border-hairline bg-linear-to-br p-4 text-left shadow-card transition duration-200 hover:-translate-y-0.5 hover:shadow-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary motion-reduce:transition-none motion-reduce:hover:translate-y-0",
+                  tone.card,
+                )}
+              >
+                <span aria-hidden="true" className={cn("pointer-events-none absolute -right-10 -top-10 size-32 rounded-full bg-radial from-40% to-transparent to-70% opacity-70", tone.ring)} />
+                <span aria-hidden="true" className="pointer-events-none absolute -bottom-8 -left-8 size-24 rotate-45 rounded-3xl border border-current opacity-[0.06]" />
+                <span className="relative flex items-start justify-between gap-3">
+                  <span className={cn("grid size-9 shrink-0 place-items-center rounded-xl text-sm font-bold tabular-nums shadow-sm", tone.medal)}>{bnNum(item.id)}</span>
+                  <span dir="rtl" lang="ar" className={cn("quran-text break-words text-right text-[2rem] font-medium leading-[1.5] sm:text-4xl", tone.text)}>{item.arabic}</span>
                 </span>
-                <span className="mt-1 block text-xs leading-relaxed text-muted-foreground line-clamp-2">
-                  {item.meaning}
+                <span className="relative mt-3 block text-lg font-bold text-foreground">{item.bangla}</span>
+                <span lang="en" className="relative block text-xs tracking-wide text-muted-foreground">{info.transliteration}</span>
+                <span className="relative mt-2 block text-sm leading-relaxed text-foreground/80 line-clamp-2">{item.meaning}</span>
+                <span className="relative mt-3 flex items-center justify-between gap-2">
+                  <span className={cn("rounded-lg px-2.5 py-1 text-[11px] font-semibold", tone.chip)}>{item.category}</span>
+                  <span className={cn("inline-flex items-center gap-0.5 text-xs font-semibold", tone.text)}>
+                    বিস্তারিত <ChevronRight className="size-3.5 transition-transform group-hover:translate-x-0.5" />
+                  </span>
                 </span>
-              </span>
-              <span className="min-w-0 border-l border-primary/10 pl-3 text-center">
-                <span dir="rtl" lang="ar" className="quran-text block break-words text-[1.7rem] leading-[1.65] font-medium text-primary sm:text-3xl">{item.arabic}</span>
-                <span className="mt-1 block text-xs text-muted-foreground">বিস্তারিত</span>
-              </span>
-            </button>
-          ))}
+              </button>
+            );
+          })}
         </div>
       )}
       <p className="text-xs leading-relaxed text-muted-foreground">এটি বহুল প্রচলিত ৯৯ নামের সংকলন। আল্লাহর নাম এই সংখ্যায় সীমাবদ্ধ নয়; নির্দিষ্ট তালিকা নির্ধারণে আলেমদের আলোচনা রয়েছে। উচ্চারণের বাংলা ও ইংরেজি লেখা সহায়ক মাত্র—শুদ্ধ আরবি শেখার বিকল্প নয়।</p>
@@ -182,11 +220,11 @@ export function NamesOfAllahViewer() {
       >
         {activeName ? (
           <div className="space-y-5">
-            <div className="rounded-2xl border border-hairline bg-surface-sunken p-5 text-center">
-              <span className="inline-block rounded-full bg-primary-soft px-3 py-1 text-xs font-bold text-primary">
+            <div className={cn("rounded-2xl border border-hairline bg-linear-to-br p-5 text-center", CATEGORY_TONES[activeName.category].card)}>
+              <span className={cn("inline-block rounded-lg px-3 py-1 text-xs font-bold", CATEGORY_TONES[activeName.category].chip)}>
                 পবিত্র নাম নং {bnNum(activeName.id)}
               </span>
-              <p dir="rtl" lang="ar" className="quran-text my-3 text-4xl text-primary font-medium">
+              <p dir="rtl" lang="ar" className={cn("quran-text my-3 text-5xl font-medium leading-[1.6]", CATEGORY_TONES[activeName.category].text)}>
                 {activeName.arabic}
               </p>
               <h2 className="text-xl font-bold text-foreground">
@@ -205,9 +243,8 @@ export function NamesOfAllahViewer() {
             </div>
             <div className="space-y-2 text-sm leading-relaxed text-muted-foreground">
               {getNameDetails(activeName.id).evidence ? (
-                <p><span className="font-semibold text-foreground">{getNameDetails(activeName.id).evidence?.kind === "name" ? "নামের উল্লেখ" : "সংশ্লিষ্ট গুণের উল্লেখ"}: </span><a className="text-primary underline underline-offset-4" href={getNameDetails(activeName.id).evidence?.url} target="_blank" rel="noreferrer">{getNameDetails(activeName.id).evidence?.label}</a></p>
+                <p className="flex flex-wrap items-center gap-2"><span className="font-semibold text-foreground">{getNameDetails(activeName.id).evidence?.kind === "name" ? "নামের উল্লেখ" : "সংশ্লিষ্ট গুণের উল্লেখ"}:</span><span className="rounded-lg bg-primary-soft px-2.5 py-0.5 text-xs font-semibold text-primary">{getNameDetails(activeName.id).evidence?.label}</span></p>
               ) : <p>প্রচলিত তালিকার নাম; এখানে পৃথক নাম হিসেবে সরাসরি দলিল সংযুক্ত করা হয়নি।</p>}
-              <a href="https://www.hadithbd.com/99namesofallah/" target="_blank" rel="noreferrer" className="inline-block text-primary underline underline-offset-4">হাদিসবিডিতে আরও পড়ুন</a>
             </div>
 
             <div className="space-y-2">

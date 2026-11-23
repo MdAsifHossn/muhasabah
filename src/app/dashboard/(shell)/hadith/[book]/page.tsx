@@ -35,9 +35,9 @@ export default async function HadithBookPage({ params }: Params) {
             </p>
           </div>
           <div className="mt-4 flex flex-wrap gap-2 text-xs font-semibold">
-            <span className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/15">{bn(getBookTotal(book.id))} হাদীস</span>
-            <span className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/15">{bn(sections.length)} কিতাব</span>
-            <span className="rounded-full bg-white/10 px-3 py-1 ring-1 ring-white/15">{book.language === "en" ? "আরবি + ইংরেজি" : "আরবি + বাংলা"}</span>
+            <span className="rounded-lg bg-white/10 px-3 py-1 ring-1 ring-white/15">{bn(getBookTotal(book.id))} হাদীস</span>
+            <span className="rounded-lg bg-white/10 px-3 py-1 ring-1 ring-white/15">{bn(sections.length)} কিতাব</span>
+            <span className="rounded-lg bg-white/10 px-3 py-1 ring-1 ring-white/15">{book.language === "en" ? "আরবি + ইংরেজি" : "আরবি + বাংলা"}</span>
           </div>
         </div>
         <div className="space-y-3 p-4 sm:p-5">

@@ -99,7 +99,7 @@ function SizeSlider({
       <span className="text-lg font-semibold text-muted-foreground" aria-hidden>
         অ
       </span>
-      <span className="grid h-8 min-w-10 place-items-center rounded-full bg-primary px-2 text-xs font-bold text-primary-foreground">
+      <span className="grid h-8 min-w-10 place-items-center rounded-lg bg-primary px-2 text-xs font-bold text-primary-foreground">
         {bnNum(value)}
       </span>
     </div>

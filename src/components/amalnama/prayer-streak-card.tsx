@@ -64,7 +64,7 @@ export function PrayerStreakCard({ streak, className, embedded = false }: { stre
       <div className="relative mt-2 flex items-center justify-between gap-2 text-xs">
         <p className="min-w-0 truncate font-medium text-white/85">{motivation(streak)}</p>
         {streak.todayTotal > 0 ? (
-          <p className="shrink-0 whitespace-nowrap rounded-full bg-white/15 px-2.5 py-1 font-semibold text-white">
+          <p className="shrink-0 whitespace-nowrap rounded-lg bg-white/15 px-2.5 py-1 font-semibold text-white">
             আজ {toBn(streak.todayDone)}/{toBn(streak.todayTotal)} ওয়াক্ত
           </p>
         ) : null}
@@ -79,7 +79,7 @@ export function PrayerStreakPill({ current, best, label }: { current: number; be
     <span
       title={`${label}: টানা ${toBn(current)} দিন • সর্বোচ্চ ${toBn(best)} দিন`}
       className={cn(
-        "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-bold",
+        "inline-flex items-center gap-1 rounded-lg px-2 py-0.5 text-[11px] font-bold",
         current > 0 ? "bg-gold-soft text-gold-foreground" : "bg-surface-sunken text-subtle-foreground",
       )}
     >

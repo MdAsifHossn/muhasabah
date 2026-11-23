@@ -182,7 +182,7 @@ export function TafsirSheet({
                     className={cn(
                       "rounded-xl px-3 py-1.5 text-xs font-semibold transition sm:text-sm",
                       active
-                        ? "bg-primary text-on-primary shadow-sm"
+                        ? "bg-active text-on-active shadow-sm"
                         : "bg-surface-sunken text-muted-foreground hover:bg-surface hover:text-foreground",
                     )}
                   >

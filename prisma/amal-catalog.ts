@@ -124,7 +124,7 @@ export async function syncAmalCatalog(prisma: PrismaClient) {
   // Bengali has two encodings for য় / ড় / ঢ় (precomposed vs. base + nukta), so
   // titles are compared after NFC normalisation — never by raw string equality.
   const norm = (value: string) => value.normalize("NFC").trim();
-  const rows = await prisma.amalItem.findMany({ orderBy: { createdAt: "asc" }, select: { id: true, titleBn: true } });
+  const rows = await prisma.amalItem.findMany({ where: { createdById: null }, orderBy: { createdAt: "asc" }, select: { id: true, titleBn: true } });
 
   for (const [index, item] of AMAL_CATALOG.entries()) {
     const titles = new Set(

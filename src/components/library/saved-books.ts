@@ -20,15 +20,17 @@ function read(): number[] {
 }
 
 function subscribe(callback: () => void) {
-  const handle = () => {
+  // Same-tab toggles already updated `cached` (kept even when storage is blocked); only other tabs invalidate it.
+  const local = () => callback();
+  const remote = () => {
     cached = null;
     callback();
   };
-  window.addEventListener(EVENT, handle);
-  window.addEventListener("storage", handle);
+  window.addEventListener(EVENT, local);
+  window.addEventListener("storage", remote);
   return () => {
-    window.removeEventListener(EVENT, handle);
-    window.removeEventListener("storage", handle);
+    window.removeEventListener(EVENT, local);
+    window.removeEventListener("storage", remote);
   };
 }
 
