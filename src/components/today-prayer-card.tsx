@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 
 import { PrayerLocationButton } from "@/components/prayer/prayer-location-picker";
 import { clockBn, dhakaNowMinutes, getForbiddenWindows } from "@/lib/forbidden-times";
+import { isDhaka } from "@/lib/prayer-location";
 import { useLocationTimings, usePrayerLocation } from "@/lib/use-prayer-location";
 import { daysLeftLabel, EVENT_INFO, EVENT_TONES, formatHijri, todayInDhaka, upcomingEvents, type UpcomingEvent } from "@/lib/hijri";
 import type { PrayerTiming } from "@/lib/prayer-times";
@@ -54,7 +55,7 @@ function durationBn(minutes: number) {
 const LABELS: Record<WaqtKey, string> = { fajr: "ফজর", dhuhr: "যোহর", asr: "আসর", maghrib: "মাগরিব", isha: "এশা" };
 
 export function TodayPrayerCard({ timings: initialTimings, hijriDate, banglaDate, compact = false, className }: Props) {
-  const { timings: located, loading } = useLocationTimings(initialTimings);
+  const { timings: located, loading, failed } = useLocationTimings(initialTimings);
   const location = usePrayerLocation();
   const timings = located ?? initialTimings;
   const [now, setNow] = useState<number | null>(null);
@@ -69,6 +70,21 @@ export function TodayPrayerCard({ timings: initialTimings, hijriDate, banglaDate
     const interval = window.setInterval(update, 30000);
     return () => window.clearInterval(interval);
   }, [location.tz]);
+
+  // Never show Dhaka's times under another place's name while those are still loading / failed.
+  if (!located && !isDhaka(location)) {
+    return (
+      <section id="today" className={cn("surface w-full rounded-card p-5 sm:p-6", className)} aria-label="আজকের নামাজের সময়" aria-busy={loading}>
+        <div className="flex items-start justify-between gap-3">
+          <h2 className="text-base font-bold text-foreground">আজকের নামাজের সময়</h2>
+          <PrayerLocationButton />
+        </div>
+        <p role="status" className="mt-6 pb-4 text-center text-sm text-muted-foreground">
+          {failed ? "এই অবস্থানের সময় আনা যায়নি। ইন্টারনেট দেখে আবার চেষ্টা করুন বা অন্য শহর বেছে নিন।" : `${location.name} এর সময় লোড হচ্ছে…`}
+        </p>
+      </section>
+    );
+  }
 
   const active = now === null ? null : getActiveWaqt(timings.minutes, now);
   const forbidden = getForbiddenWindows(timings.minutes);

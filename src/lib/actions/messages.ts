@@ -29,8 +29,8 @@ async function resolveThread(viewer: { id: string; role: unknown }, memberId?: s
   if (!isStaffRole(viewer.role)) return viewer.id;
   const parsed = objectId.safeParse(memberId);
   if (!parsed.success) throw actionError(400, "সদস্য নির্বাচন সঠিক নয়।");
-  const member = await prisma.user.findUnique({ where: { id: parsed.data }, select: { id: true, isActive: true } });
-  if (!member) throw actionError(404, "সদস্যটি পাওয়া যায়নি।");
+  const member = await prisma.user.findUnique({ where: { id: parsed.data }, select: { id: true, isActive: true, role: true } });
+  if (!member || member.role !== "MEMBER") throw actionError(404, "সদস্যটি পাওয়া যায়নি।");
   if (!member.isActive) throw actionError(403, "এই সদস্যের অ্যাকাউন্ট নিষ্ক্রিয় — বার্তা পাঠানো যাবে না।");
   return member.id;
 }
@@ -92,6 +92,7 @@ export async function editMessage(input: { id: string; body: string }) {
 export async function deleteMessage(id: string) {
   const message = await requireOwnMessage(id, true);
   await prisma.message.update({ where: { id: message.id }, data: { deletedAt: new Date(), body: "" } });
+  await prisma.messageReaction.deleteMany({ where: { kind: "DM", messageId: message.id } });
   refresh();
 }
 

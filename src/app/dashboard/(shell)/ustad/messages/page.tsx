@@ -68,6 +68,7 @@ export default async function UstadInboxPage({
         </div>
         {selectedMember && selectedMessages ? (
           <ChatThread
+            key={selectedMember.id}
             memberId={selectedMember.id}
             initialMessages={selectedMessages}
             title={selectedMember.name}

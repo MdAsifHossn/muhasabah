@@ -79,6 +79,7 @@ export function PrayerReminder() {
   const [remaining, setRemaining] = useState(0);
 
   const check = useCallback(() => {
+    if (!minutes) return;
     const events = getPrayerEvents(minutes);
     const test = readTestEvent(events);
     if (test) {

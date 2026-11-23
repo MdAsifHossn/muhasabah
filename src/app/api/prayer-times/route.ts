@@ -12,8 +12,12 @@ const SOUTH_ASIA_ZONES = new Set(["Asia/Dhaka", "Asia/Karachi", "Asia/Kolkata", 
  */
 export async function GET(request: Request) {
   const params = new URL(request.url).searchParams;
-  const lat = Number(params.get("lat"));
-  const lon = Number(params.get("lon"));
+  const rawLat = params.get("lat");
+  const rawLon = params.get("lon");
+  if (!rawLat?.trim() || !rawLon?.trim()) return NextResponse.json({ error: "অবস্থান সঠিক নয়" }, { status: 400 });
+  // ~1 km precision: nearly identical times, far fewer distinct upstream requests.
+  const lat = Math.round(Number(rawLat) * 100) / 100;
+  const lon = Math.round(Number(rawLon) * 100) / 100;
   const tz = params.get("tz") ?? "";
   const name = (params.get("name") ?? "").trim().slice(0, 80) || "আমার অবস্থান";
   if (!Number.isFinite(lat) || !Number.isFinite(lon) || Math.abs(lat) > 90 || Math.abs(lon) > 180 || !isValidTimeZone(tz)) {
@@ -22,8 +26,8 @@ export async function GET(request: Request) {
 
   const [day, month, year] = new Intl.DateTimeFormat("en-GB", { timeZone: tz, day: "2-digit", month: "2-digit", year: "numeric" }).format(new Date()).split("/");
   const url = new URL(`https://api.aladhan.com/v1/timings/${day}-${month}-${year}`);
-  url.searchParams.set("latitude", lat.toFixed(4));
-  url.searchParams.set("longitude", lon.toFixed(4));
+  url.searchParams.set("latitude", lat.toFixed(2));
+  url.searchParams.set("longitude", lon.toFixed(2));
   url.searchParams.set("school", "1");
   url.searchParams.set("timezonestring", tz);
   if (SOUTH_ASIA_ZONES.has(tz)) url.searchParams.set("method", "1");

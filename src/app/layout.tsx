@@ -1,3 +1,4 @@
+import { siteUrl } from "@/lib/site-url";
 import type { Metadata, Viewport } from "next";
 import "./globals.css";
 
@@ -28,6 +29,8 @@ window.addEventListener("appinstalled", function () {
 });`;
 
 export const metadata: Metadata = {
+  metadataBase: new URL(siteUrl()),
+  openGraph: { type: "website", locale: "bn_BD", siteName: "মুহাসাবাহ", title: "মুহাসাবাহ — আমল, কুরআন ও হাদীস", description: "প্রতিদিনের আমলনামা, আল-কুরআন, হাদীস ও উস্তাদের তত্ত্বাবধানে আত্মপর্যালোচনা।" },
   title: { default: "মুহাসাবাহ — আমল, কুরআন ও হাদীস", template: "%s | মুহাসাবাহ" },
   description: "প্রতিদিনের আমলনামা, আল-কুরআন, হাদীস ও উস্তাদের তত্ত্বাবধানে আত্মপর্যালোচনা।",
   applicationName: "মুহাসাবাহ",

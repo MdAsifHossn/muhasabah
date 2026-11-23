@@ -21,7 +21,7 @@ type Draft = { kind: NotificationKind; title: string; body: string; href: string
 export const STREAK_MILESTONE_EVERY = 40;
 
 async function upsertFor(userIds: string[], draft: Draft, keyOf: (userId: string) => string) {
-  await Promise.all(
+  await Promise.allSettled(
     userIds.map((userId) => {
       const dedupeKey = keyOf(userId);
       return prisma.notification.upsert({

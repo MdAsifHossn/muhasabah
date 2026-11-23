@@ -46,14 +46,16 @@ export function useLocationTimings(initial?: PrayerTiming) {
       const cached = window.localStorage.getItem(cacheKey);
       if (cached) {
         const timings = JSON.parse(cached) as PrayerTiming;
-        queueMicrotask(() => setFetched({ key, timings }));
-        return;
+        if (typeof timings?.minutes?.fajr === "number" && typeof timings.minutes.isha === "number") {
+          queueMicrotask(() => setFetched({ key, timings }));
+          return;
+        }
       }
     } catch {
       /* ignore broken cache */
     }
     const controller = new AbortController();
-    const params = new URLSearchParams({ lat: String(location.lat), lon: String(location.lon), tz: location.tz, name: location.name });
+    const params = new URLSearchParams({ lat: String(location.lat), lon: String(location.lon), tz: location.tz, name: location.name, d: dateKeyIn(location.tz) });
     fetch(`/api/prayer-times?${params}`, { signal: controller.signal })
       .then((response) => (response.ok ? (response.json() as Promise<PrayerTiming>) : Promise.reject(new Error("bad status"))))
       .then((timings) => {

@@ -158,6 +158,13 @@ export async function deleteManagedUser(userId: string): Promise<UserActionResul
     await prisma.book.deleteMany({ where: { userId: user.id } });
     await prisma.ustadhReview.deleteMany({ where: { OR: [{ memberId: user.id }, { reviewerId: user.id }] } });
     await prisma.amalComment.deleteMany({ where: { OR: [{ memberId: user.id }, { authorId: user.id }] } });
+    // Groups they created move to the acting Ustadhji (who becomes an admin of each) instead of vanishing with their members.
+    const ownedGroups = await prisma.chatGroup.findMany({ where: { createdById: user.id }, select: { id: true } });
+    for (const group of ownedGroups) {
+      await prisma.chatGroup.update({ where: { id: group.id }, data: { createdById: session.user.id } });
+      await prisma.groupMember.upsert({ where: { groupId_userId: { groupId: group.id, userId: session.user.id } }, create: { groupId: group.id, userId: session.user.id, isAdmin: true }, update: { isAdmin: true } });
+    }
+    await prisma.messageReaction.deleteMany({ where: { userId: user.id } });
     await prisma.announcement.deleteMany({ where: { authorId: user.id } });
     await prisma.quranProgress.deleteMany({ where: { userId: user.id } });
     await prisma.dailyAmalEntry.deleteMany({ where: { userId: user.id } });

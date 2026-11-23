@@ -523,7 +523,7 @@ function Bubble({
                   <Copy /> কপি
                 </DropdownMenuItem>
               ) : null}
-              {(mine || canModerate) && !message.failed ? (
+              {mine && !message.failed ? (
                 <DropdownMenuItem onSelect={onEdit}>
                   <Pencil /> সম্পাদনা
                 </DropdownMenuItem>

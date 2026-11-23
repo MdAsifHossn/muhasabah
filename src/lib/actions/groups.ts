@@ -109,9 +109,17 @@ export async function leaveGroup(groupId: string) {
   const session = await requireUser();
   await requireMember(groupId, session.user.id);
   await prisma.groupMember.deleteMany({ where: { groupId, userId: session.user.id } });
-  const rest = await prisma.groupMember.findMany({ where: { groupId }, orderBy: { joinedAt: "asc" }, select: { id: true, isAdmin: true } });
-  if (!rest.length) await prisma.chatGroup.deleteMany({ where: { id: groupId } });
-  else if (!rest.some((member) => member.isAdmin)) await prisma.groupMember.update({ where: { id: rest[0].id }, data: { isAdmin: true } });
+  const rest = await prisma.groupMember.findMany({ where: { groupId }, orderBy: { joinedAt: "asc" }, select: { id: true, userId: true, isAdmin: true } });
+  if (!rest.length) {
+    const ids = (await prisma.groupMessage.findMany({ where: { groupId }, select: { id: true } })).map((row) => row.id);
+    if (ids.length) await prisma.messageReaction.deleteMany({ where: { kind: "GROUP", messageId: { in: ids } } });
+    await prisma.chatGroup.deleteMany({ where: { id: groupId } });
+  } else {
+    const heir = rest.find((member) => member.isAdmin) ?? rest[0];
+    if (!heir.isAdmin) await prisma.groupMember.update({ where: { id: heir.id }, data: { isAdmin: true } });
+    const group = await prisma.chatGroup.findUnique({ where: { id: groupId }, select: { createdById: true } });
+    if (group?.createdById === session.user.id) await prisma.chatGroup.update({ where: { id: groupId }, data: { createdById: heir.userId } });
+  }
   refresh();
 }
 
@@ -226,9 +234,17 @@ export async function toggleReaction(input: { kind: MessageKind; messageId: stri
   }
 
   const where = { kind_messageId_userId: { kind, messageId, userId: session.user.id } };
-  const existing = await prisma.messageReaction.findUnique({ where });
-  if (existing?.emoji === emoji) await prisma.messageReaction.delete({ where });
-  else if (existing) await prisma.messageReaction.update({ where, data: { emoji } });
-  else await prisma.messageReaction.create({ data: { kind, messageId, userId: session.user.id, emoji } });
+  const apply = async () => {
+    const existing = await prisma.messageReaction.findUnique({ where });
+    if (existing?.emoji === emoji) await prisma.messageReaction.deleteMany({ where: { kind, messageId, userId: session.user.id } });
+    else if (existing) await prisma.messageReaction.updateMany({ where: { kind, messageId, userId: session.user.id }, data: { emoji } });
+    else await prisma.messageReaction.create({ data: { kind, messageId, userId: session.user.id, emoji } });
+  };
+  try {
+    await apply();
+  } catch {
+    // Double-tap / two tabs raced on the unique index — the second attempt sees the first one's row.
+    await apply();
+  }
   return (await loadReactions(kind, [messageId], session.user.id)).get(messageId) ?? [];
 }

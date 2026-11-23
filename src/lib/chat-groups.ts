@@ -85,6 +85,8 @@ export async function getGroupMessages(groupId: string, viewerId: string): Promi
   const rows = await prisma.groupMessage.findMany({ where: { groupId }, orderBy: { createdAt: "desc" }, take: LIMIT, include: { sender: { select: { name: true } } } });
   rows.reverse();
   const byId = new Map(rows.map((row) => [row.id, row]));
+  const missing = [...new Set(rows.map((row) => row.replyToId).filter((id): id is string => Boolean(id) && !byId.has(id as string)))];
+  if (missing.length) for (const older of await prisma.groupMessage.findMany({ where: { id: { in: missing }, groupId }, include: { sender: { select: { name: true } } } })) byId.set(older.id, older);
   const reactions = await loadReactions("GROUP", rows.map((row) => row.id), viewerId);
   return rows.map((row) => {
     const quoted = row.replyToId ? byId.get(row.replyToId) : undefined;

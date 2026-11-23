@@ -75,6 +75,8 @@ export async function getThreadMessages(memberId: string, viewer: ChatViewer): P
   });
   rows.reverse();
   const byId = new Map(rows.map((row) => [row.id, row]));
+  const missing = [...new Set(rows.map((row) => row.replyToId).filter((id): id is string => Boolean(id) && !byId.has(id as string)))];
+  if (missing.length) for (const older of await prisma.message.findMany({ where: { id: { in: missing }, memberId }, include: { sender: { select: { name: true, role: true } } } })) byId.set(older.id, older);
   const reactions = await loadReactions("DM", rows.map((row) => row.id), viewer.id);
   return rows.map((row) => {
     const fromStaff = row.senderId !== memberId;

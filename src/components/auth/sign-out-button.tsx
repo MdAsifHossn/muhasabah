@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 import { authClient } from "@/lib/auth-client";
+import { clearPrivateCaches } from "@/lib/clear-private-caches";
 
 export function SignOutButton() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export function SignOutButton() {
       disabled={pending}
       onClick={async () => {
         setPending(true);
+        await clearPrivateCaches();
         await authClient.signOut();
         router.push("/login");
         router.refresh();

@@ -1,6 +1,7 @@
 import { auth } from "@/lib/auth";
 import { canAccessThread, getThreadMessages, getUnreadCountFor, markThreadRead } from "@/lib/messages";
 import { isStaffRole } from "@/lib/permissions";
+import { prisma } from "@/lib/prisma";
 
 /**
  * Chat polling endpoint: GET /api/messages?member=<id>
@@ -10,7 +11,9 @@ import { isStaffRole } from "@/lib/permissions";
 export async function GET(request: Request) {
   const session = await auth.api.getSession({ headers: request.headers });
   if (!session?.user || !session.user.isActive) return Response.json({ error: "unauthorized" }, { status: 401 });
-  const viewer = { id: session.user.id, role: session.user.role };
+  const fresh = await prisma.user.findUnique({ where: { id: session.user.id }, select: { role: true, isActive: true } });
+  if (!fresh?.isActive) return Response.json({ error: "unauthorized" }, { status: 401 });
+  const viewer = { id: session.user.id, role: fresh.role };
 
   const requested = new URL(request.url).searchParams.get("member");
   const memberId = isStaffRole(viewer.role) ? requested : viewer.id;

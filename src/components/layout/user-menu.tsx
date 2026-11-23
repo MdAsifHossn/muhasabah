@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { setHideAmalnama } from "@/lib/actions/privacy";
 import { authClient } from "@/lib/auth-client";
+import { clearPrivateCaches } from "@/lib/clear-private-caches";
 import { cn } from "@/lib/utils";
 
 /** Avatar button in the top bar → account menu (profile, password, messages, theme, logout). */
@@ -60,6 +61,7 @@ export function UserMenu({
 
   async function signOut() {
     setSigningOut(true);
+    await clearPrivateCaches();
     await authClient.signOut();
     router.push("/login");
     router.refresh();

@@ -4,7 +4,7 @@ import { useCallback, useSyncExternalStore } from "react";
 
 import { dhakaDateKey } from "@/lib/forbidden-times";
 import { useLocationTimings } from "@/lib/use-prayer-location";
-import { fallbackMinutes, type PrayerTiming } from "@/lib/prayer-times";
+import type { PrayerTiming } from "@/lib/prayer-times";
 
 /**
  * Per-device prayer-reminder state (localStorage, every access guarded):
@@ -81,9 +81,10 @@ export function useReminderSettings(): [ReminderSettings, (patch: Partial<Remind
 
 
 /** Today's prayer minutes for the chosen location (Dhaka by default); falls back to rough Dhaka times while loading. */
-export function usePrayerMinutes(initial?: PrayerTiming["minutes"]): PrayerTiming["minutes"] {
+export function usePrayerMinutes(initial?: PrayerTiming["minutes"]): PrayerTiming["minutes"] | null {
   const { timings } = useLocationTimings();
-  return timings?.minutes ?? initial ?? fallbackMinutes;
+  // null while the chosen place's times are unknown — a wrong guess would pop a false full-screen reminder.
+  return timings?.minutes ?? initial ?? null;
 }
 
 /* ── per-day event state ────────────────────────────────────────────── */
