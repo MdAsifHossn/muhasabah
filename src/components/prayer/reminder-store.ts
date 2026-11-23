@@ -22,9 +22,11 @@ export type ReminderSettings = {
   notify: boolean;
   /** Phone push for chat messages / notices (only matters once push is on). */
   pushMessages: boolean;
+  /** The member switched phone push off on purpose — never auto-enable it again. */
+  pushOptOut: boolean;
 };
 
-export const DEFAULT_SETTINGS: ReminderSettings = { waqt: true, forbidden: true, notify: false, pushMessages: true };
+export const DEFAULT_SETTINGS: ReminderSettings = { waqt: true, forbidden: true, notify: true, pushMessages: true, pushOptOut: false };
 
 const SETTINGS_KEY = "prayer.reminder.settings.v1";
 const EVENT = "prayer-reminder-storage";

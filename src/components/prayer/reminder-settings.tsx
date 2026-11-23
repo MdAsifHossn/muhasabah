@@ -49,12 +49,14 @@ export function ReminderSettingsCard() {
     try {
       if (!value) {
         await disablePush();
+        update({ pushOptOut: true });
         setPushOn(false);
         toast.success("পুশ নোটিফিকেশন বন্ধ হয়েছে।");
         return;
       }
       const result = await enablePush(location, { waqt: settings.waqt, forbidden: settings.forbidden, messages: settings.pushMessages });
       if (result.ok) {
+        update({ pushOptOut: false });
         setPushOn(true);
         toast.success("পুশ চালু হয়েছে — সাইট বন্ধ থাকলেও ফোনে জানানো হবে।");
       } else toast.error(result.reason);

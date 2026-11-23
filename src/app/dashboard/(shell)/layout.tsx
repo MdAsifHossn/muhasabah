@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { Brand } from "@/components/brand";
 import { DashboardNav, MobileBottomNav } from "@/components/layout/dashboard-nav";
 import { NotificationBell } from "@/components/layout/notification-bell";
+import { PushAutoEnable } from "@/components/prayer/push-auto-enable";
 import { ShareButton } from "@/components/layout/share-button";
 import { SignOutButton } from "@/components/auth/sign-out-button";
 import { UserMenu } from "@/components/layout/user-menu";
@@ -92,6 +93,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
       </main>
 
       <MobileBottomNav role={role} name={session.user.name} roleLabel={roleLabel} />
+      <PushAutoEnable />
     </div>
   );
 }
