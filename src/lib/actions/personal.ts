@@ -1,6 +1,7 @@
 "use server";
 
-import { BookStatus, Gender } from "@prisma/client";
+import { BookStatus, Gender, Prisma } from "@prisma/client";
+import { verifyPassword } from "better-auth/crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 
@@ -17,6 +18,37 @@ export async function updateProfile(formData: FormData) {
   if (!parsed.success) throw actionError(400, "নাম কমপক্ষে ২ অক্ষরের হতে হবে।");
   await prisma.user.update({ where: { id: session.user.id }, data: { name: parsed.data.name } });
   revalidatePath("/dashboard", "layout");
+}
+
+export type EmailChangeResult = { success: boolean; message: string };
+
+/**
+ * Own email change. The current password is required, so a stolen session alone cannot take the account over.
+ * (There is no mail server, so the new address is not verified — it is simply the new login.)
+ */
+export async function changeOwnEmail(input: { email: string; currentPassword: string }): Promise<EmailChangeResult> {
+  const session = await requireUser();
+  const email = z.string().trim().toLowerCase().email("সঠিক ইমেইল দিন।").max(160).safeParse(input.email);
+  if (!email.success) return { success: false, message: email.error.issues[0]?.message ?? "সঠিক ইমেইল দিন।" };
+  if (!input.currentPassword) return { success: false, message: "বর্তমান পাসওয়ার্ড দিন।" };
+
+  const user = await prisma.user.findUnique({ where: { id: session.user.id }, select: { email: true } });
+  if (!user) return { success: false, message: "অ্যাকাউন্ট পাওয়া যায়নি।" };
+  if (user.email.toLowerCase() === email.data) return { success: false, message: "এটি আপনার বর্তমান ইমেইলই।" };
+
+  const account = await prisma.account.findFirst({ where: { userId: session.user.id, providerId: "credential" }, select: { password: true } });
+  if (!account?.password || !(await verifyPassword({ hash: account.password, password: input.currentPassword }))) return { success: false, message: "বর্তমান পাসওয়ার্ড সঠিক নয়।" };
+
+  try {
+    const taken = await prisma.user.findUnique({ where: { email: email.data }, select: { id: true } });
+    if (taken) return { success: false, message: "এই ইমেইল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট আছে।" };
+    await prisma.user.update({ where: { id: session.user.id }, data: { email: email.data } });
+  } catch (error) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") return { success: false, message: "এই ইমেইল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট আছে।" };
+    return { success: false, message: "ইমেইল পরিবর্তন করা যায়নি। আবার চেষ্টা করুন।" };
+  }
+  revalidatePath("/dashboard", "layout");
+  return { success: true, message: "ইমেইল পরিবর্তন হয়েছে। এখন থেকে নতুন ইমেইল দিয়ে লগইন করবেন।" };
 }
 
 /**

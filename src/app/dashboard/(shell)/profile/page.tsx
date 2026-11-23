@@ -5,6 +5,7 @@ import { AmalPrivacyToggle } from "@/components/amalnama/privacy-toggle";
 import { ToastForm } from "@/components/dashboard/toast-form";
 import { CardSection } from "@/components/design/card-section";
 import { PageHeader } from "@/components/design/page-header";
+import { ChangeEmailForm } from "@/components/profile/change-email-form";
 import { ChangePasswordForm } from "@/components/profile/change-password-form";
 import { ThemePicker } from "@/components/theme/theme-picker";
 import { Badge } from "@/components/ui/badge";
@@ -70,6 +71,13 @@ export default async function ProfilePage() {
           <Input name="name" defaultValue={name} required minLength={2} maxLength={100} aria-label="নাম" />
           <Button type="submit" className="sm:w-40">সংরক্ষণ</Button>
         </ToastForm>
+      </CardSection>
+
+      <CardSection
+        title={<span className="flex items-center gap-2"><Mail className="size-[18px] text-primary" /> ইমেইল পরিবর্তন</span>}
+        description="নতুন ইমেইলই হবে আপনার লগইন ইমেইল। নিশ্চিত করতে বর্তমান পাসওয়ার্ড লাগবে।"
+      >
+        <ChangeEmailForm currentEmail={viewer?.email ?? session.user.email} />
       </CardSection>
 
       <CardSection
