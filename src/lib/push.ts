@@ -1,4 +1,4 @@
-import webpush from "web-push";
+import * as webpushModule from "web-push";
 
 import { prisma } from "@/lib/prisma";
 
@@ -9,6 +9,9 @@ import { prisma } from "@/lib/prisma";
  * Without them every function here quietly does nothing.
  */
 export type PushPayload = { title: string; body: string; url: string; tag?: string; requireInteraction?: boolean };
+
+// web-push is CommonJS: depending on the bundler the API sits on the namespace or on `default`.
+const webpush = ("default" in webpushModule ? (webpushModule as { default: typeof webpushModule }).default : webpushModule) as typeof webpushModule;
 
 let configured: boolean | null = null;
 
