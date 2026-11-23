@@ -206,7 +206,7 @@ export function ChatThread({
         // Phone: fill between top bar (56px) and bottom nav (60px).
         "-mx-3 -mb-28 -mt-3 h-[calc(100dvh-112px-env(safe-area-inset-top)-env(safe-area-inset-bottom))] sm:-mx-6 sm:-mt-6",
         // Desktop: a card in the content area.
-        "lg:m-0 lg:h-[calc(100dvh-64px-5rem)] lg:rounded-card lg:border lg:bg-card lg:shadow-card",
+        "lg:m-0 lg:h-[var(--chat-h,calc(100dvh-64px-5rem))] lg:rounded-card lg:border lg:bg-card lg:shadow-card",
       )}
     >
       {/* Header */}
@@ -313,7 +313,7 @@ export function ChatThread({
                 type="submit"
                 disabled={!draft.trim() || sending}
                 aria-label={editing ? "সংরক্ষণ করুন" : "পাঠান"}
-                className="grid size-12 shrink-0 place-items-center rounded-full bg-primary text-primary-foreground shadow-glow transition hover:bg-primary-hover active:scale-95 disabled:opacity-40 disabled:shadow-none"
+                className="grid size-12 shrink-0 place-items-center rounded-full bg-active text-on-active shadow-glow transition hover:brightness-110 active:scale-95 disabled:opacity-40 disabled:shadow-none"
               >
                 {sending ? <Loader2 className="size-5 animate-spin" /> : editing ? <Check className="size-5" /> : <SendHorizontal className="size-5" />}
               </button>
@@ -374,7 +374,7 @@ function Bubble({
           className={cn(
             "relative select-text px-3.5 pb-1.5 pt-2 text-[15px] leading-6 shadow-xs",
             "rounded-[1.25rem]",
-            mine ? "bg-primary text-primary-foreground" : "border bg-card text-card-foreground",
+            mine ? "bg-active text-on-active" : "border bg-card text-card-foreground",
             tail && (mine ? "rounded-br-md" : "rounded-bl-md"),
             message.deleted && "border border-dashed bg-transparent text-muted-foreground shadow-none",
             message.pending && "opacity-70",
@@ -391,7 +391,7 @@ function Bubble({
           ) : (
             <p className="whitespace-pre-wrap break-words">{message.body}</p>
           )}
-          <p className={cn("mt-0.5 flex items-center justify-end gap-1 text-[11px]", mine && !message.deleted ? "text-primary-foreground/75" : "text-muted-foreground")}>
+          <p className={cn("mt-0.5 flex items-center justify-end gap-1 text-[11px]", mine && !message.deleted ? "text-on-active/75" : "text-muted-foreground")}>
             {message.editedAt && !message.deleted ? <span>সম্পাদিত •</span> : null}
             {message.failed ? <span className="font-semibold text-destructive">পাঠানো যায়নি</span> : <span>{chatTime(message.createdAt)}</span>}
             {mine && !message.deleted && !message.failed ? (

@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 
 import { ChatThread } from "@/components/chat/chat-thread";
 import { InboxList } from "@/components/chat/inbox-list";
-import { PageHeader } from "@/components/design/page-header";
 import { Badge } from "@/components/ui/badge";
 import { genderLabels } from "@/lib/amal-audience";
 import {
@@ -50,35 +49,22 @@ export default async function UstadInboxPage({
     : null;
 
   return (
-    <div className="mx-auto w-full min-w-0 max-w-6xl space-y-4 lg:space-y-5">
-      {/* Phone: one slim title row instead of the 3-line header. */}
-      {selectedMember ? null : (
-        <div className="flex items-center justify-between gap-3 lg:hidden">
-          <h1 className="text-xl font-bold">সদস্যদের বার্তা</h1>
-          {unread ? <Badge>{unread.toLocaleString("bn-BD")}টি নতুন</Badge> : <Badge variant="secondary">সব পড়া</Badge>}
-        </div>
-      )}
-      <PageHeader
-        className="hidden flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4 lg:flex"
-        eyebrow="উস্তাদ প্যানেল"
-        title="সদস্যদের বার্তা"
-        // description="প্রতিটি সদস্যের জন্য একটি আলাদা কথোপকথন। প্রশ্নের উত্তর দিন, প্রয়োজন হলে নিজে থেকে বার্তা পাঠান এবং কথোপকথনটি পরিপাটি রাখুন।"
-        meta={
-          unread ? (
-            <Badge>{unread.toLocaleString("bn-BD")}টি নতুন বার্তা</Badge>
-          ) : (
-            <Badge variant="secondary">সব পড়া হয়েছে</Badge>
-          )
-        }
-      />
+    <div className="mx-auto w-full min-w-0 max-w-6xl space-y-4 lg:space-y-5 lg:[--chat-h:calc(100dvh-64px-5rem-3.5rem)]">
+      {/* One slim row (instead of a 3-line header). On phones it hides while a thread is open. */}
+      <div className={selectedMember ? "hidden items-center justify-between gap-3 lg:flex" : "flex items-center justify-between gap-3"}>
+        <h1 className="text-xl font-bold lg:text-2xl">সদস্যদের বার্তা</h1>
+        {unread ? <Badge>{unread.toLocaleString("bn-BD")}টি নতুন</Badge> : <Badge variant="secondary">সব পড়া হয়েছে</Badge>}
+      </div>
       <div className="grid min-w-0 gap-4 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-stretch">
         <div className={selectedMember ? "hidden min-w-0 lg:block" : "block min-w-0"}>
+          <div className="no-scrollbar lg:max-h-[var(--chat-h)] lg:overflow-y-auto lg:rounded-card">
           <InboxList
             threads={threads}
             members={members}
             selectedMemberId={selectedMember?.id}
             compact
           />
+          </div>
         </div>
         {selectedMember && selectedMessages ? (
           <ChatThread

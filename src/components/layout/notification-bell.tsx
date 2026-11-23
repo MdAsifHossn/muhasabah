@@ -103,14 +103,14 @@ export function NotificationBell() {
           ) : null}
         </button>
       </PopoverTrigger>
-      <PopoverContent align="end" className="w-[min(22rem,calc(100vw-1.5rem))] p-0">
+      <PopoverContent align="end" sideOffset={10} collisionPadding={16} className="w-[min(19rem,calc(100vw-2rem))] overflow-hidden rounded-xl border-border-strong bg-background p-0 shadow-2xl">
         <div className="flex items-center justify-between border-b border-hairline px-4 py-3">
           <p className="text-sm font-bold">নোটিফিকেশন</p>
           <button type="button" onClick={readAll} disabled={unread === 0} className="inline-flex items-center gap-1 text-xs font-semibold text-primary disabled:opacity-40">
             <CheckCheck className="size-3.5" /> সব পড়া হয়েছে
           </button>
         </div>
-        <ul className="max-h-[22rem] overflow-y-auto overscroll-contain">
+        <ul className="no-scrollbar max-h-[22rem] overflow-y-auto overscroll-contain">
           {items.length === 0 ? (
             <li className="px-4 py-10 text-center text-sm text-muted-foreground">কোনো নোটিফিকেশন নেই</li>
           ) : (
