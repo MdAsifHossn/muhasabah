@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useReminderSettings } from "@/components/prayer/reminder-store";
-import { currentSubscription, enablePush, pushSupported, VAPID_PUBLIC_KEY } from "@/lib/push-client";
+import { enablePush, pushSupported, subscriptionIsCurrent, VAPID_PUBLIC_KEY } from "@/lib/push-client";
 import { usePrayerLocation } from "@/lib/use-prayer-location";
 
 const SNOOZE_KEY = "prayer.push.prompt.until";
@@ -28,7 +28,7 @@ export function PushAutoEnable() {
     if (!VAPID_PUBLIC_KEY || !pushSupported() || settings.pushOptOut) return;
     let active = true;
     (async () => {
-      if (await currentSubscription()) return;
+      if (await subscriptionIsCurrent()) return;
       if (Notification.permission === "granted") {
         await enablePush(location, { waqt: settings.waqt, forbidden: settings.forbidden, messages: settings.pushMessages });
         return;

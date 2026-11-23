@@ -1,5 +1,5 @@
 import { getPrayerEvents } from "@/lib/forbidden-times";
-import { pushConfigured, sendPush } from "@/lib/push";
+import { pushConfigReason, pushConfigured, sendPushDetailed } from "@/lib/push";
 import { fetchPrayerTiming } from "@/lib/prayer-times-remote";
 import { prisma } from "@/lib/prisma";
 
@@ -20,7 +20,7 @@ function localClock(tz: string) {
 export async function GET(request: Request) {
   const secret = process.env.CRON_SECRET;
   if (!secret || request.headers.get("authorization") !== `Bearer ${secret}`) return Response.json({ error: "unauthorized" }, { status: 401 });
-  if (!pushConfigured()) return Response.json({ skipped: "VAPID keys are not configured" });
+  if (!pushConfigured()) return Response.json({ skipped: "VAPID keys are not configured", reason: pushConfigReason() });
 
   const subscriptions = await prisma.pushSubscription.findMany({
     where: { OR: [{ waqt: true }, { forbidden: true }] },
@@ -35,6 +35,7 @@ export async function GET(request: Request) {
   }
 
   let sent = 0;
+  const failures: { status?: number; reason?: string }[] = [];
   for (const subscription of subscriptions) {
     const timing = places.get(`${subscription.lat},${subscription.lon},${subscription.tz}`);
     if (!timing) continue;
@@ -44,19 +45,19 @@ export async function GET(request: Request) {
       (event) => (event.kind === "waqt" ? subscription.waqt : subscription.forbidden) && event.start <= minutes && minutes - event.start <= FRESH_MINUTES && !done.has(`${date}:${event.id}`),
     );
     for (const event of due) {
-      const ok = await sendPush(subscription, {
+      const result = await sendPushDetailed(subscription, {
         title: event.kind === "waqt" ? `${event.label} — নামাজের সময়` : `নিষিদ্ধ সময় — ${event.label}`,
         body: event.message,
         url: "/dashboard/prayer",
         tag: `prayer-${event.id}`,
         requireInteraction: event.kind === "waqt",
       });
-      if (ok) {
+      if (result.delivered) {
         done.add(`${date}:${event.id}`);
         sent += 1;
-      }
+      } else failures.push({ status: result.status, reason: result.reason });
     }
     if (due.length) await prisma.pushSubscription.updateMany({ where: { id: subscription.id }, data: { sent: [...done] } });
   }
-  return Response.json({ devices: subscriptions.length, sent });
+  return Response.json({ devices: subscriptions.length, sent, failed: failures.length, ...(failures.length ? { firstFailure: failures[0] } : {}) });
 }

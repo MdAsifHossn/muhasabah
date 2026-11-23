@@ -7,6 +7,15 @@ export const VAPID_PUBLIC_KEY = process.env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? "";
 export type PushPrefs = { waqt: boolean; forbidden: boolean; messages: boolean };
 export type PushResult = { ok: true } | { ok: false; reason: string };
 
+/** A device registered with an older VAPID key pair can never receive pushes signed with the current one. */
+function subscriptionMatchesKey(subscription: PushSubscription) {
+  const current = subscription.options?.applicationServerKey;
+  if (!current || !VAPID_PUBLIC_KEY) return true;
+  const want = keyToBytes(VAPID_PUBLIC_KEY);
+  const have = new Uint8Array(current);
+  return want.length === have.length && want.every((byte, index) => byte === have[index]);
+}
+
 export function pushSupported() {
   return typeof window !== "undefined" && "serviceWorker" in navigator && "PushManager" in window && "Notification" in window;
 }
@@ -23,6 +32,23 @@ function keyToBytes(base64: string) {
 async function registration(timeoutMs = 5000): Promise<ServiceWorkerRegistration | null> {
   if (!pushSupported()) return null;
   return Promise.race([navigator.serviceWorker.ready, new Promise<null>((resolve) => window.setTimeout(() => resolve(null), timeoutMs))]);
+}
+
+/** True when this device is registered and its key still matches the server's. */
+export async function subscriptionIsCurrent(): Promise<boolean> {
+  const subscription = await currentSubscription();
+  return Boolean(subscription) && subscriptionMatchesKey(subscription as PushSubscription);
+}
+
+export async function sendTestPush(): Promise<{ ok: boolean; message: string }> {
+  try {
+    const response = await fetch("/api/push/test", { method: "POST" });
+    const data = (await response.json()) as { ok?: boolean; reason?: string; delivered?: number; devices?: number };
+    if (data.ok) return { ok: true, message: "পরীক্ষামূলক পুশ পাঠানো হয়েছে — ফোনে নোটিফিকেশন দেখুন (সাইট বন্ধ করে দেখাই ভালো)।" };
+    return { ok: false, message: data.reason ?? "পাঠানো যায়নি" };
+  } catch {
+    return { ok: false, message: "সার্ভারে পৌঁছানো যায়নি। ইন্টারনেট দেখুন।" };
+  }
 }
 
 export async function currentSubscription(): Promise<PushSubscription | null> {
@@ -63,7 +89,12 @@ export async function enablePush(location: PrayerLocation, prefs: PushPrefs): Pr
   const reg = await registration();
   if (!reg) return { ok: false, reason: "পুশ শুধু ইনস্টল/প্রোডাকশন সাইটে চলে। কিছুক্ষণ পরে আবার চেষ্টা করুন।" };
   try {
-    const subscription = (await reg.pushManager.getSubscription()) ?? (await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyToBytes(VAPID_PUBLIC_KEY) }));
+    let subscription = await reg.pushManager.getSubscription();
+    if (subscription && !subscriptionMatchesKey(subscription)) {
+      await subscription.unsubscribe().catch(() => undefined);
+      subscription = null;
+    }
+    subscription ??= await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: keyToBytes(VAPID_PUBLIC_KEY) });
     if (!(await post(subscription, location, prefs))) {
       await subscription.unsubscribe().catch(() => undefined);
       return { ok: false, reason: "চালু করতে লগইন করা থাকতে হবে। আবার চেষ্টা করুন।" };

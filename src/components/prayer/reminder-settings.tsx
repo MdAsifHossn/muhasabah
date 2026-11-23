@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { useReminderSettings } from "@/components/prayer/reminder-store";
 import { Switch } from "@/components/ui/switch";
-import { currentSubscription, disablePush, enablePush, pushSupported, VAPID_PUBLIC_KEY } from "@/lib/push-client";
+import { currentSubscription, disablePush, enablePush, pushSupported, sendTestPush, VAPID_PUBLIC_KEY } from "@/lib/push-client";
 import { usePrayerLocation } from "@/lib/use-prayer-location";
 
 const subscribe = () => () => {};
@@ -42,6 +42,15 @@ export function ReminderSettingsCard() {
       active = false;
     };
   }, []);
+
+  async function testPush() {
+    if (pushBusy) return;
+    setPushBusy(true);
+    const result = await sendTestPush();
+    setPushBusy(false);
+    if (result.ok) toast.success(result.message);
+    else toast.error(result.message);
+  }
 
   async function togglePush(value: boolean) {
     if (pushBusy) return;
@@ -93,6 +102,14 @@ export function ReminderSettingsCard() {
           checked={pushOn}
           onChange={(value) => void togglePush(value)}
         />
+        {pushOn ? (
+          <div className="flex items-center justify-between gap-3 py-3">
+            <span className="text-xs leading-5 text-muted-foreground">ঠিকমতো কাজ করছে কি না এখনই দেখুন — ফোনে একটি পরীক্ষামূলক নোটিফিকেশন যাবে।</span>
+            <button type="button" onClick={() => void testPush()} disabled={pushBusy} className="inline-flex h-9 shrink-0 items-center rounded-xl border border-hairline px-3 text-xs font-semibold transition hover:bg-muted disabled:opacity-60">
+              পরীক্ষা করুন
+            </button>
+          </div>
+        ) : null}
         {pushOn ? (
           <Row icon={MessageCircle} title="বার্তা ও নোটিশের পুশ" text="নতুন বার্তা, গ্রুপ বা নোটিশ এলে ফোনে জানাবে" checked={settings.pushMessages} onChange={(pushMessages) => update({ pushMessages })} />
         ) : null}
