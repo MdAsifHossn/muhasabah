@@ -6,6 +6,8 @@ import { useCallback, useEffect, useState } from "react";
 
 import { getEventState, pruneOldEventState, setEventState, usePrayerMinutes, useReminderSettings } from "@/components/prayer/reminder-store";
 import { Button } from "@/components/ui/button";
+import { syncPush } from "@/lib/push-client";
+import { usePrayerLocation } from "@/lib/use-prayer-location";
 import { bnDigits, clockBn, dhakaNowMinutes, getPrayerEvents, WAQT_LABELS, type PrayerEvent, type WaqtKey } from "@/lib/forbidden-times";
 import { cn } from "@/lib/utils";
 
@@ -75,6 +77,14 @@ function notify(event: PrayerEvent) {
 export function PrayerReminder() {
   const minutes = usePrayerMinutes();
   const [settings] = useReminderSettings();
+  const location = usePrayerLocation();
+
+  // If push is on for this device, tell the server when the place or the switches change.
+  useEffect(() => {
+    const timer = window.setTimeout(() => void syncPush(location, { waqt: settings.waqt, forbidden: settings.forbidden, messages: settings.pushMessages }), 1500);
+    return () => window.clearTimeout(timer);
+  }, [location, settings.waqt, settings.forbidden, settings.pushMessages]);
+
   const [event, setEvent] = useState<PrayerEvent | null>(null);
   const [remaining, setRemaining] = useState(0);
 

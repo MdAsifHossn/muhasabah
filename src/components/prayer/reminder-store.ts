@@ -20,9 +20,11 @@ export type ReminderSettings = {
   forbidden: boolean;
   /** Also fire a browser Notification (needs permission). */
   notify: boolean;
+  /** Phone push for chat messages / notices (only matters once push is on). */
+  pushMessages: boolean;
 };
 
-export const DEFAULT_SETTINGS: ReminderSettings = { waqt: true, forbidden: true, notify: false };
+export const DEFAULT_SETTINGS: ReminderSettings = { waqt: true, forbidden: true, notify: false, pushMessages: true };
 
 const SETTINGS_KEY = "prayer.reminder.settings.v1";
 const EVENT = "prayer-reminder-storage";

@@ -1,5 +1,6 @@
 import { AmalAudience, Gender, Role } from "@prisma/client";
 
+import { pushToUsers } from "@/lib/push";
 import { prisma } from "@/lib/prisma";
 
 /**
@@ -32,6 +33,8 @@ async function upsertFor(userIds: string[], draft: Draft, keyOf: (userId: string
       });
     }),
   );
+  // Phones get the same thing as a push (only devices that turned it on).
+  void pushToUsers(userIds, { title: draft.title, body: draft.body, url: draft.href, tag: keyOf(userIds[0] ?? "") });
 }
 
 const preview = (text: string, max = 90) => (text.length > max ? `${text.slice(0, max).trimEnd()}…` : text);

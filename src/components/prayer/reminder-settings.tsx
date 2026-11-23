@@ -1,11 +1,13 @@
 "use client";
 
-import { BellRing, Info, MonitorSmartphone, ShieldAlert } from "lucide-react";
-import { useSyncExternalStore } from "react";
+import { BellRing, Info, MessageCircle, MonitorSmartphone, ShieldAlert, Smartphone } from "lucide-react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 
 import { useReminderSettings } from "@/components/prayer/reminder-store";
 import { Switch } from "@/components/ui/switch";
+import { currentSubscription, disablePush, enablePush, pushSupported, VAPID_PUBLIC_KEY } from "@/lib/push-client";
+import { usePrayerLocation } from "@/lib/use-prayer-location";
 
 const subscribe = () => () => {};
 
@@ -28,6 +30,38 @@ function Row({ icon: Icon, title, text, checked, onChange }: { icon: typeof Bell
 export function ReminderSettingsCard() {
   const [settings, update] = useReminderSettings();
   const supported = useSyncExternalStore(subscribe, () => typeof Notification !== "undefined", () => true);
+  const location = usePrayerLocation();
+  const [pushOn, setPushOn] = useState(false);
+  const [pushBusy, setPushBusy] = useState(false);
+  const pushAvailable = Boolean(VAPID_PUBLIC_KEY);
+
+  useEffect(() => {
+    let active = true;
+    void currentSubscription().then((subscription) => active && setPushOn(Boolean(subscription) && Notification.permission === "granted"));
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  async function togglePush(value: boolean) {
+    if (pushBusy) return;
+    setPushBusy(true);
+    try {
+      if (!value) {
+        await disablePush();
+        setPushOn(false);
+        toast.success("পুশ নোটিফিকেশন বন্ধ হয়েছে।");
+        return;
+      }
+      const result = await enablePush(location, { waqt: settings.waqt, forbidden: settings.forbidden, messages: settings.pushMessages });
+      if (result.ok) {
+        setPushOn(true);
+        toast.success("পুশ চালু হয়েছে — সাইট বন্ধ থাকলেও ফোনে জানানো হবে।");
+      } else toast.error(result.reason);
+    } finally {
+      setPushBusy(false);
+    }
+  }
 
   async function toggleNotify(value: boolean) {
     if (!value) return update({ notify: false });
@@ -50,6 +84,16 @@ export function ReminderSettingsCard() {
         <BellRing className="size-5 text-primary" /> রিমাইন্ডার
       </h2>
       <div className="mt-2 divide-y divide-hairline">
+        <Row
+          icon={Smartphone}
+          title="ফোনে পুশ নোটিফিকেশন"
+          text={pushAvailable ? (pushSupported() ? "সাইট বা অ্যাপ বন্ধ থাকলেও ওয়াক্ত শুরু হলে ফোনে জানাবে" : "এই ব্রাউজারে সমর্থিত নয় (আইফোনে অ্যাপ হিসেবে যোগ করে খুলুন)") : "সার্ভারে এখনো চালু করা হয়নি"}
+          checked={pushOn}
+          onChange={(value) => void togglePush(value)}
+        />
+        {pushOn ? (
+          <Row icon={MessageCircle} title="বার্তা ও নোটিশের পুশ" text="নতুন বার্তা, গ্রুপ বা নোটিশ এলে ফোনে জানাবে" checked={settings.pushMessages} onChange={(pushMessages) => update({ pushMessages })} />
+        ) : null}
         <Row icon={MonitorSmartphone} title="নামাজের সময় পূর্ণ-স্ক্রিন রিমাইন্ডার" text="প্রতি ওয়াক্ত শুরু হলে পুরো স্ক্রিনজুড়ে মনে করিয়ে দেবে" checked={settings.waqt} onChange={(waqt) => update({ waqt })} />
         <Row icon={ShieldAlert} title="নিষিদ্ধ সময়ের রিমাইন্ডার" text="সূর্যোদয়, দ্বিপ্রহর ও সূর্যাস্তের নিষিদ্ধ সময় শুরু হলে" checked={settings.forbidden} onChange={(forbidden) => update({ forbidden })} />
         <Row
@@ -62,7 +106,7 @@ export function ReminderSettingsCard() {
       </div>
       <p className="mt-3 flex gap-2 rounded-xl bg-muted px-3 py-2.5 text-xs leading-5 text-muted-foreground">
         <Info className="mt-0.5 size-4 shrink-0" />
-        সাইট খোলা থাকলেই রিমাইন্ডার কাজ করে। সাইট পুরো বন্ধ থাকলেও ফোনে অ্যালার্মের মতো জানাতে হলে পুশ নোটিফিকেশন লাগবে — সেটি পরের ধাপে যোগ করা যাবে।
+        পুশ চালু থাকলে ওয়াক্ত ও নিষিদ্ধ সময়ের সূচনায় আপনার বেছে নেওয়া শহরের সময় অনুযায়ী ফোনে নোটিফিকেশন আসে। আইফোনে (iOS ১৬.৪+) সাইটটি আগে “হোম স্ক্রিনে যোগ করুন” দিয়ে অ্যাপ হিসেবে খুলতে হবে। নিচের দুটি সুইচ পূর্ণ-স্ক্রিন রিমাইন্ডার ও পুশ — দুটোকেই নিয়ন্ত্রণ করে।
       </p>
     </section>
   );

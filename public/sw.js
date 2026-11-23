@@ -9,7 +9,7 @@
  *   to QURAN_CACHE_MAX entries there too.
  */
 
-const VERSION = "v8";
+const VERSION = "v9";
 /** On a dev server chunk URLs are NOT content-hashed, so caching them serves stale CSS/JS. */
 const IS_DEV_HOST = ["localhost", "127.0.0.1", "[::1]"].includes(self.location.hostname);
 const PAGE_CACHE = `muhasabah-pages-${VERSION}`;
@@ -287,4 +287,53 @@ self.addEventListener("fetch", (event) => {
   }
 
   // Anything else same-origin (auth/progress APIs, RSC payloads) goes straight to the network, uncached.
+});
+
+/* ── Web Push: prayer reminders, messages, notices ───────────────────── */
+
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch {
+    data = { body: event.data ? event.data.text() : "" };
+  }
+  const title = typeof data.title === "string" && data.title ? data.title : "মুহাসাবাহ";
+  event.waitUntil(
+    self.registration.showNotification(title, {
+      body: typeof data.body === "string" ? data.body : "",
+      icon: "/images/icon-192.png",
+      badge: "/images/icon-192.png",
+      tag: typeof data.tag === "string" ? data.tag : undefined,
+      renotify: typeof data.tag === "string",
+      requireInteraction: data.requireInteraction === true,
+      vibrate: [120, 60, 120],
+      lang: "bn",
+      data: { url: typeof data.url === "string" ? data.url : "/dashboard" },
+    }),
+  );
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  let target = new URL("/dashboard", self.location.origin).href;
+  try {
+    const url = new URL(event.notification.data && event.notification.data.url ? event.notification.data.url : "/dashboard", self.location.origin);
+    if (url.origin === self.location.origin) target = url.href; // never follow an off-site link
+  } catch {
+    /* keep the default */
+  }
+  event.waitUntil(
+    (async () => {
+      const windows = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+      for (const client of windows) {
+        if (client.url.startsWith(self.location.origin) && "focus" in client) {
+          await client.focus();
+          if ("navigate" in client) await client.navigate(target).catch(() => undefined);
+          return;
+        }
+      }
+      await self.clients.openWindow(target);
+    })(),
+  );
 });
