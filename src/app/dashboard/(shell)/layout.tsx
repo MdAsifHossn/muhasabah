@@ -1,4 +1,5 @@
 import { Role } from "@prisma/client";
+import { Suspense } from "react";
 
 import { Brand } from "@/components/brand";
 import { DashboardNav, MobileBottomNav } from "@/components/layout/dashboard-nav";
@@ -44,7 +45,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
         <div className="px-5 pt-5">
           <Brand href="/dashboard" />
         </div>
-        <div className="mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-4">
+        <div className="no-scrollbar mt-6 min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-4">
           <DashboardNav role={role} />
         </div>
         <div className="shrink-0 space-y-1 border-t border-hairline p-3">
@@ -70,7 +71,9 @@ export default async function ShellLayout({ children }: { children: React.ReactN
             <span className="text-muted-foreground">{formatBanglaDate(today)}</span>
           </div>
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-            <NotificationBell />
+            <Suspense fallback={null}>
+              <NotificationBell />
+            </Suspense>
             <ShareButton />
             <ThemeToggle className="hidden sm:grid" />
             <UserMenu
@@ -84,7 +87,7 @@ export default async function ShellLayout({ children }: { children: React.ReactN
         </div>
       </header>
 
-      <main id="main-content" className="px-3 pb-28 pt-3 sm:px-6 sm:pt-6 lg:ml-64 lg:px-8 lg:pb-12 lg:pt-8">
+      <main id="main-content" className="min-w-0 overflow-x-clip px-3 pb-28 pt-3 sm:px-6 sm:pt-6 lg:ml-64 lg:px-8 lg:pb-12 lg:pt-8">
         <div className="mx-auto w-full max-w-6xl">{children}</div>
       </main>
 

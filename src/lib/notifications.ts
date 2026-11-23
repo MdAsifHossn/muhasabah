@@ -26,7 +26,7 @@ async function upsertFor(userIds: string[], draft: Draft, keyOf: (userId: string
       const dedupeKey = keyOf(userId);
       return prisma.notification.upsert({
         where: { userId_dedupeKey: { userId, dedupeKey } },
-        create: { userId, dedupeKey, ...draft },
+        create: { userId, dedupeKey, readAt: null, ...draft },
         // A repeat (e.g. another chat message in the same thread) refreshes the single entry and marks it unread again.
         update: { ...draft, readAt: null, createdAt: new Date() },
       });

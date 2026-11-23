@@ -1,7 +1,7 @@
 "use client";
 
 import { Bell, CheckCheck, Flame, Megaphone, MessageCircle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -28,6 +28,8 @@ function ago(iso: string) {
 /** Header bell: unread badge, latest notifications, tap to open + mark read. Polls every minute. */
 export function NotificationBell() {
   const router = useRouter();
+  const pathname = usePathname();
+  const search = useSearchParams().toString();
   const [open, setOpen] = useState(false);
   const [items, setItems] = useState<Item[]>([]);
   const [unread, setUnread] = useState(0);
@@ -44,12 +46,21 @@ export function NotificationBell() {
     }
   }, []);
 
+  // Reload on every navigation (e.g. opening a chat thread marks its notification read).
   useEffect(() => {
     void load();
+  }, [load, pathname, search]);
+
+  useEffect(() => {
     const timer = window.setInterval(() => {
       if (document.visibilityState === "visible") void load();
     }, 60000);
-    return () => window.clearInterval(timer);
+    const onFocus = () => void load();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+    };
   }, [load]);
 
   async function post(payload: { id?: string; all?: boolean }) {

@@ -50,13 +50,16 @@ export default async function UstadInboxPage({
     : null;
 
   return (
-    <div className="mx-auto max-w-6xl space-y-5">
+    <div className="mx-auto w-full min-w-0 max-w-6xl space-y-4 lg:space-y-5">
+      {/* Phone: one slim title row instead of the 3-line header. */}
+      {selectedMember ? null : (
+        <div className="flex items-center justify-between gap-3 lg:hidden">
+          <h1 className="text-xl font-bold">সদস্যদের বার্তা</h1>
+          {unread ? <Badge>{unread.toLocaleString("bn-BD")}টি নতুন</Badge> : <Badge variant="secondary">সব পড়া</Badge>}
+        </div>
+      )}
       <PageHeader
-        className={
-          selectedMember
-            ? "hidden flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4 lg:flex"
-            : undefined
-        }
+        className="hidden flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4 lg:flex"
         eyebrow="উস্তাদ প্যানেল"
         title="সদস্যদের বার্তা"
         // description="প্রতিটি সদস্যের জন্য একটি আলাদা কথোপকথন। প্রশ্নের উত্তর দিন, প্রয়োজন হলে নিজে থেকে বার্তা পাঠান এবং কথোপকথনটি পরিপাটি রাখুন।"
@@ -68,8 +71,8 @@ export default async function UstadInboxPage({
           )
         }
       />
-      <div className="grid gap-4 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-stretch">
-        <div className={selectedMember ? "hidden lg:block" : "block"}>
+      <div className="grid min-w-0 gap-4 lg:grid-cols-[300px_minmax(0,1fr)] lg:items-stretch">
+        <div className={selectedMember ? "hidden min-w-0 lg:block" : "block min-w-0"}>
           <InboxList
             threads={threads}
             members={members}

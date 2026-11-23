@@ -90,6 +90,15 @@ export async function markThreadRead(memberId: string, viewer: ChatViewer) {
     await prisma.message.updateMany({ where: { memberId, readByStaff: false }, data: { readByStaff: true } });
   } else if (viewer.id === memberId) {
     await prisma.message.updateMany({ where: { memberId, readByMember: false }, data: { readByMember: true } });
+  } else return;
+  // The bell entry for this thread is read too.
+  try {
+    await sharedPrisma.notification.updateMany({
+      where: { userId: viewer.id, dedupeKey: `thread:${memberId}:${isStaffRole(viewer.role) ? "member" : "staff"}`, OR: [{ readAt: null }, { readAt: { isSet: false } }] },
+      data: { readAt: new Date() },
+    });
+  } catch {
+    /* notifications are best-effort */
   }
 }
 

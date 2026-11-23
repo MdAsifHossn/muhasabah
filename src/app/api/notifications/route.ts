@@ -17,7 +17,7 @@ export async function GET(request: Request) {
   if (!userId) return Response.json({ error: "unauthorized" }, { status: 401 });
   const [items, unread] = await Promise.all([
     prisma.notification.findMany({ where: { userId }, orderBy: { createdAt: "desc" }, take: 20, select: { id: true, kind: true, title: true, body: true, href: true, readAt: true, createdAt: true } }),
-    prisma.notification.count({ where: { userId, readAt: null } }),
+    prisma.notification.count({ where: { userId, OR: [{ readAt: null }, { readAt: { isSet: false } }] } }),
   ]);
   return Response.json({ items, unread }, { headers: { "Cache-Control": "no-store" } });
 }
@@ -29,9 +29,9 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as { id?: unknown; all?: unknown } | null;
   const now = new Date();
   if (body?.all === true) {
-    await prisma.notification.updateMany({ where: { userId, readAt: null }, data: { readAt: now } });
+    await prisma.notification.updateMany({ where: { userId, OR: [{ readAt: null }, { readAt: { isSet: false } }] }, data: { readAt: now } });
   } else if (typeof body?.id === "string" && objectId.test(body.id)) {
-    await prisma.notification.updateMany({ where: { id: body.id, userId, readAt: null }, data: { readAt: now } });
+    await prisma.notification.updateMany({ where: { id: body.id, userId, OR: [{ readAt: null }, { readAt: { isSet: false } }] }, data: { readAt: now } });
   } else {
     return Response.json({ error: "bad request" }, { status: 400 });
   }

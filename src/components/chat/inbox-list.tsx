@@ -48,9 +48,9 @@ export function InboxList({ threads, members, selectedMemberId, compact = false 
         </div>
       ) : null}
 
-      <div className={cn(compact && "rounded-card border bg-card p-3 shadow-card sm:p-4")}>
+      <div className={cn("min-w-0", compact && "lg:rounded-card lg:border lg:bg-card lg:p-4 lg:shadow-card")}>
         {compact ? (
-          <div className="mb-3 flex items-center justify-between gap-2">
+          <div className="mb-3 hidden items-center justify-between gap-2 lg:flex">
             <div>
               <h2 className="font-bold text-foreground">সদস্য</h2>
               <p className="text-xs text-muted-foreground">{toBn(members.length)} জন সক্রিয় সদস্য</p>
@@ -66,11 +66,11 @@ export function InboxList({ threads, members, selectedMemberId, compact = false 
           onChange={(event) => setQuery(event.target.value)}
           placeholder="সদস্যের নাম খুঁজুন…"
           aria-label="সদস্য খুঁজুন"
-          className="h-12 w-full rounded-2xl border border-input bg-card pl-11 pr-4 text-base shadow-xs outline-none transition placeholder:text-subtle-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25 md:text-sm"
+          className="field-3d h-12 w-full rounded-xl pl-11 pr-4 text-base shadow-xs outline-none transition placeholder:text-subtle-foreground focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/25 md:text-sm"
         />
       </div>
 
-        <div className="mt-3 flex gap-1 rounded-xl bg-surface-sunken p-1">
+        <div className="mt-3 flex min-w-0 gap-1 rounded-xl bg-surface-sunken p-1">
           <button type="button" onClick={() => setFilter("all")} className={cn("flex-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition", filter === "all" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground")}>সব কথোপকথন <span className="ml-1 text-[10px]">{toBn(threads.length)}</span></button>
           <button type="button" onClick={() => setFilter("unread")} className={cn("flex-1 rounded-lg px-2 py-1.5 text-xs font-semibold transition", filter === "unread" ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground")}>নতুন বার্তা <span className="ml-1 text-[10px]">{toBn(threads.filter((thread) => thread.unread > 0).length)}</span></button>
         </div>
@@ -78,7 +78,7 @@ export function InboxList({ threads, members, selectedMemberId, compact = false 
         {!compact ? <p className="mt-3 px-1 text-xs text-muted-foreground">নাম লিখে আগের কথোপকথন খুঁজুন, অথবা নতুন সদস্যের সঙ্গে আলাদা কথোপকথন শুরু করুন।</p> : null}
 
       {filtered.length ? (
-        <ul className={cn("overflow-hidden rounded-card border bg-card shadow-card", compact && "mt-3") }>
+        <ul className={cn("overflow-hidden rounded-xl border bg-card shadow-card", compact && "mt-3")}>
           {filtered.map((thread) => (
             <li key={thread.memberId} className="border-b last:border-b-0">
               <Link href={`/dashboard/ustad/messages?member=${thread.memberId}`} className={cn("flex items-center gap-3 px-3 py-3 transition hover:bg-accent/60 active:bg-accent sm:px-4", selectedMemberId === thread.memberId && "bg-primary-soft")}>
