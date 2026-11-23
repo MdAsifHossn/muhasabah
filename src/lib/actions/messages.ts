@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { actionError } from "@/lib/action-error";
 import { canAccessThread, getMessageDb, getThreadMessages, markThreadRead, type ChatMessage } from "@/lib/messages";
+import { previewText } from "@/lib/chat-shared";
 import { notifyNewMessage } from "@/lib/notifications";
 import { isStaffRole, requireUser } from "@/lib/permissions";
 
@@ -34,14 +35,23 @@ async function resolveThread(viewer: { id: string; role: unknown }, memberId?: s
   return member.id;
 }
 
-export async function sendMessage(input: { memberId?: string | null; body: string }): Promise<ChatMessage> {
+export async function sendMessage(input: { memberId?: string | null; body: string; replyToId?: string | null }): Promise<ChatMessage> {
   const session = await requireUser();
   const viewer = { id: session.user.id, role: session.user.role };
   const body = parseBody(input.body);
   const memberId = await resolveThread(viewer, input.memberId);
   const fromStaff = memberId !== viewer.id;
+  let replyTo: ChatMessage["replyTo"] = null;
+  let replyToId: string | undefined;
+  if (input.replyToId && objectId.safeParse(input.replyToId).success) {
+    const quoted = await prisma.message.findFirst({ where: { id: input.replyToId, memberId }, include: { sender: { select: { name: true } } } });
+    if (quoted) {
+      replyToId = quoted.id;
+      replyTo = { id: quoted.id, senderName: quoted.sender.name, body: quoted.deletedAt ? "" : previewText(quoted.body), deleted: Boolean(quoted.deletedAt) };
+    }
+  }
   const created = await prisma.message.create({
-    data: { memberId, senderId: viewer.id, body, readByMember: !fromStaff, readByStaff: fromStaff || isStaffRole(viewer.role) },
+    data: { memberId, senderId: viewer.id, body, replyToId, readByMember: !fromStaff, readByStaff: fromStaff || isStaffRole(viewer.role) },
   });
   await notifyNewMessage({ memberId, senderId: viewer.id, senderName: session.user.name, fromStaff, body });
   refresh();
@@ -56,6 +66,8 @@ export async function sendMessage(input: { memberId?: string | null; body: strin
     editedAt: null,
     deleted: false,
     readByOther: false,
+    replyTo,
+    reactions: [],
   };
 }
 

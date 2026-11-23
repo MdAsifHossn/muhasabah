@@ -71,6 +71,10 @@ export const NAV_GROUPS: NavGroup[] = [
     ],
   },
   {
+    title: "যোগাযোগ",
+    items: [{ label: "গ্রুপ চ্যাট", href: "/dashboard/groups", icon: Users }],
+  },
+  {
     title: "উস্তাদজি",
     items: [
       { label: "উস্তাদজিকে বার্তা", href: "/dashboard/messages", icon: MessagesSquare, roles: ["MEMBER"] },

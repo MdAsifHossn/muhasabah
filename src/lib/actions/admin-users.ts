@@ -98,6 +98,23 @@ export async function updateManagedUser(formData: FormData): Promise<UserActionR
   }
 }
 
+/** Ustadhji lets a member create groups and add people to them (or takes it back). Ustadhji themselves always can. */
+export async function setGroupCreator(userId: string, allowed: boolean): Promise<UserActionResult> {
+  await requireAdmin();
+  const id = objectId.safeParse(userId);
+  if (!id.success) return { success: false, message: "ব্যবহারকারী ID সঠিক নয়।" };
+  try {
+    const user = await prisma.user.findUnique({ where: { id: id.data }, select: { role: true, name: true } });
+    if (!user) return { success: false, message: "ব্যবহারকারী পাওয়া যায়নি।" };
+    if (isStaffRole(user.role)) return { success: false, message: "উস্তাদজি সবসময়ই গ্রুপ তৈরি করতে পারেন।" };
+    await prisma.user.update({ where: { id: id.data }, data: { groupCreator: Boolean(allowed) } });
+    refreshUsers();
+    return { success: true, message: allowed ? `${user.name} এখন গ্রুপ তৈরি ও সদস্য যোগ করতে পারবেন।` : `${user.name} এর গ্রুপ তৈরির অনুমতি সরানো হয়েছে।` };
+  } catch (error) {
+    return { success: false, message: messageFromError(error) };
+  }
+}
+
 /** Admin sets a new password; the user is signed out of every device. */
 export async function resetManagedUserPassword(formData: FormData): Promise<UserActionResult> {
   await requireAdmin();

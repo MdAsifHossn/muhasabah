@@ -1,14 +1,17 @@
 "use client";
 
-import { ArrowLeft, Check, CheckCheck, Copy, Loader2, MessageCircleHeart, MoreVertical, Pencil, SendHorizontal, Trash2, X } from "lucide-react";
+import { ArrowLeft, Check, CheckCheck, Copy, Loader2, MessageCircleHeart, MoreVertical, Pencil, Reply, SendHorizontal, Trash2, Users, X } from "lucide-react";
 import Link from "next/link";
-import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { toast } from "sonner";
 
 import { chatDayKey, chatDayLabel, chatTime } from "@/components/chat/format";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { actionErrorMessage } from "@/lib/action-error";
+import { deleteGroupMessage, editGroupMessage, sendGroupMessage, toggleReaction } from "@/lib/actions/groups";
 import { deleteMessage, editMessage, sendMessage } from "@/lib/actions/messages";
+import { applyReaction, previewText, REACTION_EMOJIS } from "@/lib/chat-types";
+import { CHAT_RETENTION_DAYS } from "@/lib/chat-retention-days";
 import type { ChatMessage } from "@/lib/messages";
 import { cn } from "@/lib/utils";
 
@@ -32,6 +35,9 @@ export function ChatThread({
   canPost = true,
   canModerate = false,
   disabledReason,
+  mode = "dm",
+  groupId,
+  headerAction,
 }: {
   /** Thread owner; null for a member viewing their own thread. */
   memberId: string | null;
@@ -44,7 +50,15 @@ export function ChatThread({
   /** Admin: may delete anyone's message. */
   canModerate?: boolean;
   disabledReason?: string;
+  /** "group": a many-member group chat (send/edit/delete go to the group actions). */
+  mode?: "dm" | "group";
+  groupId?: string;
+  /** Extra header control (e.g. the group info button). */
+  headerAction?: ReactNode;
 }) {
+  const isGroup = mode === "group";
+  const kind = isGroup ? "GROUP" : "DM";
+  const [replyingTo, setReplyingTo] = useState<LocalMessage | null>(null);
   const [messages, setMessages] = useState<LocalMessage[]>(initialMessages);
   const [draft, setDraft] = useState("");
   const [editing, setEditing] = useState<LocalMessage | null>(null);
@@ -79,7 +93,7 @@ export function ChatThread({
 
   const poll = useCallback(async () => {
     try {
-      const response = await fetch(`/api/messages${memberId ? `?member=${memberId}` : ""}`, { cache: "no-store" });
+      const response = await fetch(isGroup ? `/api/groups/${groupId}` : `/api/messages${memberId ? `?member=${memberId}` : ""}`, { cache: "no-store" });
       if (!response.ok) return;
       const data = (await response.json()) as { messages: ChatMessage[] };
       stickToBottom.current = isNearBottom();
@@ -87,7 +101,7 @@ export function ChatThread({
     } catch {
       /* offline — try again on the next tick */
     }
-  }, [memberId]);
+  }, [memberId, isGroup, groupId]);
 
   useEffect(() => {
     let timer: ReturnType<typeof setInterval> | undefined;
@@ -121,7 +135,7 @@ export function ChatThread({
       const target = editing;
       setSending(true);
       try {
-        await editMessage({ id: target.id, body });
+        await (isGroup ? editGroupMessage({ id: target.id, body }) : editMessage({ id: target.id, body }));
         setMessages((current) => current.map((message) => (message.id === target.id ? { ...message, body, editedAt: new Date().toISOString() } : message)));
         setEditing(null);
         setDraft("");
@@ -145,14 +159,18 @@ export function ChatThread({
       editedAt: null,
       deleted: false,
       readByOther: false,
+      replyTo: replyingTo ? { id: replyingTo.id, senderName: replyingTo.senderName, body: previewText(replyingTo.body), deleted: false } : null,
+      reactions: [],
       pending: true,
     };
+    const replyToId = replyingTo && !replyingTo.pending ? replyingTo.id : null;
+    setReplyingTo(null);
     stickToBottom.current = true;
     setMessages((current) => [...current, optimistic]);
     setDraft("");
     setSending(true);
     try {
-      const saved = await sendMessage({ memberId, body });
+      const saved = await (isGroup ? sendGroupMessage({ groupId: groupId ?? "", body, replyToId }) : sendMessage({ memberId, body, replyToId }));
       // A poll may already have delivered the saved copy — keep exactly one.
       setMessages((current) => current.filter((message) => message.id !== saved.id).map((message) => (message.id === tempId ? saved : message)));
     } catch (error) {
@@ -170,7 +188,7 @@ export function ChatThread({
       return;
     }
     try {
-      await deleteMessage(message.id);
+      await (isGroup ? deleteGroupMessage(message.id) : deleteMessage(message.id));
       toast.success("বার্তাটি মুছে ফেলা হয়েছে");
       setMessages((current) => current.map((item) => (item.id === message.id ? { ...item, deleted: true, body: "" } : item)));
       if (editing?.id === message.id) cancelEdit();
@@ -179,7 +197,27 @@ export function ChatThread({
     }
   }
 
+  async function react(message: LocalMessage, emoji: string) {
+    if (message.pending || message.failed || message.deleted) return;
+    const before = message.reactions;
+    setMessages((current) => current.map((item) => (item.id === message.id ? { ...item, reactions: applyReaction(item.reactions, emoji) } : item)));
+    try {
+      const fresh = await toggleReaction({ kind, messageId: message.id, emoji });
+      setMessages((current) => current.map((item) => (item.id === message.id ? { ...item, reactions: fresh } : item)));
+    } catch (error) {
+      setMessages((current) => current.map((item) => (item.id === message.id ? { ...item, reactions: before } : item)));
+      toast.error(actionErrorMessage(error, "প্রতিক্রিয়া দেওয়া যায়নি।"));
+    }
+  }
+
+  function startReply(message: LocalMessage) {
+    setEditing(null);
+    setReplyingTo(message);
+    requestAnimationFrame(() => inputRef.current?.focus());
+  }
+
   function startEdit(message: LocalMessage) {
+    setReplyingTo(null);
     setEditing(message);
     setDraft(message.body);
     requestAnimationFrame(() => inputRef.current?.focus());
@@ -217,12 +255,13 @@ export function ChatThread({
           </Link>
         ) : null}
         <span className="hero-surface grid size-11 shrink-0 place-items-center rounded-full text-base font-bold ring-2 ring-gold/40">
-          {isStaffView ? title.trim().slice(0, 1) : <MessageCircleHeart className="size-5 text-[#ebe6da]" />}
+          {isGroup ? <Users className="size-5 text-[#ebe6da]" /> : isStaffView ? title.trim().slice(0, 1) : <MessageCircleHeart className="size-5 text-[#ebe6da]" />}
         </span>
         <div className="min-w-0 flex-1">
           <h1 className="truncate text-[15px] font-semibold leading-tight">{title}</h1>
           {subtitle ? <p className="truncate text-xs text-muted-foreground">{subtitle}</p> : null}
         </div>
+        {headerAction}
       </header>
 
       {/* Messages */}
@@ -267,6 +306,8 @@ export function ChatThread({
                     canModerate={canModerate}
                     onEdit={() => startEdit(message)}
                     onDelete={() => void remove(message)}
+                    onReply={() => startReply(message)}
+                    onReact={(emoji) => void react(message, emoji)}
                   />
                 </Fragment>
               );
@@ -279,6 +320,18 @@ export function ChatThread({
       <footer className="shrink-0 border-t bg-card/90 px-3 pb-3 pt-2 backdrop-blur-xl sm:px-4 lg:rounded-b-card lg:bg-transparent">
         {canPost ? (
           <>
+            {replyingTo && !editing ? (
+              <div className="mx-auto mb-2 flex max-w-3xl items-center gap-2 rounded-xl border-l-4 border-primary bg-muted/70 px-3 py-2 text-xs">
+                <Reply className="size-3.5 shrink-0 text-primary" />
+                <span className="min-w-0 flex-1">
+                  <b className="block truncate text-primary">{replyingTo.mine ? "নিজের বার্তা" : replyingTo.senderName}</b>
+                  <span className="block truncate text-muted-foreground">{replyingTo.body || "বার্তা"}</span>
+                </span>
+                <button type="button" onClick={() => setReplyingTo(null)} aria-label="উত্তর বাতিল" className="grid size-7 place-items-center rounded-lg hover:bg-black/5 dark:hover:bg-white/10">
+                  <X className="size-4" />
+                </button>
+              </div>
+            ) : null}
             {editing ? (
               <div className="mx-auto mb-2 flex max-w-3xl items-center gap-2 rounded-xl bg-primary-soft px-3 py-2 text-xs text-primary-soft-foreground">
                 <Pencil className="size-3.5 shrink-0" />
@@ -318,6 +371,7 @@ export function ChatThread({
                 {sending ? <Loader2 className="size-5 animate-spin" /> : editing ? <Check className="size-5" /> : <SendHorizontal className="size-5" />}
               </button>
             </form>
+            <p className="mx-auto mt-1.5 max-w-3xl text-center text-[11px] text-subtle-foreground">বার্তা {CHAT_RETENTION_DAYS.toLocaleString("bn-BD")} দিন পর স্বয়ংক্রিয়ভাবে মুছে যায়।</p>
           </>
         ) : (
           <p className="mx-auto max-w-3xl rounded-xl bg-muted px-4 py-3 text-center text-sm text-muted-foreground">{disabledReason ?? "এই কথোপকথনে বার্তা পাঠানো যাচ্ছে না।"}</p>
@@ -335,6 +389,8 @@ function Bubble({
   canModerate,
   onEdit,
   onDelete,
+  onReply,
+  onReact,
 }: {
   message: LocalMessage;
   showName: boolean;
@@ -343,6 +399,8 @@ function Bubble({
   canModerate: boolean;
   onEdit: () => void;
   onDelete: () => void;
+  onReply: () => void;
+  onReact: (emoji: string) => void;
 }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -359,7 +417,7 @@ function Bubble({
   };
 
   return (
-    <li className={cn("group flex", mine ? "justify-end" : "justify-start", spaced && "mt-2")}>
+    <li className={cn("group flex", mine ? "justify-end" : "justify-start", spaced && "mt-2", message.reactions.length > 0 && !message.deleted && "mb-3")}>
       <div className={cn("flex max-w-[82%] items-end gap-1 sm:max-w-[70%]", mine && "flex-row-reverse")}>
         <div
           onPointerDown={startPress}
@@ -374,13 +432,19 @@ function Bubble({
           className={cn(
             "relative select-text px-3.5 pb-1.5 pt-2 text-[15px] leading-6 shadow-xs",
             "rounded-[1.25rem]",
-            mine ? "bg-active text-on-active" : "border bg-card text-card-foreground",
+            mine ? "border border-primary/20 bg-primary-soft text-foreground" : "border bg-card text-card-foreground",
             tail && (mine ? "rounded-br-md" : "rounded-bl-md"),
             message.deleted && "border border-dashed bg-transparent text-muted-foreground shadow-none",
             message.pending && "opacity-70",
             message.failed && "ring-2 ring-destructive/60",
           )}
         >
+          {message.replyTo && !message.deleted ? (
+            <div className="mb-1.5 rounded-lg border-l-4 border-primary/70 bg-black/5 px-2.5 py-1.5 text-xs dark:bg-white/5">
+              <b className="block truncate text-primary">{message.replyTo.senderName || "বার্তা"}</b>
+              <span className="line-clamp-2 text-muted-foreground">{message.replyTo.deleted ? "বার্তাটি মুছে ফেলা হয়েছে" : message.replyTo.body}</span>
+            </div>
+          ) : null}
           {showName && !mine && message.fromStaff ? (
             <p className="mb-0.5 text-xs font-semibold text-gold">উস্তাদজি — {message.senderName}</p>
           ) : showName && !mine ? (
@@ -391,13 +455,30 @@ function Bubble({
           ) : (
             <p className="whitespace-pre-wrap break-words">{message.body}</p>
           )}
-          <p className={cn("mt-0.5 flex items-center justify-end gap-1 text-[11px]", mine && !message.deleted ? "text-on-active/75" : "text-muted-foreground")}>
+          <p className={cn("mt-0.5 flex items-center justify-end gap-1 text-[11px]", "text-muted-foreground")}>
             {message.editedAt && !message.deleted ? <span>সম্পাদিত •</span> : null}
             {message.failed ? <span className="font-semibold text-destructive">পাঠানো যায়নি</span> : <span>{chatTime(message.createdAt)}</span>}
             {mine && !message.deleted && !message.failed ? (
               message.pending ? <Loader2 className="size-3 animate-spin" /> : message.readByOther ? <CheckCheck className="size-3.5" aria-label="পড়া হয়েছে" /> : <Check className="size-3.5" aria-label="পাঠানো হয়েছে" />
             ) : null}
           </p>
+          {message.reactions.length && !message.deleted ? (
+            <div className={cn("-mb-3.5 mt-1 flex flex-wrap gap-1", mine && "justify-end")}>
+              {message.reactions.map((reaction) => (
+                <button
+                  key={reaction.emoji}
+                  type="button"
+                  onClick={() => onReact(reaction.emoji)}
+                  aria-label={`${reaction.emoji} ${reaction.count.toLocaleString("bn-BD")}`}
+                  aria-pressed={reaction.mine}
+                  className={cn("inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 text-xs shadow-xs transition active:scale-95", reaction.mine ? "border-primary/60 bg-primary-soft" : "bg-card")}
+                >
+                  <span>{reaction.emoji}</span>
+                  {reaction.count > 1 ? <span className="font-semibold tabular-nums text-muted-foreground">{reaction.count.toLocaleString("bn-BD")}</span> : null}
+                </button>
+              ))}
+            </div>
+          ) : null}
         </div>
 
         {canAct || message.failed ? (
@@ -408,7 +489,31 @@ function Bubble({
             >
               <MoreVertical className="size-4" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align={mine ? "end" : "start"} className="min-w-40">
+            <DropdownMenuContent align={mine ? "end" : "start"} className="min-w-56">
+              {!message.failed && canAct ? (
+                <>
+                  <div className="flex items-center gap-0.5 px-1 py-1" role="group" aria-label="প্রতিক্রিয়া">
+                    {REACTION_EMOJIS.map((emoji) => (
+                      <button
+                        key={emoji}
+                        type="button"
+                        onClick={() => {
+                          setMenuOpen(false);
+                          onReact(emoji);
+                        }}
+                        aria-label={`${emoji} দিন`}
+                        className={cn("grid size-9 place-items-center rounded-full text-xl transition hover:scale-125 hover:bg-accent", message.reactions.some((reaction) => reaction.mine && reaction.emoji === emoji) && "bg-primary-soft")}
+                      >
+                        {emoji}
+                      </button>
+                    ))}
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onSelect={onReply}>
+                    <Reply /> উত্তর দিন
+                  </DropdownMenuItem>
+                </>
+              ) : null}
               {!message.failed ? (
                 <DropdownMenuItem
                   onSelect={() => {

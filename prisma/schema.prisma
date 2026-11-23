@@ -104,6 +104,8 @@ model User {
   /// Privacy switch (profile settings): when true, even USTADH cannot
   /// see this member's Amalnama. Turning it off restores full review access.
   hideAmalnama  Boolean  @default(false)
+  /// Ustadhji can let a member create groups and add people to them (null / false = cannot).
+  groupCreator  Boolean? @default(false)
   joinedAt      DateTime @default(now())
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
@@ -124,6 +126,10 @@ model User {
   notifications Notification[]
   messageThread Message[]      @relation("MessageThread")
   messagesSent  Message[]      @relation("MessageSender")
+
+  groupsCreated    ChatGroup[]    @relation("GroupCreator")
+  groupMemberships GroupMember[]
+  groupMessages    GroupMessage[]
 
   @@index([role, isActive])
 }
@@ -383,6 +389,65 @@ model Notification {
   @@index([userId, createdAt])
 }
 
+/// Group chat: anyone can create a group and add members; every member can write, reply and react.
+/// Chat messages (private + group) are purged after 7 days (see src/lib/chat-retention.ts).
+model ChatGroup {
+  id            String         @id @default(auto()) @map("_id") @db.ObjectId
+  name          String
+  createdById   String         @db.ObjectId
+  createdBy     User           @relation("GroupCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members       GroupMember[]
+  messages      GroupMessage[]
+  lastMessageAt DateTime       @default(now())
+  createdAt     DateTime       @default(now())
+
+  @@index([lastMessageAt])
+}
+
+model GroupMember {
+  id         String    @id @default(auto()) @map("_id") @db.ObjectId
+  groupId    String    @db.ObjectId
+  group      ChatGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  userId     String    @db.ObjectId
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// Group admins can add / remove people. The creator is the first admin.
+  isAdmin    Boolean   @default(false)
+  lastReadAt DateTime  @default(now())
+  joinedAt   DateTime  @default(now())
+
+  @@unique([groupId, userId])
+  @@index([userId])
+}
+
+model GroupMessage {
+  id        String    @id @default(auto()) @map("_id") @db.ObjectId
+  groupId   String    @db.ObjectId
+  group     ChatGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  senderId  String    @db.ObjectId
+  sender    User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  body      String
+  replyToId String?   @db.ObjectId
+  editedAt  DateTime?
+  deletedAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([groupId, createdAt])
+  @@index([createdAt])
+}
+
+/// One emoji reaction per user per message. kind = "DM" (Message) or "GROUP" (GroupMessage).
+model MessageReaction {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  kind      String
+  messageId String   @db.ObjectId
+  userId    String   @db.ObjectId
+  emoji     String
+  createdAt DateTime @default(now())
+
+  @@unique([kind, messageId, userId])
+  @@index([kind, messageId])
+}
+
 model Message {
   id           String    @id @default(auto()) @map("_id") @db.ObjectId
   memberId     String    @db.ObjectId
@@ -390,6 +455,8 @@ model Message {
   senderId     String    @db.ObjectId
   sender       User      @relation("MessageSender", fields: [senderId], references: [id], onDelete: Cascade)
   body         String
+  /// Quoted message (same thread) when this is a reply.
+  replyToId    String?   @db.ObjectId
   editedAt     DateTime?
   deletedAt    DateTime?
   /// Read receipts per side of the thread.

@@ -10,7 +10,8 @@ import { Segmented, Sheet } from "@/components/ustad/sheet";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Field, Input, Select } from "@/components/ui/input";
-import { createManagedUser, deleteManagedUser, resetManagedUserPassword, updateManagedUser, type UserActionResult } from "@/lib/actions/admin-users";
+import { Switch } from "@/components/ui/switch";
+import { createManagedUser, deleteManagedUser, resetManagedUserPassword, setGroupCreator, updateManagedUser, type UserActionResult } from "@/lib/actions/admin-users";
 import { genderLabels } from "@/lib/amal-audience";
 import { roleLabels } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -27,6 +28,8 @@ export type ManagedUser = {
   bookCount: number;
   /** The member hid their Amalnama — supervisors must not see any of its data. */
   hideAmalnama: boolean;
+  /** Member may create groups and add people (Ustadhji always may). */
+  groupCreator: boolean;
 };
 
 type Editor = { mode: "create" } | { mode: "edit"; user: ManagedUser } | { mode: "password"; user: ManagedUser } | { mode: "delete"; user: ManagedUser } | null;
@@ -174,6 +177,7 @@ export function UserManager({ users, currentUserId }: { users: ManagedUser[]; cu
                         <EyeOff className="size-3" /> আমলনামা গোপন
                       </Badge>
                     ) : null}
+                    {user.role === Role.MEMBER && user.groupCreator ? <Badge variant="soft">গ্রুপ নির্মাতা</Badge> : null}
                   </div>
                   <p className="mt-2 text-[11px] text-subtle-foreground">
                     যোগদান {new Date(user.joinedAt).toLocaleDateString("bn-BD", { day: "numeric", month: "short", year: "numeric" })}
@@ -181,6 +185,15 @@ export function UserManager({ users, currentUserId }: { users: ManagedUser[]; cu
                   </p>
                 </div>
               </div>
+              {user.role === Role.MEMBER ? (
+                <label className="mt-3 flex cursor-pointer items-center justify-between gap-3 rounded-lg bg-surface-sunken px-3 py-2.5 text-sm">
+                  <span className="min-w-0">
+                    <span className="block font-semibold">গ্রুপ তৈরির অনুমতি</span>
+                    <span className="block text-xs text-muted-foreground">গ্রুপ খুলতে ও সদস্য যোগ করতে পারবেন</span>
+                  </span>
+                  <Switch checked={user.groupCreator} disabled={isPending || !user.isActive} onCheckedChange={(next) => run(() => setGroupCreator(user.id, next))} aria-label={`${user.name} কে গ্রুপ তৈরির অনুমতি`} />
+                </label>
+              ) : null}
               <div className="mt-3 flex gap-2 border-t border-hairline pt-3">
                 <Button size="sm" variant="soft" className="flex-1" onClick={() => setEditor({ mode: "edit", user })}>
                   <Pencil className="size-3.5" /> সম্পাদনা

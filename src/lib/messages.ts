@@ -3,6 +3,8 @@ import { createRequire } from "node:module";
 import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 
+import { loadReactions, previewText, type ReactionSummary, type ReplyPreview } from "@/lib/chat-shared";
+import { maybePurgeOldChat } from "@/lib/chat-retention";
 import { isStaffRole } from "@/lib/permissions";
 import { prisma as sharedPrisma } from "@/lib/prisma";
 
@@ -54,6 +56,9 @@ export type ChatMessage = {
   deleted: boolean;
   /** The other side has read it (for ✓✓ on own messages). */
   readByOther: boolean;
+  /** The message this one quotes (reply), if any. */
+  replyTo: ReplyPreview | null;
+  reactions: ReactionSummary[];
 };
 
 export type ChatViewer = { id: string; role: unknown };
@@ -61,14 +66,19 @@ export type ChatViewer = { id: string; role: unknown };
 const THREAD_LIMIT = 300;
 
 export async function getThreadMessages(memberId: string, viewer: ChatViewer): Promise<ChatMessage[]> {
+  maybePurgeOldChat();
   const rows = await prisma.message.findMany({
     where: { memberId },
     orderBy: { createdAt: "desc" },
     take: THREAD_LIMIT,
     include: { sender: { select: { name: true, role: true } } },
   });
-  return rows.reverse().map((row) => {
+  rows.reverse();
+  const byId = new Map(rows.map((row) => [row.id, row]));
+  const reactions = await loadReactions("DM", rows.map((row) => row.id), viewer.id);
+  return rows.map((row) => {
     const fromStaff = row.senderId !== memberId;
+    const quoted = row.replyToId ? byId.get(row.replyToId) : undefined;
     return {
       id: row.id,
       body: row.deletedAt ? "" : row.body,
@@ -80,6 +90,8 @@ export async function getThreadMessages(memberId: string, viewer: ChatViewer): P
       editedAt: row.editedAt ? row.editedAt.toISOString() : null,
       deleted: Boolean(row.deletedAt),
       readByOther: fromStaff ? row.readByMember : row.readByStaff,
+      replyTo: row.replyToId ? { id: row.replyToId, senderName: quoted?.sender.name ?? "", body: quoted && !quoted.deletedAt ? previewText(quoted.body) : "", deleted: !quoted || Boolean(quoted.deletedAt) } : null,
+      reactions: reactions.get(row.id) ?? [],
     };
   });
 }

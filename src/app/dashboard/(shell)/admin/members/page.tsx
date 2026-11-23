@@ -9,7 +9,7 @@ export default async function MembersPage() {
   const session = await requireAdmin();
   const users = await prisma.user.findMany({
     orderBy: [{ role: "asc" }, { createdAt: "desc" }],
-    select: { id: true, name: true, email: true, role: true, gender: true, isActive: true, hideAmalnama: true, joinedAt: true, _count: { select: { dailyEntries: true, books: true } } },
+    select: { id: true, name: true, email: true, role: true, gender: true, isActive: true, hideAmalnama: true, groupCreator: true, joinedAt: true, _count: { select: { dailyEntries: true, books: true } } },
   });
 
   const managedUsers: ManagedUser[] = users.map((user) => ({
@@ -24,6 +24,7 @@ export default async function MembersPage() {
     entryCount: user.hideAmalnama ? 0 : user._count.dailyEntries,
     bookCount: user._count.books,
     hideAmalnama: user.hideAmalnama,
+    groupCreator: user.groupCreator === true,
   }));
 
   return (

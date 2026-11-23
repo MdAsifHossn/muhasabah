@@ -82,3 +82,22 @@ export async function notifyStreakMilestone(input: { memberId: string; memberNam
     console.error("notifyStreakMilestone failed", error);
   }
 }
+
+/** Everyone in the group except the sender: one refreshed bell entry per group. */
+export async function notifyGroupMessage(input: { groupId: string; groupName: string; senderId: string; senderName: string; memberIds: string[]; body: string }) {
+  try {
+    const recipients = input.memberIds.filter((id) => id !== input.senderId);
+    await upsertFor(recipients, { kind: "MESSAGE", title: `${input.groupName} — ${input.senderName}`, body: preview(input.body), href: `/dashboard/groups?group=${input.groupId}` }, () => `group:${input.groupId}`);
+  } catch (error) {
+    console.error("notifyGroupMessage failed", error);
+  }
+}
+
+export async function notifyGroupAdded(input: { groupId: string; groupName: string; byName: string; userIds: string[] }) {
+  if (!input.userIds.length) return;
+  try {
+    await upsertFor(input.userIds, { kind: "MESSAGE", title: "নতুন গ্রুপে যোগ হয়েছেন", body: `${input.byName} আপনাকে "${input.groupName}" গ্রুপে যোগ করেছেন`, href: `/dashboard/groups?group=${input.groupId}` }, () => `group:${input.groupId}`);
+  } catch (error) {
+    console.error("notifyGroupAdded failed", error);
+  }
+}
